@@ -28,8 +28,8 @@ export function Sidebar({ userName }: { userName: string }) {
           N
         </div>
         <div>
-          <p className="font-heading text-sm leading-tight text-white">Novasoft Pipeline</p>
-          <p className="text-[11px] leading-tight text-slate-500">Strategie 2026</p>
+          <p className="font-heading text-sm leading-tight text-white">Novasoft CRM</p>
+          <p className="text-[11px] leading-tight text-slate-500">Pipeline</p>
         </div>
       </div>
 

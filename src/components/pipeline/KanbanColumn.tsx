@@ -2,10 +2,9 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { STAGE_COLORS } from "@/lib/constants";
+import { formatEurCompact } from "@/lib/format";
 import { KanbanCard } from "./KanbanCard";
 import type { Opportunity } from "@/types/opportunity";
-
-const currency = new Intl.NumberFormat("ro-RO", { notation: "compact", maximumFractionDigits: 1 });
 
 export function KanbanColumn({
   stage,
@@ -40,7 +39,7 @@ export function KanbanColumn({
           </span>
         </div>
         <span className="font-mono text-[11px] text-slate-500">
-          {totalValue > 0 ? `${currency.format(totalValue)} lei` : ""}
+          {totalValue > 0 ? formatEurCompact(totalValue) : ""}
         </span>
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto p-2">

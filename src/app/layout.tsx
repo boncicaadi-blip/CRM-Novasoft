@@ -16,8 +16,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Pipeline — Strategie comerciala 2026",
-  description: "Tracking pipeline comercial",
+  title: "Novasoft CRM — Pipeline",
+  description: "Tracking pipeline comercial Novasoft",
 };
 
 export default function RootLayout({

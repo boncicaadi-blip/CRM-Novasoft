@@ -8,14 +8,13 @@ import {
   buildTimeSeries,
   upcomingActions,
 } from "@/lib/analytics";
+import { formatEur } from "@/lib/format";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { StageChart } from "@/components/dashboard/StageChart";
 import { StatusChart } from "@/components/dashboard/StatusChart";
 import { TimeSeriesChart } from "@/components/dashboard/TimeSeriesChart";
 import { ResponsabilChart } from "@/components/dashboard/ResponsabilChart";
 import { ActionsList } from "@/components/dashboard/ActionsList";
-
-const currency = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
 
 export default async function DashboardPage() {
   const [opportunities, history] = await Promise.all([
@@ -42,13 +41,13 @@ export default async function DashboardPage() {
       <div className="mb-5 grid grid-cols-4 gap-4">
         <KpiCard
           label="ARR activ"
-          value={`${currency.format(kpis.totalArr)} lei`}
+          value={formatEur(kpis.totalArr)}
           sublabel={`${kpis.activeCount} oportunitati active`}
           icon={<TrendingUp size={16} />}
         />
         <KpiCard
           label="Forecast ponderat"
-          value={`${currency.format(kpis.weightedForecast)} lei`}
+          value={formatEur(kpis.weightedForecast)}
           sublabel="ARR x Probability"
           icon={<Target size={16} />}
         />

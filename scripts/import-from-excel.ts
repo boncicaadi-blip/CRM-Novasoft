@@ -87,7 +87,7 @@ async function ensureProfile(fullName: string | null): Promise<string | null> {
 }
 
 async function main() {
-  const wb = XLSX.readFile(filePath);
+  const wb = XLSX.readFile(filePath, { cellDates: true });
   const ws = wb.Sheets["Pipeline"];
   if (!ws) {
     console.error('Nu am gasit foaia "Pipeline" in fisier.');

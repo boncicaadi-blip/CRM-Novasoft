@@ -13,7 +13,8 @@ import {
   Radio,
   Check,
 } from "lucide-react";
-import { Field, TextInput, TextArea, Select, Checkbox } from "@/components/form/fields";
+import { Field, TextInput, TextArea, Select, Checkbox, MoneyInput } from "@/components/form/fields";
+import { formatEur } from "@/lib/format";
 import {
   DOMENII_ACTIVITATE,
   PRODUSE_SERVICII,
@@ -160,9 +161,15 @@ export function OpportunityForm({
                 defaultValue={opportunity?.responsabil_vanzare_id ?? ""}
                 className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
               >
-                <option value="">Selecteaza...</option>
+                <option value="" style={{ backgroundColor: "#111535", color: "#F1F5F9" }}>
+                  Selecteaza...
+                </option>
                 {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>
+                  <option
+                    key={p.id}
+                    value={p.id}
+                    style={{ backgroundColor: "#111535", color: "#F1F5F9" }}
+                  >
                     {p.full_name}
                   </option>
                 ))}
@@ -431,109 +438,77 @@ export function OpportunityForm({
               />
             </Field>
             <Field label="Valoare pret / user">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="valoare_pret_per_user"
                 defaultValue={opportunity?.valoare_pret_per_user ?? 0}
               />
             </Field>
             <Field label="Valoare implementare Synergo">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="valoare_implementare_synergo"
                 defaultValue={opportunity?.valoare_implementare_synergo ?? 0}
               />
             </Field>
 
             <Field label="Valoare SaaS anuala">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="valoare_saas_anuala"
                 defaultValue={opportunity?.valoare_saas_anuala ?? 0}
               />
             </Field>
             <Field label="ARR Synergo">
-              <TextInput
-                type="number"
-                step="0.01"
-                name="arr_synergo"
-                defaultValue={opportunity?.arr_synergo ?? 0}
-              />
+              <MoneyInput name="arr_synergo" defaultValue={opportunity?.arr_synergo ?? 0} />
             </Field>
             <Field label="MRR Synergo">
-              <TextInput
-                type="number"
-                step="0.01"
-                name="mrr_synergo"
-                defaultValue={opportunity?.mrr_synergo ?? 0}
-              />
+              <MoneyInput name="mrr_synergo" defaultValue={opportunity?.mrr_synergo ?? 0} />
             </Field>
 
             <Field label="Valoare pachet server anual">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="valoare_pachet_server_anual"
                 defaultValue={opportunity?.valoare_pachet_server_anual ?? 0}
               />
             </Field>
             <Field label="Valoare firma suplimentara">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="valoare_firma_suplimentara"
                 defaultValue={opportunity?.valoare_firma_suplimentara ?? 0}
               />
             </Field>
             <Field label="Pachet Synergo OnPremise">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="pachet_synergo_onpremise"
                 defaultValue={opportunity?.pachet_synergo_onpremise ?? 0}
               />
             </Field>
 
             <Field label="Licenta Synergo OnPremise">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="licenta_synergo_onpremise"
                 defaultValue={opportunity?.licenta_synergo_onpremise ?? 0}
               />
             </Field>
             <Field label="Licenta companie suplimentara">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="licenta_companie_suplimentara"
                 defaultValue={opportunity?.licenta_companie_suplimentara ?? 0}
               />
             </Field>
             <Field label="Licenta useri suplimentari OnPremise">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="licenta_useri_suplimentari_onpremise"
                 defaultValue={opportunity?.licenta_useri_suplimentari_onpremise ?? 0}
               />
             </Field>
 
             <Field label="Mentenanta / user OnPremise">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="valoare_mentenanta_per_user_onpremise"
                 defaultValue={opportunity?.valoare_mentenanta_per_user_onpremise ?? 0}
               />
             </Field>
             <Field label="Mentenanta lunara OnPremise">
-              <TextInput
-                type="number"
-                step="0.01"
+              <MoneyInput
                 name="valoare_mentenanta_lunara_onpremise"
                 defaultValue={opportunity?.valoare_mentenanta_lunara_onpremise ?? 0}
               />
@@ -634,9 +609,7 @@ function ForecastPreview({ label, value }: { label: string; value: number }) {
   return (
     <div>
       <p className="text-[11px] text-slate-500">{label}</p>
-      <p className="font-mono text-lg text-[#E8007A]">
-        {new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(value)} lei
-      </p>
+      <p className="font-mono text-lg text-[#E8007A]">{formatEur(value)}</p>
     </div>
   );
 }

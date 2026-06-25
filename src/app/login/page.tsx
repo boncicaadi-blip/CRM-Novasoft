@@ -51,9 +51,9 @@ export default function LoginPage() {
           <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#E8007A] text-[#0B0D1A] font-bold text-lg">
             N
           </div>
-          <h1 className="text-xl font-heading text-white">Novasoft Pipeline</h1>
+          <h1 className="text-xl font-heading text-white">Novasoft CRM</h1>
           <p className="mt-1 text-sm text-slate-400">
-            Strategie comerciala 2026
+            Pipeline
           </p>
         </div>
 

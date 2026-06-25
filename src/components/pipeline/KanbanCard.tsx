@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { STATUS_COLORS } from "@/lib/constants";
+import { formatEur } from "@/lib/format";
 import type { Opportunity } from "@/types/opportunity";
-
-const currency = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
 
 export function KanbanCard({ opportunity }: { opportunity: Opportunity }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -55,7 +54,7 @@ export function KanbanCard({ opportunity }: { opportunity: Opportunity }) {
         </p>
         <div className="flex items-center justify-between">
           <span className="font-mono text-xs text-[#E8007A]">
-            {totalValue > 0 ? `${currency.format(totalValue)} lei` : "—"}
+            {totalValue > 0 ? formatEur(totalValue) : "—"}
           </span>
           <span className="text-[11px] text-slate-500">
             {opportunity.profiles?.full_name?.split(" ")[0] ?? ""}

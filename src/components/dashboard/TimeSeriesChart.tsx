@@ -9,8 +9,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-
-const currency = new Intl.NumberFormat("ro-RO", { notation: "compact", maximumFractionDigits: 1 });
+import { formatEurCompact } from "@/lib/format";
 
 export function TimeSeriesChart({ data }: { data: { month: string; arr: number; count: number }[] }) {
   if (data.length === 0) {
@@ -39,7 +38,7 @@ export function TimeSeriesChart({ data }: { data: { month: string; arr: number; 
           <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} />
           <YAxis
             tick={{ fontSize: 11, fill: "#94A3B8" }}
-            tickFormatter={(v) => currency.format(v)}
+            tickFormatter={(v) => formatEurCompact(v)}
           />
           <Tooltip
             contentStyle={{
@@ -48,7 +47,7 @@ export function TimeSeriesChart({ data }: { data: { month: string; arr: number; 
               borderRadius: 8,
               fontSize: 12,
             }}
-            formatter={(value) => [`${currency.format(Number(value))} lei`, "ARR"]}
+            formatter={(value) => [formatEurCompact(Number(value)), "ARR"]}
           />
           <Area
             type="monotone"

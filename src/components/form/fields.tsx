@@ -25,6 +25,23 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${inputClass} ${props.className ?? ""}`} />;
 }
 
+/** Input numeric cu simbol EUR fix in dreapta - pentru toate campurile monetare. */
+export function MoneyInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className="relative">
+      <input
+        type="number"
+        step="0.01"
+        {...props}
+        className={`${inputClass} pr-10 ${props.className ?? ""}`}
+      />
+      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-500">
+        EUR
+      </span>
+    </div>
+  );
+}
+
 export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
@@ -33,6 +50,12 @@ export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
     />
   );
 }
+
+// Stilurile native ale <option> ignora clasele Tailwind ale parintelui <select>
+// (browserul le randeaza cu paleta sistemului de operare), asa ca fortam
+// culorile explicit prin style inline - altfel optiunile apar alb-pe-alb
+// pe dark theme.
+const optionStyle = { backgroundColor: "#111535", color: "#F1F5F9" };
 
 export function Select({
   options,
@@ -44,9 +67,11 @@ export function Select({
 }) {
   return (
     <select {...props} className={`${inputClass} ${props.className ?? ""}`}>
-      <option value="">{placeholder ?? "Selecteaza..."}</option>
+      <option value="" style={optionStyle}>
+        {placeholder ?? "Selecteaza..."}
+      </option>
       {options.map((opt) => (
-        <option key={opt} value={opt}>
+        <option key={opt} value={opt} style={optionStyle}>
           {opt}
         </option>
       ))}
