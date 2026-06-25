@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { LayoutDashboard, GitBranch, Plus, LogOut } from "lucide-react";
+import { LayoutDashboard, GitBranch, CalendarDays, Plus, LogOut } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pipeline", label: "Pipeline", icon: GitBranch },
+  { href: "/calendar", label: "Calendar", icon: CalendarDays },
 ];
 
 export function Sidebar({ userName }: { userName: string }) {

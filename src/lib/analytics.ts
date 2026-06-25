@@ -115,3 +115,56 @@ export function upcomingActions(opportunities: Opportunity[]) {
     .sort((a, b) => a.data.localeCompare(b.data))
     .slice(0, 8);
 }
+
+export type ActionCalendarStatus = "restanta" | "viitoare" | "finalizata";
+
+export interface CalendarAction {
+  id: string;
+  opportunityId: string;
+  numePotential: string;
+  actiune: string | null;
+  stage: string;
+  date: string; // YYYY-MM-DD
+  status: ActionCalendarStatus;
+}
+
+/**
+ * Construieste lista de "actiuni de calendar" dintr-un set de oportunitati.
+ * O oportunitate produce o actiune de calendar doar daca are data_actiune setata.
+ * Status-ul (restanta/viitoare/finalizata) e derivat, nu stocat separat.
+ */
+export function buildCalendarActions(opportunities: Opportunity[]): CalendarAction[] {
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  return opportunities
+    .filter((o) => !!o.data_actiune)
+    .map((o) => {
+      const date = o.data_actiune!.slice(0, 10);
+      let status: ActionCalendarStatus;
+      if (o.status_actiune === "Finalizata") {
+        status = "finalizata";
+      } else if (date < todayStr) {
+        status = "restanta";
+      } else {
+        status = "viitoare";
+      }
+      return {
+        id: o.id,
+        opportunityId: o.id,
+        numePotential: o.nume_potential,
+        actiune: o.actiune,
+        stage: o.stage,
+        date,
+        status,
+      };
+    });
+}
+
+export function calendarActionCounts(actions: CalendarAction[]) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  return {
+    today: actions.filter((a) => a.date === todayStr).length,
+    overdue: actions.filter((a) => a.status === "restanta").length,
+    upcoming: actions.filter((a) => a.status === "viitoare").length,
+  };
+}
