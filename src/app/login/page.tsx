@@ -45,13 +45,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0B0F14] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#0B0D1A] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#2DD4BF] text-[#0B0F14] font-bold text-lg">
-            P
+          <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#E8007A] text-[#0B0D1A] font-bold text-lg">
+            N
           </div>
-          <h1 className="text-xl font-semibold text-white">Pipeline</h1>
+          <h1 className="text-xl font-heading text-white">Novasoft Pipeline</h1>
           <p className="mt-1 text-sm text-slate-400">
             Strategie comerciala 2026
           </p>
@@ -63,7 +63,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setMode("signin")}
               className={`flex-1 rounded-md py-1.5 transition ${
-                mode === "signin" ? "bg-[#2DD4BF] text-[#0B0F14] font-medium" : "text-slate-300"
+                mode === "signin" ? "bg-[#E8007A] text-[#0B0D1A] font-medium" : "text-slate-300"
               }`}
             >
               Autentificare
@@ -72,7 +72,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setMode("signup")}
               className={`flex-1 rounded-md py-1.5 transition ${
-                mode === "signup" ? "bg-[#2DD4BF] text-[#0B0F14] font-medium" : "text-slate-300"
+                mode === "signup" ? "bg-[#E8007A] text-[#0B0D1A] font-medium" : "text-slate-300"
               }`}
             >
               Cont nou
@@ -87,7 +87,7 @@ export default function LoginPage() {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2DD4BF]"
+                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
                   placeholder="Adrian Boncica"
                 />
               </div>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2DD4BF]"
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
                 placeholder="tu@firma.ro"
               />
             </div>
@@ -111,7 +111,7 @@ export default function LoginPage() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#2DD4BF]"
+                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
                 placeholder="••••••••"
               />
             </div>
@@ -123,7 +123,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-md bg-[#2DD4BF] py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#5EEAD4] disabled:opacity-50"
+              className="w-full rounded-md bg-[#E8007A] py-2 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
             >
               {loading ? "Se proceseaza..." : mode === "signin" ? "Intra in cont" : "Creeaza cont"}
             </button>

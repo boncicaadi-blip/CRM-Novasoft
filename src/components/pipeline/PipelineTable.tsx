@@ -49,7 +49,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Cauta firma, grup sau judet..."
-        className="mb-3 w-full max-w-sm rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#2DD4BF]"
+        className="mb-3 w-full max-w-sm rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
       />
       <div className="overflow-x-auto rounded-xl border border-white/10">
         <table className="w-full text-sm">
@@ -71,7 +71,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
                 className="border-b border-white/5 transition hover:bg-white/[0.03]"
               >
                 <td className="px-3 py-2.5">
-                  <Link href={`/oportunitati/${o.id}`} className="text-white hover:text-[#2DD4BF]">
+                  <Link href={`/oportunitati/${o.id}`} className="text-white hover:text-[#E8007A]">
                     {o.nume_potential}
                   </Link>
                 </td>
@@ -99,7 +99,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
                 </td>
                 <td className="px-3 py-2.5 text-slate-400">{o.profiles?.full_name ?? "—"}</td>
                 <td className="px-3 py-2.5 text-slate-400">{o.judet ?? "—"}</td>
-                <td className="px-3 py-2.5 text-right font-mono text-[#2DD4BF]">
+                <td className="px-3 py-2.5 text-right font-mono text-[#E8007A]">
                   {o.arr_synergo > 0 ? `${currency.format(o.arr_synergo)} lei` : "—"}
                 </td>
                 <td className="px-3 py-2.5 text-right text-xs text-slate-500">

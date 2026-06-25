@@ -20,14 +20,14 @@ export function ResponsabilChart({ data }: { data: { name: string; count: number
           />
           <Tooltip
             contentStyle={{
-              background: "#0E1420",
+              background: "#111535",
               border: "1px solid #ffffff20",
               borderRadius: 8,
               fontSize: 12,
             }}
             formatter={(value) => [`${currency.format(Number(value))} lei`, "ARR"]}
           />
-          <Bar dataKey="arr" fill="#2DD4BF" radius={[0, 4, 4, 0]} barSize={18} />
+          <Bar dataKey="arr" fill="#E8007A" radius={[0, 4, 4, 0]} barSize={18} />
         </BarChart>
       </ResponsiveContainer>
     </div>

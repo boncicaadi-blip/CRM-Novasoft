@@ -25,7 +25,7 @@ export function KanbanColumn({
     <div
       ref={setNodeRef}
       className={`flex h-full w-72 shrink-0 flex-col rounded-xl border transition ${
-        isOver ? "border-[#2DD4BF]/50 bg-[#2DD4BF]/[0.03]" : "border-white/5 bg-white/[0.015]"
+        isOver ? "border-[#E8007A]/50 bg-[#E8007A]/[0.03]" : "border-white/5 bg-white/[0.015]"
       }`}
     >
       <div className="flex items-center justify-between border-b border-white/5 px-3 py-2.5">

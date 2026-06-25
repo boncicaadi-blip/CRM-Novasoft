@@ -18,7 +18,7 @@ export function KpiCard({
       <div className="mb-2 flex items-center justify-between">
         <p className="text-xs text-slate-500">{label}</p>
         {icon && (
-          <span style={{ color: accent ?? "#2DD4BF" }} className="opacity-70">
+          <span style={{ color: accent ?? "#E8007A" }} className="opacity-70">
             {icon}
           </span>
         )}

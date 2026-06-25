@@ -23,7 +23,7 @@ export function StatusChart({ data }: { data: { status: string; count: number }[
           </Pie>
           <Tooltip
             contentStyle={{
-              background: "#0E1420",
+              background: "#111535",
               border: "1px solid #ffffff20",
               borderRadius: 8,
               fontSize: 12,

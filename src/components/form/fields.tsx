@@ -19,7 +19,7 @@ export function Field({
 }
 
 const inputClass =
-  "w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-[#2DD4BF] placeholder:text-slate-600";
+  "w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-[#E8007A] placeholder:text-slate-600";
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${inputClass} ${props.className ?? ""}`} />;
@@ -63,7 +63,7 @@ export function Checkbox({
       <input
         type="checkbox"
         {...props}
-        className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2DD4BF]"
+        className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#E8007A]"
       />
       {label}
     </label>

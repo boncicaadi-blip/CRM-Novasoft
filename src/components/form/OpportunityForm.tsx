@@ -107,9 +107,9 @@ export function OpportunityForm({
               <div
                 className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm transition ${
                   isActive
-                    ? "border-[#2DD4BF] bg-[#2DD4BF] text-[#0B0F14]"
+                    ? "border-[#E8007A] bg-[#E8007A] text-[#0B0D1A]"
                     : isDone
-                    ? "border-[#2DD4BF]/50 bg-[#2DD4BF]/10 text-[#2DD4BF]"
+                    ? "border-[#E8007A]/50 bg-[#E8007A]/10 text-[#E8007A]"
                     : "border-white/10 bg-white/[0.03] text-slate-500"
                 }`}
               >
@@ -158,7 +158,7 @@ export function OpportunityForm({
               <select
                 name="responsabil_vanzare_id"
                 defaultValue={opportunity?.responsabil_vanzare_id ?? ""}
-                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#2DD4BF]"
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
               >
                 <option value="">Selecteaza...</option>
                 {profiles.map((p) => (
@@ -350,7 +350,7 @@ export function OpportunityForm({
                 name="substatus"
                 list="substatus-suggestions"
                 defaultValue={opportunity?.substatus ?? ""}
-                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#2DD4BF]"
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
                 placeholder="alege sau scrie liber"
               />
               <datalist id="substatus-suggestions">
@@ -541,7 +541,7 @@ export function OpportunityForm({
           </div>
 
           {isEdit && (
-            <div className="mt-2 grid grid-cols-3 gap-4 rounded-lg border border-[#2DD4BF]/20 bg-[#2DD4BF]/5 p-4">
+            <div className="mt-2 grid grid-cols-3 gap-4 rounded-lg border border-[#E8007A]/20 bg-[#E8007A]/5 p-4">
               <ForecastPreview label="Forecast Total SaaS" value={opportunity.forecast_total_saas} />
               <ForecastPreview
                 label="Forecast Total OnPremise"
@@ -611,7 +611,7 @@ export function OpportunityForm({
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-md bg-[#2DD4BF] px-5 py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#5EEAD4] disabled:opacity-50"
+            className="rounded-md bg-[#E8007A] px-5 py-2 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
           >
             {isPending ? "Se salveaza..." : isEdit ? "Salveaza modificarile" : "Creeaza oportunitate"}
           </button>
@@ -634,7 +634,7 @@ function ForecastPreview({ label, value }: { label: string; value: number }) {
   return (
     <div>
       <p className="text-[11px] text-slate-500">{label}</p>
-      <p className="font-mono text-lg text-[#2DD4BF]">
+      <p className="font-mono text-lg text-[#E8007A]">
         {new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(value)} lei
       </p>
     </div>

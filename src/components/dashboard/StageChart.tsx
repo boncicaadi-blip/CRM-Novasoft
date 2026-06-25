@@ -29,7 +29,7 @@ export function StageChart({ data }: { data: { stage: string; count: number; val
           <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} allowDecimals={false} />
           <Tooltip
             contentStyle={{
-              background: "#0E1420",
+              background: "#111535",
               border: "1px solid #ffffff20",
               borderRadius: 8,
               fontSize: 12,
@@ -38,7 +38,7 @@ export function StageChart({ data }: { data: { stage: string; count: number; val
           />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
             {data.map((entry) => (
-              <Cell key={entry.stage} fill={STAGE_COLORS[entry.stage] ?? "#2DD4BF"} />
+              <Cell key={entry.stage} fill={STAGE_COLORS[entry.stage] ?? "#E8007A"} />
             ))}
           </Bar>
         </BarChart>

@@ -31,7 +31,7 @@ export default async function OpportunityDetailPage({
             Inapoi la pipeline
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-white">{opportunity.nume_potential}</h1>
+            <h1 className="text-lg font-heading text-white">{opportunity.nume_potential}</h1>
             <span className="font-mono text-xs text-slate-500">{opportunity.opportunity_code}</span>
             <span
               className="rounded-full px-2 py-0.5 text-[11px] font-medium"

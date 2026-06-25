@@ -31,8 +31,8 @@ export function TimeSeriesChart({ data }: { data: { month: string; arr: number; 
         <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
           <defs>
             <linearGradient id="arrGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2DD4BF" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="#2DD4BF" stopOpacity={0} />
+              <stop offset="0%" stopColor="#E8007A" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="#E8007A" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
@@ -43,7 +43,7 @@ export function TimeSeriesChart({ data }: { data: { month: string; arr: number; 
           />
           <Tooltip
             contentStyle={{
-              background: "#0E1420",
+              background: "#111535",
               border: "1px solid #ffffff20",
               borderRadius: 8,
               fontSize: 12,
@@ -53,7 +53,7 @@ export function TimeSeriesChart({ data }: { data: { month: string; arr: number; 
           <Area
             type="monotone"
             dataKey="arr"
-            stroke="#2DD4BF"
+            stroke="#E8007A"
             strokeWidth={2}
             fill="url(#arrGradient)"
           />

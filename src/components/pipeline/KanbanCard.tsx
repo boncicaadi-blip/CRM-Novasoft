@@ -29,7 +29,7 @@ export function KanbanCard({ opportunity }: { opportunity: Opportunity }) {
       style={style}
       {...listeners}
       {...attributes}
-      className="cursor-grab rounded-lg border border-white/10 bg-[#101724] p-3 transition hover:border-white/20 active:cursor-grabbing"
+      className="cursor-grab rounded-lg border border-white/10 bg-[#161B45] p-3 transition hover:border-white/20 active:cursor-grabbing"
     >
       <Link
         href={`/oportunitati/${opportunity.id}`}
@@ -54,7 +54,7 @@ export function KanbanCard({ opportunity }: { opportunity: Opportunity }) {
           {opportunity.judet ?? "—"} · {opportunity.tip_proiect ?? "—"}
         </p>
         <div className="flex items-center justify-between">
-          <span className="font-mono text-xs text-[#2DD4BF]">
+          <span className="font-mono text-xs text-[#E8007A]">
             {totalValue > 0 ? `${currency.format(totalValue)} lei` : "—"}
           </span>
           <span className="text-[11px] text-slate-500">

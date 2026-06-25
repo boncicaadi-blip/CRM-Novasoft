@@ -1,14 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b0f14;
+  --background: #0b0d1a;
   --foreground: #f1f5f9;
+
+  /* Paleta Novasoft */
+  --novasoft-magenta: #e8007a;
+  --novasoft-blue: #0070f3;
+  --novasoft-bg: #0b0d1a;
+  --novasoft-card: #111535;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-barlow), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, Menlo, monospace;
 }
 
@@ -16,4 +23,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-weight: 700;
 }

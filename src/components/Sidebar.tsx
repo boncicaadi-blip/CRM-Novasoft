@@ -22,20 +22,20 @@ export function Sidebar({ userName }: { userName: string }) {
   }
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-white/10 bg-[#0E1420] px-3 py-4">
+    <aside className="flex h-screen w-60 flex-col border-r border-white/10 bg-[#111535] px-3 py-4">
       <div className="mb-6 flex items-center gap-2 px-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2DD4BF] text-sm font-bold text-[#0B0F14]">
-          P
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E8007A] text-sm font-bold text-[#0B0D1A]">
+          N
         </div>
         <div>
-          <p className="text-sm font-semibold leading-tight text-white">Pipeline</p>
+          <p className="font-heading text-sm leading-tight text-white">Novasoft Pipeline</p>
           <p className="text-[11px] leading-tight text-slate-500">Strategie 2026</p>
         </div>
       </div>
 
       <Link
         href="/oportunitati/noua"
-        className="mb-5 flex items-center justify-center gap-1.5 rounded-md bg-[#2DD4BF] py-2 text-sm font-medium text-[#0B0F14] transition hover:bg-[#5EEAD4]"
+        className="mb-5 flex items-center justify-center gap-1.5 rounded-md bg-[#E8007A] py-2 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA]"
       >
         <Plus size={16} />
         Oportunitate noua
