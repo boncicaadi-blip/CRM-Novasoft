@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -28,9 +29,13 @@ export function Sidebar({ userName }: { userName: string }) {
       {/* Header mobil (sub md) - logo + utilizator + logout, navigarea e in bottom bar */}
       <header className="flex items-center justify-between border-b border-white/10 bg-[#111535] px-4 py-3 md:hidden">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E8007A] text-xs font-bold text-[#0B0D1A]">
-            N
-          </div>
+          <Image
+            src="/icon-novasoft-indigo.png"
+            alt="Novasoft"
+            width={28}
+            height={28}
+            className="rounded-lg"
+          />
           <p className="font-heading text-sm text-white">Novasoft CRM</p>
         </div>
         <div className="flex items-center gap-2">
@@ -53,14 +58,16 @@ export function Sidebar({ userName }: { userName: string }) {
 
       {/* Sidebar desktop (md+) */}
       <aside className="hidden h-screen w-60 flex-col border-r border-white/10 bg-[#111535] px-3 py-4 md:flex">
-        <div className="mb-6 flex items-center gap-2 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E8007A] text-sm font-bold text-[#0B0D1A]">
-            N
-          </div>
-          <div>
-            <p className="font-heading text-sm leading-tight text-white">Novasoft CRM</p>
-            <p className="text-[11px] leading-tight text-slate-500">Pipeline</p>
-          </div>
+        <div className="mb-6 px-2">
+          <Image
+            src="/logo-novasoft.png"
+            alt="Novasoft"
+            width={150}
+            height={32}
+            className="h-7 w-auto"
+            priority
+          />
+          <p className="mt-1 text-[11px] leading-tight text-slate-500">CRM Pipeline</p>
         </div>
 
         <Link

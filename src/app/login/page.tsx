@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -48,13 +49,15 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-[#0B0D1A] px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#E8007A] text-[#0B0D1A] font-bold text-lg">
-            N
-          </div>
-          <h1 className="text-xl font-heading text-white">Novasoft CRM</h1>
-          <p className="mt-1 text-sm text-slate-400">
-            Pipeline
-          </p>
+          <Image
+            src="/logo-novasoft.png"
+            alt="Novasoft"
+            width={220}
+            height={48}
+            className="mx-auto mb-3 h-10 w-auto"
+            priority
+          />
+          <p className="text-sm text-slate-400">CRM Pipeline</p>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
