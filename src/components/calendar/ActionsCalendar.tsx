@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
   PointerSensor,
   closestCenter,
   useSensor,
@@ -48,6 +50,7 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
   // Override optimist doar pentru actiunile mutate manual, cat asteptam
   // confirmarea serverului - sursa de adevar e prop-ul `baseActions`.
   const [dateOverrides, setDateOverrides] = useState<Record<string, string>>({});
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [colorMode, setColorMode] = useState<ColorMode>("status");
   const [selectedAction, setSelectedAction] = useState<CalendarAction | null>(null);
@@ -57,9 +60,13 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  const actions = baseActions.map((a) =>
-    dateOverrides[a.id] ? { ...a, date: dateOverrides[a.id] } : a
+  const actions = useMemo(
+    () =>
+      baseActions.map((a) => (dateOverrides[a.id] ? { ...a, date: dateOverrides[a.id] } : a)),
+    [baseActions, dateOverrides]
   );
+
+  const activeAction = activeId ? actions.find((a) => a.id === activeId) ?? null : null;
 
   const actionsByDay = useMemo(() => {
     const map = new Map<string, CalendarAction[]>();
@@ -99,7 +106,12 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
     });
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -122,7 +134,13 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
       <div className="flex h-full flex-col gap-4 px-3 py-4 sm:px-6 lg:flex-row">
         <div className="flex-1">
           {/* Header navigare */}
@@ -237,6 +255,17 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
           onClose={() => setOpenDay(null)}
         />
       )}
+
+      <DragOverlay>
+        {activeAction ? (
+          <div
+            className="rotate-1 truncate rounded px-1.5 py-1 text-[11px] font-medium text-white shadow-2xl"
+            style={{ backgroundColor: colorFor(activeAction) }}
+          >
+            {activeAction.numePotential}
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

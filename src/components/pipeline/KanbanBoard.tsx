@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
   PointerSensor,
   closestCenter,
   useSensor,
@@ -12,6 +14,7 @@ import {
 } from "@dnd-kit/core";
 import { STAGES } from "@/lib/constants";
 import { KanbanColumn } from "./KanbanColumn";
+import { KanbanCard } from "./KanbanCard";
 import { updateOpportunityStageAction } from "@/lib/actions/opportunities";
 import type { Opportunity } from "@/types/opportunity";
 
@@ -28,6 +31,7 @@ export function KanbanBoard({
   // care se actualizeaza automat la fiecare re-render declansat de
   // router.refresh() - fara nevoie de useEffect/setState sincronizat.
   const [stageOverrides, setStageOverrides] = useState<Record<string, string>>({});
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -37,7 +41,14 @@ export function KanbanBoard({
     stageOverrides[o.id] ? { ...o, stage: stageOverrides[o.id] } : o
   );
 
+  const activeItem = activeId ? items.find((o) => o.id === activeId) ?? null : null;
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -69,7 +80,13 @@ export function KanbanBoard({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
       <div className="flex h-full gap-3 overflow-x-auto px-6 py-4">
         {STAGES.map((stage) => (
           <KanbanColumn
@@ -80,6 +97,18 @@ export function KanbanBoard({
           />
         ))}
       </div>
+
+      {/* DragOverlay randeaza elementul tras intr-un layer separat, deasupra
+          tuturor, fara sa blocheze detectarea de coliziune sub cursor -
+          fara asta, elementul original (repozitionat cu transform) ramane
+          "sub cursor" si poate interfera cu calculul lui `over`. */}
+      <DragOverlay>
+        {activeItem ? (
+          <div className="w-72 rotate-1 opacity-90 shadow-2xl">
+            <KanbanCard opportunity={activeItem} dragHandleOnly />
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

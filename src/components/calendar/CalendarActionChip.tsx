@@ -19,7 +19,10 @@ export function CalendarActionChip({
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.4 : 1,
+    // Cat dureaza drag-ul, originalul devine invizibil - DragOverlay arata
+    // versiunea "vie", repozitionata liber, fara sa stea in calea
+    // detectarii coliziunii pentru `over`.
+    opacity: isDragging ? 0 : 1,
     backgroundColor: color,
   };
 
