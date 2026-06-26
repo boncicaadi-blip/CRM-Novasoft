@@ -1,5 +1,55 @@
 import type { Opportunity, OpportunityHistoryRow } from "@/types/opportunity";
 
+export interface DashboardFilters {
+  stage: string | null;
+  status: string | null;
+  responsabil: string | null;
+  judet: string | null;
+  /** Interval de date (inclusiv) selectat prin drag pe graficul de evolutie. */
+  dateFrom: string | null;
+  dateTo: string | null;
+}
+
+export const EMPTY_FILTERS: DashboardFilters = {
+  stage: null,
+  status: null,
+  responsabil: null,
+  judet: null,
+  dateFrom: null,
+  dateTo: null,
+};
+
+export function hasActiveFilters(filters: DashboardFilters): boolean {
+  return Object.values(filters).some((v) => v !== null);
+}
+
+/**
+ * Aplica filtrele curente (din click pe grafice sau dropdown-uri de sus)
+ * peste lista de oportunitati. Filtrul de data se aplica pe updated_at,
+ * ca aproximare rezonabila a "activitatii in acel interval" - istoricul
+ * complet per-zi ar necesita un join cu opportunity_history per filtru,
+ * mult mai costisitor pentru un simplu cross-filter vizual.
+ */
+export function applyDashboardFilters(
+  opportunities: Opportunity[],
+  filters: DashboardFilters
+): Opportunity[] {
+  let rows = opportunities;
+  if (filters.stage) rows = rows.filter((o) => o.stage === filters.stage);
+  if (filters.status) rows = rows.filter((o) => o.status === filters.status);
+  if (filters.responsabil) {
+    rows = rows.filter((o) => (o.profiles?.full_name ?? "Neasignat") === filters.responsabil);
+  }
+  if (filters.judet) rows = rows.filter((o) => (o.judet ?? "Necunoscut") === filters.judet);
+  if (filters.dateFrom) {
+    rows = rows.filter((o) => o.updated_at.slice(0, 10) >= filters.dateFrom!);
+  }
+  if (filters.dateTo) {
+    rows = rows.filter((o) => o.updated_at.slice(0, 10) <= filters.dateTo!);
+  }
+  return rows;
+}
+
 export function computeKpis(opportunities: Opportunity[]) {
   const active = opportunities.filter((o) => o.status === "Activa");
   const won = opportunities.filter((o) => o.status === "Castigata");
@@ -66,6 +116,27 @@ export function groupByJudet(opportunities: Opportunity[], top = 8) {
     .slice(0, top);
 }
 
+export interface JudetMapDatum {
+  judet: string;
+  count: number;
+  arr: number;
+  forecast: number;
+}
+
+/** Agregare completa pe judet, pentru harta choropleth - toate judetele, nu doar top N. */
+export function groupByJudetFull(opportunities: Opportunity[]): JudetMapDatum[] {
+  const map = new Map<string, JudetMapDatum>();
+  for (const o of opportunities) {
+    const key = o.judet ?? "Necunoscut";
+    const entry = map.get(key) ?? { judet: key, count: 0, arr: 0, forecast: 0 };
+    entry.count += 1;
+    entry.arr += o.arr_synergo ?? 0;
+    entry.forecast += o.forecast_total_saas ?? 0;
+    map.set(key, entry);
+  }
+  return Array.from(map.values());
+}
+
 export function groupByCanalIntrare(opportunities: Opportunity[]) {
   const map = new Map<string, number>();
   for (const o of opportunities) {
@@ -95,7 +166,14 @@ export function buildTimeSeries(history: OpportunityHistoryRow[]) {
     const rows = Array.from(byMonthAndOpp.get(month)!.values());
     const arr = rows.reduce((s, r) => s + (r.arr_synergo ?? 0), 0);
     const count = rows.length;
-    return { month, arr, count };
+    // Prima si ultima zi calendaristica a lunii - folosite pentru a converti
+    // o selectie de luni (drag pe grafic) intr-un interval real de date,
+    // aplicabil ca filtru pe updated_at.
+    const [y, m] = month.split("-").map(Number);
+    const dateFrom = `${month}-01`;
+    const lastDay = new Date(y, m, 0).getDate();
+    const dateTo = `${month}-${String(lastDay).padStart(2, "0")}`;
+    return { month, arr, count, dateFrom, dateTo };
   });
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -8,10 +9,31 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  ReferenceArea,
 } from "recharts";
-import { formatEurCompact } from "@/lib/format";
+import { formatEur, formatEurCompact } from "@/lib/format";
+import { ChartTooltipBox } from "./ChartTooltipBox";
 
-export function TimeSeriesChart({ data }: { data: { month: string; arr: number; count: number }[] }) {
+interface TimeSeriesDatum {
+  month: string;
+  arr: number;
+  count: number;
+  dateFrom: string;
+  dateTo: string;
+}
+
+export function TimeSeriesChart({
+  data,
+  onSelectRange,
+  selectedRange,
+}: {
+  data: TimeSeriesDatum[];
+  onSelectRange?: (range: { dateFrom: string; dateTo: string } | null) => void;
+  selectedRange?: { dateFrom: string; dateTo: string } | null;
+}) {
+  const [dragStart, setDragStart] = useState<string | null>(null);
+  const [dragEnd, setDragEnd] = useState<string | null>(null);
+
   if (data.length === 0) {
     return (
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
@@ -23,11 +45,52 @@ export function TimeSeriesChart({ data }: { data: { month: string; arr: number; 
     );
   }
 
+  function finishSelection() {
+    if (!dragStart || !dragEnd || !onSelectRange) {
+      setDragStart(null);
+      setDragEnd(null);
+      return;
+    }
+    const startIdx = data.findIndex((d) => d.month === dragStart);
+    const endIdx = data.findIndex((d) => d.month === dragEnd);
+    const [from, to] = startIdx <= endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+
+    if (from === to) {
+      // Click simplu (fara drag real) - tratam ca selectie pe o singura luna.
+      onSelectRange({ dateFrom: data[from].dateFrom, dateTo: data[from].dateTo });
+    } else {
+      onSelectRange({ dateFrom: data[from].dateFrom, dateTo: data[to].dateTo });
+    }
+    setDragStart(null);
+    setDragEnd(null);
+  }
+
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 text-sm font-medium text-white">Evolutie ARR in timp (din istoric)</p>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm font-medium text-white">Evolutie ARR in timp (din istoric)</p>
+        {selectedRange && onSelectRange && (
+          <button
+            onClick={() => onSelectRange(null)}
+            className="text-[11px] text-[#E8007A] hover:text-[#FF4FAA]"
+          >
+            Sterge selectia
+          </button>
+        )}
+      </div>
+      {onSelectRange && (
+        <p className="mb-2 text-[11px] text-slate-500">
+          Trage cu mouse-ul peste grafic pentru a selecta un interval.
+        </p>
+      )}
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
+          onMouseDown={(e) => onSelectRange && e?.activeLabel && setDragStart(String(e.activeLabel))}
+          onMouseMove={(e) => dragStart && e?.activeLabel && setDragEnd(String(e.activeLabel))}
+          onMouseUp={finishSelection}
+        >
           <defs>
             <linearGradient id="arrGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#E8007A" stopOpacity={0.4} />
@@ -41,13 +104,19 @@ export function TimeSeriesChart({ data }: { data: { month: string; arr: number; 
             tickFormatter={(v) => formatEurCompact(v)}
           />
           <Tooltip
-            contentStyle={{
-              background: "#111535",
-              border: "1px solid #ffffff20",
-              borderRadius: 8,
-              fontSize: 12,
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const d = payload[0].payload as TimeSeriesDatum;
+              return (
+                <ChartTooltipBox
+                  title={d.month}
+                  rows={[
+                    { label: "ARR", value: formatEur(d.arr) },
+                    { label: "Oportunitati", value: String(d.count) },
+                  ]}
+                />
+              );
             }}
-            formatter={(value) => [formatEurCompact(Number(value)), "ARR"]}
           />
           <Area
             type="monotone"
@@ -55,7 +124,20 @@ export function TimeSeriesChart({ data }: { data: { month: string; arr: number; 
             stroke="#E8007A"
             strokeWidth={2}
             fill="url(#arrGradient)"
+            isAnimationActive={false}
           />
+          {dragStart && dragEnd && (
+            <ReferenceArea x1={dragStart} x2={dragEnd} fill="#0070F3" fillOpacity={0.15} />
+          )}
+          {selectedRange &&
+            (() => {
+              const fromMonth = data.find((d) => d.dateFrom <= selectedRange.dateFrom && d.dateTo >= selectedRange.dateFrom)?.month;
+              const toMonth = data.find((d) => d.dateFrom <= selectedRange.dateTo && d.dateTo >= selectedRange.dateTo)?.month;
+              if (!fromMonth || !toMonth) return null;
+              return (
+                <ReferenceArea x1={fromMonth} x2={toMonth} fill="#0070F3" fillOpacity={0.1} stroke="#0070F3" strokeOpacity={0.4} />
+              );
+            })()}
         </AreaChart>
       </ResponsiveContainer>
     </div>

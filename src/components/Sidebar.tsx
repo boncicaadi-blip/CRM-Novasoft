@@ -4,14 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { LayoutDashboard, GitBranch, CalendarDays, Settings, Plus, LogOut } from "lucide-react";
+import { LayoutDashboard, GitBranch, CalendarDays, Map, Settings, Plus, LogOut } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pipeline", label: "Pipeline", icon: GitBranch },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/dashboard/harta", label: "Harta", icon: Map },
   { href: "/setari/nomenclatoare", label: "Setari", icon: Settings },
 ];
+
+/** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta. */
+function isNavItemActive(pathname: string, href: string): boolean {
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname.startsWith(href);
+}
 
 export function Sidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
@@ -80,7 +87,7 @@ export function Sidebar({ userName }: { userName: string }) {
 
         <nav className="flex-1 space-y-1">
           {NAV_ITEMS.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+            const isActive = isNavItemActive(pathname, item.href);
             const Icon = item.icon;
             return (
               <Link
@@ -119,7 +126,7 @@ export function Sidebar({ userName }: { userName: string }) {
       {/* Bottom nav mobil (sub md) */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-[#111535] md:hidden">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = isNavItemActive(pathname, item.href);
           const Icon = item.icon;
           return (
             <Link
