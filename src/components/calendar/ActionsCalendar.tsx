@@ -6,6 +6,7 @@ import {
   DndContext,
   DragEndEvent,
   PointerSensor,
+  closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -121,7 +122,7 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="flex h-full flex-col gap-4 px-3 py-4 sm:px-6 lg:flex-row">
         <div className="flex-1">
           {/* Header navigare */}

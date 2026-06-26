@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { STAGES } from "@/lib/constants";
 import { KanbanColumn } from "./KanbanColumn";
 import { updateOpportunityStageAction } from "@/lib/actions/opportunities";
@@ -62,7 +69,7 @@ export function KanbanBoard({
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="flex h-full gap-3 overflow-x-auto px-6 py-4">
         {STAGES.map((stage) => (
           <KanbanColumn
