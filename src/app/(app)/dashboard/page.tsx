@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   const actions = upcomingActions(opportunities);
 
   return (
-    <div className="px-6 py-6">
+    <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="mb-6">
         <h1 className="text-lg font-heading text-white">Dashboard</h1>
         <p className="text-sm text-slate-500">
@@ -38,7 +38,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="mb-5 grid grid-cols-4 gap-4">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label="ARR activ"
           value={formatEur(kpis.totalArr)}
@@ -67,15 +67,15 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mb-5 grid grid-cols-3 gap-4">
-        <div className="col-span-2">
+      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
           <StageChart data={stageData} />
         </div>
         <StatusChart data={statusData} />
       </div>
 
-      <div className="mb-5 grid grid-cols-3 gap-4">
-        <div className="col-span-2">
+      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
           <TimeSeriesChart data={timeSeries} />
         </div>
         <ActionsList actions={actions} />

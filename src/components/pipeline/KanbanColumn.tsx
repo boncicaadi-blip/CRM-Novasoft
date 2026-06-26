@@ -9,11 +9,14 @@ import type { Opportunity } from "@/types/opportunity";
 export function KanbanColumn({
   stage,
   opportunities,
+  stageColor,
 }: {
   stage: string;
   opportunities: Opportunity[];
+  stageColor?: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
+  const color = stageColor ?? STAGE_COLORS[stage] ?? "#94A3B8";
 
   const totalValue = opportunities.reduce(
     (sum, o) => sum + (o.arr_synergo ?? 0) + (o.valoare_implementare_synergo ?? 0),
@@ -29,10 +32,7 @@ export function KanbanColumn({
     >
       <div className="flex items-center justify-between border-b border-white/5 px-3 py-2.5">
         <div className="flex items-center gap-2">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: STAGE_COLORS[stage] }}
-          />
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
           <span className="text-sm font-medium text-white">{stage}</span>
           <span className="rounded-full bg-white/10 px-1.5 text-[11px] text-slate-400">
             {opportunities.length}

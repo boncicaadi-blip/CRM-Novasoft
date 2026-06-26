@@ -146,3 +146,24 @@ export interface OpportunityHistoryRow {
   forecast_total_saas: number | null;
   forecast_total_onpremise: number | null;
 }
+
+export type NomenclatorCategorie =
+  | "stage"
+  | "status"
+  | "domeniu_activitate"
+  | "produs_serviciu"
+  | "tip_proiect"
+  | "canal_intrare"
+  | "actiune"
+  | "status_actiune";
+
+export interface Nomenclator {
+  id: string;
+  categorie: NomenclatorCategorie;
+  valoare: string;
+  culoare: string | null;
+  probability: number | null;
+  ordine: number;
+  activ: boolean;
+  created_at: string;
+}

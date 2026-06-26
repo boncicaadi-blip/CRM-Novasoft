@@ -21,3 +21,12 @@ export function InfoCard({
     </div>
   );
 }
+
+export function LabeledInput({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] text-slate-500">{label}</span>
+      {children}
+    </label>
+  );
+}

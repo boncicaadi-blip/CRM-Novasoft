@@ -21,9 +21,9 @@ export default async function AppLayout({
     .single();
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden md:flex-row">
       <Sidebar userName={profile?.full_name ?? data.user.email ?? "Utilizator"} />
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 overflow-y-auto pb-14 md:pb-0">{children}</main>
     </div>
   );
 }

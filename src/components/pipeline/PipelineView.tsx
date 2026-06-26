@@ -6,7 +6,13 @@ import { KanbanBoard } from "./KanbanBoard";
 import { PipelineTable } from "./PipelineTable";
 import type { Opportunity } from "@/types/opportunity";
 
-export function PipelineView({ opportunities }: { opportunities: Opportunity[] }) {
+export function PipelineView({
+  opportunities,
+  stageColors,
+}: {
+  opportunities: Opportunity[];
+  stageColors?: Record<string, string>;
+}) {
   const [view, setView] = useState<"kanban" | "table">("kanban");
 
   return (
@@ -21,7 +27,7 @@ export function PipelineView({ opportunities }: { opportunities: Opportunity[] }
       <div className="flex-1 overflow-hidden">
         {view === "kanban" ? (
           <div className="h-full overflow-x-auto">
-            <KanbanBoard opportunities={opportunities} />
+            <KanbanBoard opportunities={opportunities} stageColors={stageColors} />
           </div>
         ) : (
           <div className="h-full overflow-y-auto">

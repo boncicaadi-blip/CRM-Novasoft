@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import {
   startOfMonth,
   endOfMonth,
@@ -10,14 +17,16 @@ import {
   addDays,
   addMonths,
   subMonths,
-  isSameMonth,
-  isSameDay,
   format,
 } from "date-fns";
 import { ro } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { CalendarAction } from "@/lib/analytics";
 import { STAGE_COLORS } from "@/lib/constants";
+import { updateOpportunityActionDateAction } from "@/lib/actions/opportunities";
+import { CalendarDayCell } from "./CalendarDayCell";
+import { ActionDetailPanel } from "./ActionDetailPanel";
+import { DayDetailModal } from "./DayDetailModal";
 
 const STATUS_COLORS: Record<CalendarAction["status"], string> = {
   restanta: "#94A3B8",
@@ -31,18 +40,25 @@ const STATUS_LABELS: Record<CalendarAction["status"], string> = {
   finalizata: "Finalizata",
 };
 
-/** Parseaza un string "YYYY-MM-DD" ca data locala, fara conversie UTC care ar putea schimba ziua. */
-function parseLocalDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-
 type ColorMode = "status" | "stage";
 
-export function ActionsCalendar({ actions }: { actions: CalendarAction[] }) {
+export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAction[] }) {
+  const router = useRouter();
+  // Override optimist doar pentru actiunile mutate manual, cat asteptam
+  // confirmarea serverului - sursa de adevar e prop-ul `baseActions`.
+  const [dateOverrides, setDateOverrides] = useState<Record<string, string>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [colorMode, setColorMode] = useState<ColorMode>("status");
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedAction, setSelectedAction] = useState<CalendarAction | null>(null);
+  const [openDay, setOpenDay] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  const actions = baseActions.map((a) =>
+    dateOverrides[a.id] ? { ...a, date: dateOverrides[a.id] } : a
+  );
 
   const actionsByDay = useMemo(() => {
     const map = new Map<string, CalendarAction[]>();
@@ -68,186 +84,158 @@ export function ActionsCalendar({ actions }: { actions: CalendarAction[] }) {
 
   const weekdayLabels = ["Lun", "Mar", "Mie", "Joi", "Vin", "Sam", "Dum"];
 
-  const selectedActions = selectedDay ? actionsByDay.get(selectedDay) ?? [] : [];
+  function colorFor(action: CalendarAction) {
+    return colorMode === "status"
+      ? STATUS_COLORS[action.status]
+      : STAGE_COLORS[action.stage] ?? "#94A3B8";
+  }
+
+  function clearOverride(actionId: string) {
+    setDateOverrides((prev) => {
+      const next = { ...prev };
+      delete next[actionId];
+      return next;
+    });
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+
+    const overId = String(over.id);
+    if (!overId.startsWith("day:")) return;
+    const newDate = overId.replace("day:", "");
+
+    const actionId = String(active.id);
+    const current = actions.find((a) => a.id === actionId);
+    if (!current || current.date === newDate) return;
+
+    setDateOverrides((prev) => ({ ...prev, [actionId]: newDate }));
+
+    updateOpportunityActionDateAction(actionId, newDate)
+      .then(() => {
+        router.refresh();
+        clearOverride(actionId);
+      })
+      .catch(() => clearOverride(actionId));
+  }
 
   return (
-    <div className="flex h-full flex-col gap-4 px-6 py-4 lg:flex-row">
-      <div className="flex-1">
-        {/* Header navigare */}
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentMonth((d) => subMonths(d, 1))}
-              className="rounded-md border border-white/10 p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => setCurrentMonth((d) => addMonths(d, 1))}
-              className="rounded-md border border-white/10 p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
-            >
-              <ChevronRight size={16} />
-            </button>
-            <button
-              onClick={() => setCurrentMonth(new Date())}
-              className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
-            >
-              Azi
-            </button>
-            <h2 className="ml-2 font-heading text-lg text-white">
-              {format(currentMonth, "MMMM yyyy", { locale: ro })}
-            </h2>
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <div className="flex h-full flex-col gap-4 px-3 py-4 sm:px-6 lg:flex-row">
+        <div className="flex-1">
+          {/* Header navigare */}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentMonth((d) => subMonths(d, 1))}
+                className="rounded-md border border-white/10 p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => setCurrentMonth((d) => addMonths(d, 1))}
+                className="rounded-md border border-white/10 p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <button
+                onClick={() => setCurrentMonth(new Date())}
+                className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+              >
+                Azi
+              </button>
+              <h2 className="ml-2 font-heading text-lg text-white">
+                {format(currentMonth, "MMMM yyyy", { locale: ro })}
+              </h2>
+            </div>
+
+            <div className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
+              <button
+                onClick={() => setColorMode("status")}
+                className={`rounded-md px-3 py-1.5 transition ${
+                  colorMode === "status" ? "bg-white/10 text-white" : "text-slate-500"
+                }`}
+              >
+                Culoare: Status
+              </button>
+              <button
+                onClick={() => setColorMode("stage")}
+                className={`rounded-md px-3 py-1.5 transition ${
+                  colorMode === "stage" ? "bg-white/10 text-white" : "text-slate-500"
+                }`}
+              >
+                Culoare: Stage
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
-            <button
-              onClick={() => setColorMode("status")}
-              className={`rounded-md px-3 py-1.5 transition ${
-                colorMode === "status" ? "bg-white/10 text-white" : "text-slate-500"
-              }`}
-            >
-              Culoare: Status
-            </button>
-            <button
-              onClick={() => setColorMode("stage")}
-              className={`rounded-md px-3 py-1.5 transition ${
-                colorMode === "stage" ? "bg-white/10 text-white" : "text-slate-500"
-              }`}
-            >
-              Culoare: Stage
-            </button>
-          </div>
-        </div>
-
-        {/* Legenda */}
-        <div className="mb-3 flex items-center gap-4 text-xs text-slate-400">
-          {colorMode === "status"
-            ? Object.entries(STATUS_LABELS).map(([key, label]) => (
-                <span key={key} className="flex items-center gap-1.5">
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: STATUS_COLORS[key as CalendarAction["status"]] }}
-                  />
-                  {label}
-                </span>
-              ))
-            : Object.entries(STAGE_COLORS).map(([stage, color]) => (
-                <span key={stage} className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-                  {stage}
-                </span>
-              ))}
-        </div>
-
-        {/* Grila calendar */}
-        <div className="overflow-hidden rounded-xl border border-white/10">
-          <div className="grid grid-cols-7 border-b border-white/10 bg-[#111535]">
-            {weekdayLabels.map((d) => (
-              <div key={d} className="px-2 py-2 text-center text-xs font-medium text-slate-500">
-                {d}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7">
-            {days.map((day) => {
-              const dayStr = format(day, "yyyy-MM-dd");
-              const dayActions = actionsByDay.get(dayStr) ?? [];
-              const isCurrentMonth = isSameMonth(day, currentMonth);
-              const isToday = isSameDay(day, new Date());
-              const isSelected = selectedDay === dayStr;
-
-              return (
-                <button
-                  key={dayStr}
-                  onClick={() => setSelectedDay(dayActions.length > 0 ? dayStr : null)}
-                  className={`flex min-h-[88px] flex-col items-stretch border-b border-r border-white/5 p-1.5 text-left transition last:border-r-0 ${
-                    isCurrentMonth ? "" : "opacity-30"
-                  } ${isToday ? "bg-[#E8007A]/[0.06]" : ""} ${
-                    isSelected ? "ring-1 ring-inset ring-[#E8007A]" : "hover:bg-white/[0.02]"
-                  }`}
-                >
-                  <span
-                    className={`mb-1 text-xs ${
-                      isToday ? "font-bold text-[#E8007A]" : "text-slate-400"
-                    }`}
-                  >
-                    {format(day, "d")}
+          {/* Legenda */}
+          <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-400">
+            {colorMode === "status"
+              ? Object.entries(STATUS_LABELS).map(([key, label]) => (
+                  <span key={key} className="flex items-center gap-1.5">
+                    <span
+                      className="h-2 w-2 rounded-full"
+                      style={{ backgroundColor: STATUS_COLORS[key as CalendarAction["status"]] }}
+                    />
+                    {label}
                   </span>
-                  <div className="flex-1 space-y-0.5 overflow-hidden">
-                    {dayActions.slice(0, 3).map((a) => (
-                      <div
-                        key={a.id}
-                        className="truncate rounded px-1 py-0.5 text-[10px] font-medium text-white"
-                        style={{
-                          backgroundColor:
-                            colorMode === "status"
-                              ? STATUS_COLORS[a.status]
-                              : STAGE_COLORS[a.stage] ?? "#94A3B8",
-                        }}
-                        title={`${a.numePotential} | ${a.actiune ?? ""}`}
-                      >
-                        {a.numePotential}
-                      </div>
-                    ))}
-                    {dayActions.length > 3 && (
-                      <p className="px-1 text-[10px] text-slate-500">
-                        +{dayActions.length - 3} mai multe
-                      </p>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+                ))
+              : Object.entries(STAGE_COLORS).map(([stage, color]) => (
+                  <span key={stage} className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                    {stage}
+                  </span>
+                ))}
           </div>
-        </div>
-      </div>
 
-      {/* Panou lateral cu detalii ziua selectata */}
-      <div className="w-full shrink-0 lg:w-72">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="mb-3 text-sm font-medium text-white">
-            {selectedDay
-              ? format(parseLocalDate(selectedDay), "d MMMM yyyy", { locale: ro })
-              : "Selecteaza o zi"}
+          <p className="mb-2 text-[11px] text-slate-500">
+            Trage o actiune pe alta zi pentru a-i schimba data. Click pe o zi pentru vedere
+            detaliata, click pe o actiune pentru detalii in panoul din dreapta.
           </p>
-          {selectedActions.length === 0 ? (
-            <p className="text-xs text-slate-500">
-              {selectedDay ? "Nicio actiune in aceasta zi." : "Click pe o zi cu actiuni pentru detalii."}
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {selectedActions.map((a) => (
-                <Link
-                  key={a.id}
-                  href={`/oportunitati/${a.opportunityId}`}
-                  className="block rounded-lg border border-white/5 bg-white/[0.02] p-2.5 transition hover:border-white/20"
-                >
-                  <div className="mb-1 flex items-center gap-1.5">
-                    <StatusIcon status={a.status} />
-                    <span className="text-sm text-white">{a.numePotential}</span>
-                  </div>
-                  <p className="text-xs text-slate-400">{a.actiune ?? "—"}</p>
-                  <span
-                    className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[10px]"
-                    style={{
-                      backgroundColor: `${STAGE_COLORS[a.stage]}20`,
-                      color: STAGE_COLORS[a.stage],
-                    }}
-                  >
-                    {a.stage}
-                  </span>
-                </Link>
+
+          {/* Grila calendar */}
+          <div className="overflow-hidden rounded-xl border border-white/10">
+            <div className="grid grid-cols-7 border-b border-white/10 bg-[#111535]">
+              {weekdayLabels.map((d) => (
+                <div key={d} className="px-2 py-2 text-center text-xs font-medium text-slate-500">
+                  {d}
+                </div>
               ))}
             </div>
-          )}
+            <div className="grid grid-cols-7">
+              {days.map((day) => {
+                const dayStr = format(day, "yyyy-MM-dd");
+                return (
+                  <CalendarDayCell
+                    key={dayStr}
+                    day={day}
+                    currentMonth={currentMonth}
+                    actions={actionsByDay.get(dayStr) ?? []}
+                    colorFor={colorFor}
+                    onOpenDay={setOpenDay}
+                    onOpenAction={setSelectedAction}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Panou lateral cu detalii actiune selectata */}
+        <div className="w-full shrink-0 lg:w-72">
+          <ActionDetailPanel action={selectedAction} />
         </div>
       </div>
-    </div>
-  );
-}
 
-function StatusIcon({ status }: { status: CalendarAction["status"] }) {
-  if (status === "finalizata") return <CheckCircle2 size={13} className="text-green-400" />;
-  if (status === "restanta") return <AlertCircle size={13} className="text-slate-400" />;
-  return <Clock size={13} className="text-[#0070F3]" />;
+      {openDay && (
+        <DayDetailModal
+          dateStr={openDay}
+          actions={actionsByDay.get(openDay) ?? []}
+          onClose={() => setOpenDay(null)}
+        />
+      )}
+    </DndContext>
+  );
 }

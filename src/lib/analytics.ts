@@ -123,6 +123,8 @@ export interface CalendarAction {
   opportunityId: string;
   numePotential: string;
   actiune: string | null;
+  observatiiActiune: string | null;
+  dataFinalizare: string | null;
   stage: string;
   date: string; // YYYY-MM-DD
   status: ActionCalendarStatus;
@@ -153,6 +155,8 @@ export function buildCalendarActions(opportunities: Opportunity[]): CalendarActi
         opportunityId: o.id,
         numePotential: o.nume_potential,
         actiune: o.actiune,
+        observatiiActiune: o.observatii_actiune,
+        dataFinalizare: o.data_finalizare_actiune,
         stage: o.stage,
         date,
         status,

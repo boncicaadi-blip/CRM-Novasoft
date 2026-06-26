@@ -1,19 +1,20 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil } from "lucide-react";
-import { getOpportunity } from "@/lib/data/opportunities";
+import { ArrowLeft } from "lucide-react";
+import { getOpportunity, getProfiles } from "@/lib/data/opportunities";
+import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
-import { InfoCard, InfoRow } from "@/components/overview/InfoCard";
+import { FirmaCard } from "@/components/overview/FirmaCard";
+import { CalificareCard } from "@/components/overview/CalificareCard";
+import { PipelineStatusCard } from "@/components/overview/PipelineStatusCard";
+import { ActiuneCard } from "@/components/overview/ActiuneCard";
+import { PricingCard } from "@/components/overview/PricingCard";
+import { SursaCard } from "@/components/overview/SursaCard";
 
-function fmtDate(value: string | null) {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString("ro-RO");
-}
-
-function yesNo(value: boolean) {
-  return value ? "Da" : "Nu";
+function valori(items: { valoare: string }[] | undefined): string[] {
+  return (items ?? []).map((i) => i.valoare);
 }
 
 export default async function OpportunityOverviewPage({
@@ -22,13 +23,24 @@ export default async function OpportunityOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const o = await getOpportunity(id);
+  const [o, profiles, nomenclatoare] = await Promise.all([
+    getOpportunity(id),
+    getProfiles(),
+    getNomenclatoare(),
+  ]);
 
   if (!o) notFound();
 
+  const stageColor = nomenclatoare["stage"]?.find((s) => s.valoare === o.stage)?.culoare
+    ?? STAGE_COLORS[o.stage]
+    ?? "#94A3B8";
+  const statusColor = nomenclatoare["status"]?.find((s) => s.valoare === o.status)?.culoare
+    ?? STATUS_COLORS[o.status]
+    ?? "#94A3B8";
+
   return (
-    <div className="px-6 py-4">
-      <div className="mb-5 flex items-center justify-between">
+    <div className="px-3 py-4 sm:px-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
             href="/pipeline"
@@ -42,137 +54,45 @@ export default async function OpportunityOverviewPage({
             <span className="font-mono text-xs text-slate-500">{o.opportunity_code}</span>
             <span
               className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-              style={{
-                backgroundColor: `${STAGE_COLORS[o.stage]}20`,
-                color: STAGE_COLORS[o.stage],
-              }}
+              style={{ backgroundColor: `${stageColor}20`, color: stageColor }}
             >
               {o.stage}
             </span>
             <span
               className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-              style={{
-                backgroundColor: `${STATUS_COLORS[o.status]}20`,
-                color: STATUS_COLORS[o.status],
-              }}
+              style={{ backgroundColor: `${statusColor}20`, color: statusColor }}
             >
               {o.status}
             </span>
           </div>
           <p className="mt-1 text-xs text-slate-500">{o.nume_grup}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <DeleteButton id={o.id} />
-          <Link
-            href={`/oportunitati/${o.id}/edit`}
-            className="flex items-center gap-1.5 rounded-md bg-[#E8007A] px-3 py-1.5 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA]"
-          >
-            <Pencil size={14} />
-            Editeaza
-          </Link>
-        </div>
+        <DeleteButton id={o.id} />
       </div>
 
       {/* KPI rapide */}
-      <div className="mb-5 grid grid-cols-4 gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiMini label="ARR" value={formatEur(o.arr_synergo)} accent="#E8007A" />
         <KpiMini label="MRR" value={formatEur(o.mrr_synergo)} />
         <KpiMini label="Forecast SaaS" value={formatEur(o.forecast_total_saas)} accent="#0070F3" />
-        <KpiMini
-          label="Probability"
-          value={`${Math.round((o.probability ?? 0) * 100)}%`}
-        />
+        <KpiMini label="Probability" value={`${Math.round((o.probability ?? 0) * 100)}%`} />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <InfoCard title="Firma">
-          <InfoRow label="Nume grup" value={o.nume_grup} />
-          <InfoRow label="Nume potential" value={o.nume_potential} />
-          <InfoRow label="Cod fiscal" value={o.cod_fiscal} />
-          <InfoRow label="Responsabil vanzare" value={o.profiles?.full_name} />
-          <InfoRow label="Domeniu activitate" value={o.domeniul_activitate} />
-          <InfoRow label="Judet" value={o.judet} />
-          <InfoRow label="Oras" value={o.oras} />
-        </InfoCard>
-
-        <InfoCard title="Calificare tehnica">
-          <InfoRow label="Solutia existenta" value={o.solutia_existenta} />
-          <InfoRow label="Client Novasoft" value={yesNo(o.client_novasoft)} />
-          <InfoRow label="Client WindSoft" value={yesNo(o.client_windsoft)} />
-          <InfoRow label="Produs propus" value={o.produs_serviciu_propus} />
-          <InfoRow label="Contabilitate interna" value={o.contabilitate_interna} />
-          <InfoRow label="Solutie contabilitate" value={o.solutie_contabilitate} />
-          <InfoRow label="Mai multe firme in grup" value={yesNo(o.mai_multe_firme_grup)} />
-          <InfoRow label="Nr vehicule" value={o.nr_vehicule} />
-          <InfoRow label="Interes planificator" value={yesNo(o.interes_planificator)} />
-          <InfoRow label="Potential fonduri europene" value={yesNo(o.potential_fonduri_europene)} />
-        </InfoCard>
-
-        <InfoCard title="Pipeline & status">
-          <InfoRow label="Data contactarii" value={fmtDate(o.data_contactarii)} />
-          <InfoRow label="Stage" value={o.stage} />
-          <InfoRow label="Status" value={o.status} />
-          <InfoRow label="Substatus" value={o.substatus} />
-          <InfoRow label="Motivatia substatusului" value={o.motivatia_substatusului} />
-          <InfoRow label="Probability" value={`${Math.round((o.probability ?? 0) * 100)}%`} />
-        </InfoCard>
-
-        <InfoCard title="Actiune curenta">
-          <InfoRow label="Actiune" value={o.actiune} />
-          <InfoRow label="Status actiune" value={o.status_actiune} />
-          <InfoRow label="Data actiune" value={fmtDate(o.data_actiune)} />
-          <InfoRow label="Data finalizare" value={fmtDate(o.data_finalizare_actiune)} />
-          {o.observatii_actiune && (
-            <div className="py-1.5">
-              <span className="text-xs text-slate-500">Observatii actiune</span>
-              <p className="mt-1 text-sm text-slate-300">{o.observatii_actiune}</p>
-            </div>
-          )}
-        </InfoCard>
-
-        <InfoCard title="Pricing">
-          <InfoRow label="Tip proiect" value={o.tip_proiect} />
-          <InfoRow label="Nr utilizatori Synergo" value={o.nr_utilizatori_synergo} />
-          <InfoRow label="Valoare pret / user" value={formatEur(o.valoare_pret_per_user)} />
-          <InfoRow
-            label="Valoare implementare"
-            value={formatEur(o.valoare_implementare_synergo)}
-          />
-          <InfoRow label="Valoare SaaS anuala" value={formatEur(o.valoare_saas_anuala)} />
-          <InfoRow label="ARR Synergo" value={formatEur(o.arr_synergo)} />
-          <InfoRow label="MRR Synergo" value={formatEur(o.mrr_synergo)} />
-          <InfoRow
-            label="Licenta Synergo OnPremise"
-            value={formatEur(o.licenta_synergo_onpremise)}
-          />
-          <InfoRow
-            label="Mentenanta lunara OnPremise"
-            value={formatEur(o.valoare_mentenanta_lunara_onpremise)}
-          />
-          <InfoRow label="Forecast Total SaaS" value={formatEur(o.forecast_total_saas)} />
-          <InfoRow
-            label="Forecast Total OnPremise"
-            value={formatEur(o.forecast_total_onpremise)}
-          />
-        </InfoCard>
-
-        <InfoCard title="Sursa & context">
-          <InfoRow label="Canal intrare" value={o.canal_intrare} />
-          <InfoRow label="Nume canal intrare" value={o.nume_canal_intrare} />
-          <InfoRow label="Oportunitati" value={o.oportunitati} />
-          {o.feedback && (
-            <div className="py-1.5">
-              <span className="text-xs text-slate-500">Feedback</span>
-              <p className="mt-1 text-sm text-slate-300">{o.feedback}</p>
-            </div>
-          )}
-          {o.observatii && (
-            <div className="py-1.5">
-              <span className="text-xs text-slate-500">Observatii</span>
-              <p className="mt-1 text-sm text-slate-300">{o.observatii}</p>
-            </div>
-          )}
-        </InfoCard>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <FirmaCard o={o} profiles={profiles} domeniiActivitate={valori(nomenclatoare["domeniu_activitate"])} />
+        <CalificareCard o={o} produseServicii={valori(nomenclatoare["produs_serviciu"])} />
+        <PipelineStatusCard
+          o={o}
+          stages={nomenclatoare["stage"] ?? []}
+          statuses={valori(nomenclatoare["status"])}
+        />
+        <ActiuneCard
+          o={o}
+          actiuni={valori(nomenclatoare["actiune"])}
+          statusActiune={valori(nomenclatoare["status_actiune"])}
+        />
+        <PricingCard o={o} tipuriProiect={valori(nomenclatoare["tip_proiect"])} />
+        <SursaCard o={o} canaleIntrare={valori(nomenclatoare["canal_intrare"])} />
       </div>
 
       <p className="mt-4 text-[11px] text-slate-600">

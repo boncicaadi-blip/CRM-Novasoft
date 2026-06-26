@@ -16,20 +16,11 @@ import {
 import { Field, TextInput, TextArea, Select, Checkbox, MoneyInput } from "@/components/form/fields";
 import { formatEur } from "@/lib/format";
 import {
-  DOMENII_ACTIVITATE,
-  PRODUSE_SERVICII,
-  TIPURI_PROIECT,
-  CANALE_INTRARE,
-  STAGES,
-  STATUSES,
-  STATUS_ACTIUNE,
-  ACTIUNI,
   DA_NU_NUSTIU,
   JUDETE,
   SUBSTATUS_SUGGESTIONS,
-  PROBABILITY_BY_STAGE,
 } from "@/lib/constants";
-import type { Opportunity, Profile } from "@/types/opportunity";
+import type { Opportunity, Profile, Nomenclator } from "@/types/opportunity";
 import {
   createOpportunityAction,
   updateOpportunityAction,
@@ -49,30 +40,51 @@ function toDateInputValue(v: string | null | undefined) {
   return v.slice(0, 10);
 }
 
+/** Extrage doar valoarea (string) dintr-o lista de nomenclatoare, in ordinea definita. */
+function valori(items: Nomenclator[] | undefined): string[] {
+  return (items ?? []).map((i) => i.valoare);
+}
+
 export function OpportunityForm({
   opportunity,
   profiles,
+  nomenclatoare,
 }: {
   opportunity?: Opportunity;
   profiles: Profile[];
+  nomenclatoare: Record<string, Nomenclator[]>;
 }) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [isPending, startTransition] = useTransition();
   const isEdit = !!opportunity;
 
-  const [status, setStatus] = useState(opportunity?.status ?? "Activa");
-  const [stage, setStage] = useState(opportunity?.stage ?? "Suspect");
+  const stages = nomenclatoare["stage"] ?? [];
+  const statuses = valori(nomenclatoare["status"]);
+  const domeniiActivitate = valori(nomenclatoare["domeniu_activitate"]);
+  const produseServicii = valori(nomenclatoare["produs_serviciu"]);
+  const tipuriProiect = valori(nomenclatoare["tip_proiect"]);
+  const canaleIntrare = valori(nomenclatoare["canal_intrare"]);
+  const actiuni = valori(nomenclatoare["actiune"]);
+  const statusActiune = valori(nomenclatoare["status_actiune"]);
+
+  const probabilityByStage: Record<string, number> = {};
+  for (const s of stages) {
+    if (s.probability !== null) probabilityByStage[s.valoare] = s.probability;
+  }
+
+  const [status, setStatus] = useState(opportunity?.status ?? statuses[0] ?? "Activa");
+  const [stage, setStage] = useState(opportunity?.stage ?? stages[0]?.valoare ?? "Suspect");
   const [probability, setProbability] = useState(
-    opportunity?.probability ?? PROBABILITY_BY_STAGE["Suspect"]
+    opportunity?.probability ?? probabilityByStage[stage] ?? 0
   );
 
   const substatusOptions = SUBSTATUS_SUGGESTIONS[status] ?? [];
 
   function handleStageChange(value: string) {
     setStage(value);
-    if (PROBABILITY_BY_STAGE[value] !== undefined) {
-      setProbability(PROBABILITY_BY_STAGE[value]);
+    if (probabilityByStage[value] !== undefined) {
+      setProbability(probabilityByStage[value]);
     }
   }
 
@@ -91,8 +103,11 @@ export function OpportunityForm({
   const isFirstStep = stepIndex === 0;
 
   return (
-    <form action={handleSubmit} className="mx-auto max-w-3xl px-6 py-8">
+    <form action={handleSubmit} className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       {/* Stepper */}
+      <p className="mb-2 text-center text-xs text-slate-500 sm:hidden">
+        Pasul {stepIndex + 1} din {STEPS.length}: {STEPS[stepIndex].label}
+      </p>
       <div className="mb-8 flex items-center justify-between">
         {STEPS.map((step, i) => {
           const Icon = step.icon;
@@ -117,7 +132,7 @@ export function OpportunityForm({
                 {isDone ? <Check size={15} /> : <Icon size={15} />}
               </div>
               <span
-                className={`text-[11px] transition ${
+                className={`hidden text-[11px] transition sm:inline ${
                   isActive ? "text-white font-medium" : "text-slate-500"
                 }`}
               >
@@ -135,7 +150,7 @@ export function OpportunityForm({
           <p className="mb-4 text-xs text-slate-500">
             Datele de baza ale prospectului / clientului.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nume grup *">
               <TextInput
                 name="nume_grup"
@@ -179,7 +194,7 @@ export function OpportunityForm({
               <Select
                 name="domeniul_activitate"
                 defaultValue={opportunity?.domeniul_activitate ?? ""}
-                options={DOMENII_ACTIVITATE}
+                options={domeniiActivitate}
               />
             </Field>
             <div />
@@ -202,7 +217,7 @@ export function OpportunityForm({
           <p className="mb-4 text-xs text-slate-500">
             Context tehnic si operational despre prospect.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Solutia existenta">
               <TextInput
                 name="solutia_existenta"
@@ -214,7 +229,7 @@ export function OpportunityForm({
               <Select
                 name="produs_serviciu_propus"
                 defaultValue={opportunity?.produs_serviciu_propus ?? "SYNERGO"}
-                options={PRODUSE_SERVICII}
+                options={produseServicii}
               />
             </Field>
             <div className="flex gap-6 pt-1">
@@ -308,7 +323,7 @@ export function OpportunityForm({
           <p className="mb-4 text-xs text-slate-500">
             Unde se afla aceasta oportunitate in procesul de vanzare.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Data contactarii">
               <TextInput
                 type="date"
@@ -320,7 +335,7 @@ export function OpportunityForm({
               <Select
                 name="tip_proiect"
                 defaultValue={opportunity?.tip_proiect ?? ""}
-                options={TIPURI_PROIECT}
+                options={tipuriProiect}
               />
             </Field>
             <Field label="Stage *">
@@ -329,7 +344,7 @@ export function OpportunityForm({
                 required
                 value={stage}
                 onChange={(e) => handleStageChange(e.target.value)}
-                options={STAGES}
+                options={valori(stages)}
               />
             </Field>
             <Field label="Probability (sansa de castig)" hint="Se actualizeaza automat la schimbarea Stage-ului, dar poti ajusta manual.">
@@ -349,7 +364,7 @@ export function OpportunityForm({
                 required
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                options={STATUSES}
+                options={statuses}
               />
             </Field>
             <Field label="Substatus">
@@ -383,19 +398,19 @@ export function OpportunityForm({
           <p className="mb-4 text-xs text-slate-500">
             Ce e de facut in continuare cu aceasta oportunitate.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Actiune">
               <Select
                 name="actiune"
                 defaultValue={opportunity?.actiune ?? ""}
-                options={ACTIUNI}
+                options={actiuni}
               />
             </Field>
             <Field label="Status actiune">
               <Select
                 name="status_actiune"
                 defaultValue={opportunity?.status_actiune ?? ""}
-                options={STATUS_ACTIUNE}
+                options={statusActiune}
               />
             </Field>
             <Field label="Data actiune">
@@ -429,7 +444,7 @@ export function OpportunityForm({
           <p className="mb-4 text-xs text-slate-500">
             Valorile financiare. Forecast-ul se calculeaza automat din Probability.
           </p>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label="Nr utilizatori Synergo">
               <TextInput
                 type="number"
@@ -516,7 +531,7 @@ export function OpportunityForm({
           </div>
 
           {isEdit && (
-            <div className="mt-2 grid grid-cols-3 gap-4 rounded-lg border border-[#E8007A]/20 bg-[#E8007A]/5 p-4">
+            <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3 rounded-lg border border-[#E8007A]/20 bg-[#E8007A]/5 p-4">
               <ForecastPreview label="Forecast Total SaaS" value={opportunity.forecast_total_saas} />
               <ForecastPreview
                 label="Forecast Total OnPremise"
@@ -533,12 +548,12 @@ export function OpportunityForm({
           <p className="mb-4 text-xs text-slate-500">
             De unde a venit aceasta oportunitate si alte observatii.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Canal intrare">
               <Select
                 name="canal_intrare"
                 defaultValue={opportunity?.canal_intrare ?? ""}
-                options={CANALE_INTRARE}
+                options={canaleIntrare}
               />
             </Field>
             <Field label="Nume canal intrare">

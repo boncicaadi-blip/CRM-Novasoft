@@ -10,7 +10,7 @@ export default async function CalendarPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-white/10 px-6 py-4">
+      <div className="border-b border-white/10 px-3 py-4 sm:px-6">
         <h1 className="text-lg font-heading text-white">Calendar actiuni</h1>
         <p className="text-sm text-slate-500">
           Toate actiunile planificate, vazute pe luna calendaristica.

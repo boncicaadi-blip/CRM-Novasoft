@@ -83,7 +83,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
   }, [filtered]);
 
   return (
-    <div className="flex h-full flex-col px-6 py-4">
+    <div className="flex h-full flex-col px-3 py-4 sm:px-6">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input
           value={search}

@@ -123,3 +123,15 @@ export const PROBABILITY_BY_STAGE: Record<string, number> = {
   Negociere: 0.75,
   Contractare: 0.9,
 };
+
+// Etichete prietenoase pentru categoriile de nomenclator (afisate in pagina de administrare)
+export const NOMENCLATOR_CATEGORII: { value: string; label: string; hasColor: boolean; hasProbability: boolean }[] = [
+  { value: "stage", label: "Stage (etape pipeline)", hasColor: true, hasProbability: true },
+  { value: "status", label: "Status", hasColor: true, hasProbability: false },
+  { value: "domeniu_activitate", label: "Domeniul de activitate", hasColor: false, hasProbability: false },
+  { value: "produs_serviciu", label: "Produs & Serviciu propus", hasColor: false, hasProbability: false },
+  { value: "tip_proiect", label: "Tip proiect", hasColor: false, hasProbability: false },
+  { value: "canal_intrare", label: "Canal intrare", hasColor: false, hasProbability: false },
+  { value: "actiune", label: "Actiune (follow-up)", hasColor: false, hasProbability: false },
+  { value: "status_actiune", label: "Status actiune", hasColor: false, hasProbability: false },
+];

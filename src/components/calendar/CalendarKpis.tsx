@@ -8,7 +8,7 @@ export function CalendarKpis({
   upcoming: number;
 }) {
   return (
-    <div className="grid grid-cols-3 gap-3 px-6 pt-4">
+    <div className="grid grid-cols-1 gap-3 px-4 pt-4 sm:grid-cols-3 sm:px-6">
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
         <p className="text-[11px] text-slate-500">Actiuni azi</p>
         <p className="font-mono text-xl text-white">{today > 0 ? today : "--"}</p>

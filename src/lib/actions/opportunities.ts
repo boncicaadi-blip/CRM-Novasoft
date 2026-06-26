@@ -110,6 +110,79 @@ export async function updateOpportunityStageAction(id: string, stage: string) {
   revalidatePath("/dashboard");
 }
 
+export async function updateOpportunityActionDateAction(id: string, dataActiune: string) {
+  await updateOpportunity(id, { data_actiune: dataActiune });
+  revalidatePath("/calendar");
+  revalidatePath("/dashboard");
+}
+
+/**
+ * Update inline pe o singura sectiune a fisei oportunitatii (folosit din
+ * vederea de ansamblu, unde fiecare caseta se editeaza independent, fara
+ * sa treaca prin formularul wizard complet).
+ */
+export async function updateOpportunitySectionAction(
+  id: string,
+  formData: FormData
+) {
+  const get = (key: string) => {
+    const v = formData.get(key);
+    return v === null || v === "" ? null : (v as string);
+  };
+  const getNum = (key: string) => {
+    const v = get(key);
+    return v === null ? null : Number(v);
+  };
+  const getBool = (key: string) => formData.get(key) === "on";
+
+  const payload: Record<string, unknown> = {};
+  const fields = formData.get("__fields") as string;
+  const fieldList = fields ? fields.split(",") : [];
+
+  const numericFields = new Set([
+    "nr_societati_suplimentare",
+    "nr_vehicule",
+    "probability",
+    "nr_utilizatori_synergo",
+    "valoare_pret_per_user",
+    "valoare_implementare_synergo",
+    "valoare_saas_anuala",
+    "arr_synergo",
+    "mrr_synergo",
+    "valoare_pachet_server_anual",
+    "valoare_firma_suplimentara",
+    "pachet_synergo_onpremise",
+    "licenta_companie_suplimentara",
+    "licenta_useri_suplimentari_onpremise",
+    "licenta_synergo_onpremise",
+    "valoare_mentenanta_per_user_onpremise",
+    "valoare_mentenanta_lunara_onpremise",
+  ]);
+  const boolFields = new Set([
+    "client_novasoft",
+    "client_windsoft",
+    "mai_multe_firme_grup",
+    "potential_fonduri_europene",
+    "interes_planificator",
+  ]);
+
+  for (const field of fieldList) {
+    if (!field) continue;
+    if (numericFields.has(field)) {
+      payload[field] = getNum(field);
+    } else if (boolFields.has(field)) {
+      payload[field] = getBool(field);
+    } else {
+      payload[field] = get(field);
+    }
+  }
+
+  await updateOpportunity(id, payload);
+  revalidatePath(`/oportunitati/${id}`);
+  revalidatePath("/pipeline");
+  revalidatePath("/dashboard");
+}
+
 export async function deleteOpportunityAction(id: string) {
   await deleteOpportunity(id);
   revalidatePath("/pipeline");
