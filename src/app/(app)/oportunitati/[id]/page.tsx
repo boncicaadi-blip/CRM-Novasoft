@@ -6,8 +6,8 @@ import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
-import { BackButton } from "@/components/BackButton";
 import { FirmaCard } from "@/components/overview/FirmaCard";
+import { ContactCard } from "@/components/overview/ContactCard";
 import { CalificareCard } from "@/components/overview/CalificareCard";
 import { PipelineStatusCard } from "@/components/overview/PipelineStatusCard";
 import { ActiuneCard } from "@/components/overview/ActiuneCard";
@@ -41,7 +41,6 @@ export default async function OpportunityOverviewPage({
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <BackButton />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link
@@ -93,6 +92,7 @@ export default async function OpportunityOverviewPage({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <FirmaCard o={o} profiles={profiles} domeniiActivitate={nomenclatoare["domeniu_activitate"] ?? []} />
+        <ContactCard o={o} />
         <CalificareCard o={o} produseServicii={valori(nomenclatoare["produs_serviciu"])} />
         <PipelineStatusCard
           o={o}

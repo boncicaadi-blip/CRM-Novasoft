@@ -67,8 +67,12 @@ export function PricingCard({ o, tipuriProiect }: { o: Opportunity; tipuriProiec
     setError(null);
     startTransition(async () => {
       try {
-        await updateOpportunitySectionAction(o.id, formData);
-        setEditing(false);
+        const result = await updateOpportunitySectionAction(o.id, formData);
+        if (result.success) {
+          setEditing(false);
+        } else {
+          setError(result.message ?? "A aparut o eroare la salvare.");
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "A aparut o eroare la salvare.");
       }

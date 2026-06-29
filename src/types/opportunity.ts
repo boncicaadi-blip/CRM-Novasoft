@@ -15,6 +15,10 @@ export interface Opportunity {
   nr_angajati: number | null;
   cifra_afaceri_an: number | null;
   cifra_afaceri_actualizat_la: string | null;
+  contact_nume: string | null;
+  contact_functie: string | null;
+  contact_telefon: string | null;
+  contact_email: string | null;
 
   // Calificare tehnica
   solutia_existenta: string | null;

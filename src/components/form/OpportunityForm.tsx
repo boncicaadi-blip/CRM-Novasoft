@@ -59,6 +59,7 @@ export function OpportunityForm({
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [isPending, startTransition] = useTransition();
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   useSaveShortcut(formRef);
   const isEdit = !!opportunity;
@@ -165,12 +166,22 @@ export function OpportunityForm({
   }
 
   function handleSubmit(formData: FormData) {
+    setSubmitError(null);
     startTransition(async () => {
       if (isEdit) {
-        await updateOpportunityAction(opportunity.id, formData);
-        router.push(`/oportunitati/${opportunity.id}`);
+        const result = await updateOpportunityAction(opportunity.id, formData);
+        if (result.success) {
+          router.push(`/oportunitati/${opportunity.id}`);
+        } else {
+          setSubmitError(result.message ?? "A aparut o eroare la salvare.");
+        }
       } else {
-        await createOpportunityAction(formData);
+        const result = await createOpportunityAction(formData);
+        // createOpportunityAction face redirect() intern la succes - daca
+        // ajungem aici cu result definit, inseamna ca a fost eroare de validare.
+        if (result && !result.success) {
+          setSubmitError(result.message ?? "A aparut o eroare la salvare.");
+        }
       }
     });
   }
@@ -748,6 +759,12 @@ export function OpportunityForm({
           </div>
         </div>
       </div>
+
+      {submitError && (
+        <p className="mt-3 rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          {submitError}
+        </p>
+      )}
 
       {/* Navigare pasi */}
       <div className="mt-5 flex items-center justify-between">

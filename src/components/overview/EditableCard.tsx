@@ -31,8 +31,12 @@ export function EditableCard({
     setError(null);
     startTransition(async () => {
       try {
-        await updateOpportunitySectionAction(opportunityId, formData);
-        setEditing(false);
+        const result = await updateOpportunitySectionAction(opportunityId, formData);
+        if (result.success) {
+          setEditing(false);
+        } else {
+          setError(result.message ?? "A aparut o eroare la salvare.");
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "A aparut o eroare la salvare.");
       }

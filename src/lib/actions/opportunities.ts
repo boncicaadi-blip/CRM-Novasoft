@@ -100,7 +100,9 @@ function parsePayload(formData: FormData): OpportunityInsert {
   };
 }
 
-export async function createOpportunityAction(formData: FormData) {
+export async function createOpportunityAction(
+  formData: FormData
+): Promise<{ success: boolean; message?: string }> {
   const payload = parsePayload(formData);
   const errors = validateOpportunityBusinessRules({
     status: payload.status ?? "Activa",
@@ -111,7 +113,7 @@ export async function createOpportunityAction(formData: FormData) {
     motiv_amanare: payload.motiv_amanare ?? null,
     data_revenire: payload.data_revenire ?? null,
   });
-  if (errors.length > 0) throw new Error(errors.join(" "));
+  if (errors.length > 0) return { success: false, message: errors.join(" ") };
 
   const opp = await createOpportunity(payload);
   revalidatePath("/pipeline");
@@ -119,7 +121,10 @@ export async function createOpportunityAction(formData: FormData) {
   redirect(`/oportunitati/${opp.id}`);
 }
 
-export async function updateOpportunityAction(id: string, formData: FormData) {
+export async function updateOpportunityAction(
+  id: string,
+  formData: FormData
+): Promise<{ success: boolean; message?: string }> {
   const payload = parsePayload(formData);
   const errors = validateOpportunityBusinessRules({
     status: payload.status ?? "Activa",
@@ -130,12 +135,13 @@ export async function updateOpportunityAction(id: string, formData: FormData) {
     motiv_amanare: payload.motiv_amanare ?? null,
     data_revenire: payload.data_revenire ?? null,
   });
-  if (errors.length > 0) throw new Error(errors.join(" "));
+  if (errors.length > 0) return { success: false, message: errors.join(" ") };
 
   await updateOpportunity(id, payload);
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
   revalidatePath(`/oportunitati/${id}`);
+  return { success: true };
 }
 
 export async function updateOpportunityStageAction(id: string, stage: string) {
@@ -158,7 +164,7 @@ export async function updateOpportunityActionDateAction(id: string, dataActiune:
 export async function updateOpportunitySectionAction(
   id: string,
   formData: FormData
-) {
+): Promise<{ success: boolean; message?: string }> {
   const get = (key: string) => {
     const v = formData.get(key);
     return v === null || v === "" ? null : (v as string);
@@ -213,7 +219,7 @@ export async function updateOpportunitySectionAction(
   // contine status/actiune ar putea "trece" validarea fara sa vada
   // problema reala (ex. editezi Firma pe o oportunitate Activa fara next step).
   const current = await getOpportunity(id);
-  if (!current) throw new Error("Oportunitatea nu a fost gasita.");
+  if (!current) return { success: false, message: "Oportunitatea nu a fost gasita." };
 
   const merged = { ...current, ...payload } as unknown as Record<string, unknown>;
   const errors = validateOpportunityBusinessRules({
@@ -225,12 +231,13 @@ export async function updateOpportunitySectionAction(
     motiv_amanare: (merged.motiv_amanare as string | null) ?? null,
     data_revenire: (merged.data_revenire as string | null) ?? null,
   });
-  if (errors.length > 0) throw new Error(errors.join(" "));
+  if (errors.length > 0) return { success: false, message: errors.join(" ") };
 
   await updateOpportunity(id, payload);
   revalidatePath(`/oportunitati/${id}`);
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
+  return { success: true };
 }
 
 /**

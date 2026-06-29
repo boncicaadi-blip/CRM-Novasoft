@@ -16,6 +16,7 @@ import {
   LogOut,
   User,
   Users,
+  Plug,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -148,14 +149,24 @@ export function Sidebar({
                 Profilul meu
               </Link>
               {isAdmin && (
-                <Link
-                  href="/setari/utilizatori"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
-                >
-                  <Users size={15} />
-                  Utilizatori
-                </Link>
+                <>
+                  <Link
+                    href="/setari/utilizatori"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <Users size={15} />
+                    Utilizatori
+                  </Link>
+                  <Link
+                    href="/setari/integrari"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <Plug size={15} />
+                    Integrari
+                  </Link>
+                </>
               )}
             </div>
           )}
