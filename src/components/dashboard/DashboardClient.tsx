@@ -11,10 +11,12 @@ import {
   buildTimeSeries,
   upcomingActions,
   applyDashboardFilters,
+  buildRiskLists,
   EMPTY_FILTERS,
   type DashboardFilters,
 } from "@/lib/analytics";
 import { formatEur } from "@/lib/format";
+import { RiskZone } from "@/components/dashboard/RiskZone";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { StageChart } from "@/components/dashboard/StageChart";
 import { StatusChart } from "@/components/dashboard/StatusChart";
@@ -62,6 +64,7 @@ export function DashboardClient({
   const responsabilData = useMemo(() => groupByResponsabil(filtered), [filtered]);
   const timeSeries = useMemo(() => buildTimeSeries(history), [history]);
   const actions = useMemo(() => upcomingActions(filtered), [filtered]);
+  const riskLists = useMemo(() => buildRiskLists(filtered), [filtered]);
 
   const selectedRange =
     filters.dateFrom && filters.dateTo
@@ -98,6 +101,13 @@ export function DashboardClient({
           judete={judete}
         />
       </div>
+
+      <RiskZone
+        ofertareFaraFollowUp={riskLists.ofertareFaraFollowUp}
+        negociereStagnanta={riskLists.negociereStagnanta}
+        probabilitateMareFaraActiune={riskLists.probabilitateMareFaraActiune}
+        amanateFaraDataRevenire={riskLists.amanateFaraDataRevenire}
+      />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <KpiCard

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, AlertCircle, Flame } from "lucide-react";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
-import { computeStagnation } from "@/lib/analytics";
+import { computeStagnation, computeOpportunityScore, scoreLevel } from "@/lib/analytics";
 import type { Opportunity } from "@/types/opportunity";
 
 type SortKey =
@@ -16,7 +16,8 @@ type SortKey =
   | "mrr_synergo"
   | "forecast_total_saas"
   | "updated_at"
-  | "data_actiune";
+  | "data_actiune"
+  | "score";
 
 export function PipelineTable({ opportunities }: { opportunities: Opportunity[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("updated_at");
@@ -24,6 +25,11 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
 
   const sorted = useMemo(() => {
     return [...opportunities].sort((a, b) => {
+      if (sortKey === "score") {
+        const av = computeOpportunityScore(a).total;
+        const bv = computeOpportunityScore(b).total;
+        return (av - bv) * sortDir;
+      }
       const av = a[sortKey] ?? "";
       const bv = b[sortKey] ?? "";
       if (av < bv) return -1 * sortDir;
@@ -64,6 +70,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
               <Th label="Stage" onClick={() => toggleSort("stage")} />
               <Th label="Status" onClick={() => toggleSort("status")} />
               <th className="whitespace-nowrap px-3 py-2.5 font-medium">Risc</th>
+              <Th label="Scor" onClick={() => toggleSort("score")} />
               <th className="whitespace-nowrap px-3 py-2.5 font-medium">Substatus</th>
               <th className="whitespace-nowrap px-3 py-2.5 font-medium">Responsabil</th>
               <th className="whitespace-nowrap px-3 py-2.5 font-medium">Judet</th>
@@ -124,6 +131,9 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
                 <td className="whitespace-nowrap px-3 py-2.5">
                   <RiskBadge o={o} />
                 </td>
+                <td className="whitespace-nowrap px-3 py-2.5">
+                  <ScoreCell o={o} />
+                </td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
                   {o.substatus ?? "—"}
                 </td>
@@ -159,7 +169,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={17} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={18} className="px-3 py-8 text-center text-slate-500">
                   Nicio oportunitate gasita.
                 </td>
               </tr>
@@ -168,7 +178,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
           {sorted.length > 0 && (
             <tfoot>
               <tr className="border-t border-white/10 bg-white/[0.02] font-medium">
-                <td className="sticky left-0 bg-[#111535] px-3 py-2.5 text-white" colSpan={13}>
+                <td className="sticky left-0 bg-[#111535] px-3 py-2.5 text-white" colSpan={14}>
                   Total ({sorted.length} oportunitati)
                 </td>
                 <td className="px-3 py-2.5 text-right font-mono text-slate-200">
@@ -210,6 +220,23 @@ function Th({
     >
       {label}
     </th>
+  );
+}
+
+/** Celula de scor oportunitate (B-12) cu tooltip de detalii. */
+function ScoreCell({ o }: { o: Opportunity }) {
+  const score = computeOpportunityScore(o);
+  const level = scoreLevel(score.total);
+  const tooltip = score.detalii.map((d) => `${d.criteriu}: ${d.puncte}/${d.maxim}`).join("\n");
+
+  return (
+    <span
+      className="rounded-full px-2 py-0.5 font-mono text-[11px] font-medium"
+      style={{ backgroundColor: `${level.color}20`, color: level.color }}
+      title={tooltip}
+    >
+      {score.total}
+    </span>
   );
 }
 

@@ -188,6 +188,73 @@ export function buildTimeSeries(history: OpportunityHistoryRow[]) {
   });
 }
 
+export interface OpportunityScoreBreakdown {
+  total: number;
+  detalii: { criteriu: string; puncte: number; maxim: number }[];
+}
+
+/**
+ * B-12: scor 0-100, calculat automat din campuri deja existente (fara
+ * campuri noi de completat manual). Ponderile reflecta relevanta comerciala:
+ * decidentul si sistemul actual deficitar conteaza mai mult decat canalul
+ * de intrare, de exemplu.
+ */
+export function computeOpportunityScore(o: Opportunity): OpportunityScoreBreakdown {
+  const detalii: { criteriu: string; puncte: number; maxim: number }[] = [];
+
+  // Decident identificat (contact cu nume + functie) - 20p
+  const decidentPuncte = o.contact_nume && o.contact_functie ? 20 : o.contact_nume ? 10 : 0;
+  detalii.push({ criteriu: "Decident identificat", puncte: decidentPuncte, maxim: 20 });
+
+  // Sistem actual deficitar / fara sistem - 20p (presupunem ca lipsa solutiei
+  // existente sau mentionarea uneia indica o nevoie de inlocuire)
+  const sistemPuncte = o.solutia_existenta ? 20 : 0;
+  detalii.push({ criteriu: "Sistem actual identificat", puncte: sistemPuncte, maxim: 20 });
+
+  // Flota / casa de expeditii (nr vehicule > 0) - 15p, scalat dupa marime
+  const nrVehicule = o.nr_vehicule ?? 0;
+  const flotaPuncte = nrVehicule >= 20 ? 15 : nrVehicule >= 5 ? 10 : nrVehicule > 0 ? 5 : 0;
+  detalii.push({ criteriu: "Marime flota", puncte: flotaPuncte, maxim: 15 });
+
+  // Nr utilizatori Synergo solicitati - 15p, scalat
+  const nrUtilizatori = o.nr_utilizatori_synergo ?? 0;
+  const utilizatoriPuncte =
+    nrUtilizatori >= 20 ? 15 : nrUtilizatori >= 10 ? 10 : nrUtilizatori > 0 ? 5 : 0;
+  detalii.push({ criteriu: "Nr utilizatori", puncte: utilizatoriPuncte, maxim: 15 });
+
+  // Interes produs/proiect definit (TMS, ERP etc.) - 10p
+  const interesPuncte = o.produs_serviciu_propus || o.tip_proiect ? 10 : 0;
+  detalii.push({ criteriu: "Interes produs definit", puncte: interesPuncte, maxim: 10 });
+
+  // Termen de decizie / actiune apropiata (in urmatoarele 14 zile) - 10p
+  let termenPuncte = 0;
+  if (o.data_actiune) {
+    const zile = Math.floor(
+      (new Date(o.data_actiune.slice(0, 10)).getTime() - Date.now()) / 86400000
+    );
+    if (zile >= 0 && zile <= 14) termenPuncte = 10;
+    else if (zile > 14 && zile <= 30) termenPuncte = 5;
+  }
+  detalii.push({ criteriu: "Termen apropiat", puncte: termenPuncte, maxim: 10 });
+
+  // Recomandare ca sursa - 5p
+  const recomandarePuncte = o.canal_intrare === "Recomandare" ? 5 : 0;
+  detalii.push({ criteriu: "Sursa recomandare", puncte: recomandarePuncte, maxim: 5 });
+
+  // Potential fonduri europene - 5p
+  const fonduriPuncte = o.potential_fonduri_europene ? 5 : 0;
+  detalii.push({ criteriu: "Fonduri europene", puncte: fonduriPuncte, maxim: 5 });
+
+  const total = detalii.reduce((s, d) => s + d.puncte, 0);
+  return { total, detalii };
+}
+
+export function scoreLevel(score: number): { label: string; color: string } {
+  if (score >= 70) return { label: "Ridicat", color: "#22C55E" };
+  if (score >= 40) return { label: "Mediu", color: "#FBBF24" };
+  return { label: "Scazut", color: "#94A3B8" };
+}
+
 export interface StagnationInfo {
   zileInStage: number;
   zileDeLaUltimaActiune: number | null;
@@ -217,6 +284,42 @@ export function computeStagnation(o: Opportunity): StagnationInfo {
   else if (referinta >= 7) severitate = "atentie";
 
   return { zileInStage, zileDeLaUltimaActiune, severitate };
+}
+
+/**
+ * B-11: zona operationala a Dashboard-ului - oferte (stage Ofertare) fara
+ * follow-up de 7+ zile, si negocieri (stage Negociere) stagnante 7+ zile.
+ * Reutilizeaza computeStagnation pentru consistenta cu badge-urile din
+ * Kanban/lista.
+ */
+export function buildRiskLists(opportunities: Opportunity[]) {
+  const activePipeline = opportunities.filter(
+    (o) => o.status === "Activa" && o.stage !== "Lead Pool"
+  );
+
+  const ofertareFaraFollowUp = activePipeline
+    .filter((o) => o.stage === "Ofertare")
+    .filter((o) => computeStagnation(o).severitate !== "ok")
+    .sort((a, b) => computeStagnation(b).zileInStage - computeStagnation(a).zileInStage);
+
+  const negociereStagnanta = activePipeline
+    .filter((o) => o.stage === "Negociere")
+    .filter((o) => computeStagnation(o).severitate !== "ok")
+    .sort((a, b) => computeStagnation(b).zileInStage - computeStagnation(a).zileInStage);
+
+  const probabilitateMareFaraActiune = activePipeline
+    .filter((o) => (o.probability ?? 0) >= 0.5 && (!o.actiune || !o.data_actiune));
+
+  const amanateFaraDataRevenire = opportunities.filter(
+    (o) => o.status === "Amanata" && !o.data_revenire
+  );
+
+  return {
+    ofertareFaraFollowUp,
+    negociereStagnanta,
+    probabilitateMareFaraActiune,
+    amanateFaraDataRevenire,
+  };
 }
 
 export function upcomingActions(opportunities: Opportunity[]) {
