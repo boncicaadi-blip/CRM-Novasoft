@@ -213,7 +213,9 @@ export type TimelineEntryType =
   | "follow_up"
   | "schimbare_stage"
   | "schimbare_status"
-  | "actiune_finalizata";
+  | "actiune_finalizata"
+  | "actiune_setata"
+  | "creare";
 
 export interface TimelineEntry {
   id: string;

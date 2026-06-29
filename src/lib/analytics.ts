@@ -1,4 +1,4 @@
-import type { Opportunity, OpportunityHistoryRow } from "@/types/opportunity";
+import type { Opportunity, OpportunityHistoryRow, TimelineEntry } from "@/types/opportunity";
 
 export interface DashboardFilters {
   stage: string | null;
@@ -320,6 +320,70 @@ export function buildRiskLists(opportunities: Opportunity[]) {
     probabilitateMareFaraActiune,
     amanateFaraDataRevenire,
   };
+}
+
+export interface StageDuration {
+  stage: string;
+  dataIntrare: string;
+  dataIesire: string | null;
+  zile: number;
+}
+
+/**
+ * Reconstituie din timeline (evenimentele 'creare' si 'schimbare_stage')
+ * durata petrecuta in fiecare stage, in ordine cronologica. Util pentru
+ * pagina de trasabilitate completa a unei oportunitati.
+ */
+export function computeStageDurations(timeline: TimelineEntry[]): StageDuration[] {
+  // timeline vine de obicei sortat descrescator (cel mai recent primul) -
+  // lucram pe o copie crescatoare, ca sa procesam in ordine cronologica reala.
+  const sorted = [...timeline].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  const relevant = sorted.filter((e) => e.tip === "creare" || e.tip === "schimbare_stage");
+  if (relevant.length === 0) return [];
+
+  const durations: StageDuration[] = [];
+  let stageCurent: string | null = null;
+  let dataIntrareCurenta: string | null = null;
+
+  for (const entry of relevant) {
+    if (entry.tip === "creare") {
+      const match = entry.continut?.match(/Stage initial: (.+)$/);
+      stageCurent = match?.[1] ?? null;
+      dataIntrareCurenta = entry.created_at;
+    } else if (entry.tip === "schimbare_stage") {
+      const match = entry.continut?.match(/^(.+) -> (.+)$/);
+      const stageNou = match?.[2] ?? null;
+      if (stageCurent && dataIntrareCurenta) {
+        const zile = Math.floor(
+          (new Date(entry.created_at).getTime() - new Date(dataIntrareCurenta).getTime()) / 86400000
+        );
+        durations.push({
+          stage: stageCurent,
+          dataIntrare: dataIntrareCurenta,
+          dataIesire: entry.created_at,
+          zile,
+        });
+      }
+      stageCurent = stageNou;
+      dataIntrareCurenta = entry.created_at;
+    }
+  }
+
+  // Stage-ul curent (fara data de iesire - inca activ)
+  if (stageCurent && dataIntrareCurenta) {
+    const zile = Math.floor((Date.now() - new Date(dataIntrareCurenta).getTime()) / 86400000);
+    durations.push({
+      stage: stageCurent,
+      dataIntrare: dataIntrareCurenta,
+      dataIesire: null,
+      zile,
+    });
+  }
+
+  return durations;
 }
 
 export function upcomingActions(opportunities: Opportunity[]) {

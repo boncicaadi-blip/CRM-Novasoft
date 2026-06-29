@@ -11,6 +11,8 @@ import {
   ArrowRightLeft,
   RefreshCw,
   CheckCircle2,
+  CalendarClock,
+  Sparkles,
 } from "lucide-react";
 import { addTimelineEntryAction } from "@/lib/actions/timeline";
 import type { TimelineEntry, TimelineEntryType } from "@/types/opportunity";
@@ -37,6 +39,8 @@ const TYPE_CONFIG: Record<
   schimbare_stage: { icon: ArrowRightLeft, color: "#60A5FA", label: "Schimbare Stage" },
   schimbare_status: { icon: RefreshCw, color: "#FB923C", label: "Schimbare Status" },
   actiune_finalizata: { icon: CheckCircle2, color: "#22C55E", label: "Actiune finalizata" },
+  actiune_setata: { icon: CalendarClock, color: "#A78BFA", label: "Actiune programata" },
+  creare: { icon: Sparkles, color: "#E8007A", label: "Intrare in sistem" },
 };
 
 export function TimelineCard({

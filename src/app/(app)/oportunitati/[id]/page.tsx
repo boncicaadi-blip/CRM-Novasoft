@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, History } from "lucide-react";
 import { getOpportunity, getProfiles } from "@/lib/data/opportunities";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { getTimeline } from "@/lib/data/timeline";
@@ -74,7 +74,16 @@ export default async function OpportunityOverviewPage({
           </div>
           <p className="mt-1 text-xs text-slate-500">{o.nume_grup}</p>
         </div>
-        <DeleteButton id={o.id} />
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/oportunitati/${o.id}/istoric`}
+            className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/5"
+          >
+            <History size={14} />
+            Istoric complet
+          </Link>
+          <DeleteButton id={o.id} />
+        </div>
       </div>
 
       {/* KPI rapide */}
