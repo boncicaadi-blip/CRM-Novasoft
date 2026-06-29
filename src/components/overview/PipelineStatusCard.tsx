@@ -128,6 +128,14 @@ export function PipelineStatusCard({
                 onChange={(e) => handleStageChange(e.target.value)}
                 className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
               >
+                {/* Daca stage_id curent nu se gaseste in lista (date vechi/desincronizate),
+                    aratam valoarea text reala ca opțiune, in loc sa cadem silentios pe
+                    prima din lista - asta ar trimite o valoare gresita la salvare. */}
+                {!stages.some((s) => s.id === stageId) && stageId && (
+                  <option value={stageId} style={optionStyle}>
+                    {o.stage} (valoare curenta, neasociata)
+                  </option>
+                )}
                 {stages.map((s) => (
                   <option key={s.id} value={s.id} style={optionStyle}>
                     {s.valoare}
@@ -149,6 +157,11 @@ export function PipelineStatusCard({
                 onChange={(e) => setStatusId(e.target.value)}
                 className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
               >
+                {!statusuri.some((s) => s.id === statusId) && statusId && (
+                  <option value={statusId} style={optionStyle}>
+                    {o.status} (valoare curenta, neasociata)
+                  </option>
+                )}
                 {statusuri.map((s) => (
                   <option key={s.id} value={s.id} style={optionStyle}>
                     {s.valoare}

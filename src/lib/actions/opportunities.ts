@@ -8,6 +8,7 @@ import {
   deleteOpportunity,
   getOpportunity,
 } from "@/lib/data/opportunities";
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { validateOpportunityBusinessRules } from "@/lib/validation";
 import type { OpportunityInsert } from "@/types/opportunity";
 
@@ -220,6 +221,37 @@ export async function updateOpportunitySectionAction(
   // problema reala (ex. editezi Firma pe o oportunitate Activa fara next step).
   const current = await getOpportunity(id);
   if (!current) return { success: false, message: "Oportunitatea nu a fost gasita." };
+
+  // Daca payload-ul trimite un *_id (stage_id, status_id, motiv_pierdere_id,
+  // motiv_amanare_id), trebuie sa rezolvam si textul corespunzator AICI, in
+  // JS - altfel `merged.status` ar ramane vechea valoare text din `current`,
+  // si validarea ar verifica o stare care nu mai e cea reala ce se va scrie
+  // (sincronizarea *_id -> text se face de un trigger SQL, dupa acest punct).
+  const idFieldsToResolve: Array<{ idField: string; textField: string; categorie: string }> = [
+    { idField: "stage_id", textField: "stage", categorie: "stage" },
+    { idField: "status_id", textField: "status", categorie: "status" },
+    { idField: "motiv_pierdere_id", textField: "motiv_pierdere", categorie: "motiv_pierdere" },
+    { idField: "motiv_amanare_id", textField: "motiv_amanare", categorie: "motiv_amanare" },
+  ];
+  const idsToLookup = idFieldsToResolve
+    .filter((f) => payload[f.idField])
+    .map((f) => payload[f.idField] as string);
+
+  if (idsToLookup.length > 0) {
+    const supabase = await createSupabaseServerClient();
+    const { data: nomRows } = await supabase
+      .from("nomenclatoare")
+      .select("id, valoare")
+      .in("id", idsToLookup);
+
+    for (const f of idFieldsToResolve) {
+      const idValue = payload[f.idField] as string | undefined;
+      if (idValue) {
+        const match = nomRows?.find((r) => r.id === idValue);
+        if (match) payload[f.textField] = match.valoare;
+      }
+    }
+  }
 
   const merged = { ...current, ...payload } as unknown as Record<string, unknown>;
   const errors = validateOpportunityBusinessRules({

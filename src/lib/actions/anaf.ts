@@ -14,7 +14,8 @@ export async function refreshAnafFinancialsAction(opportunityId: string, cui: st
   if (!data) {
     return {
       success: false,
-      message: "Eroare la conectarea cu Termene.ro. Verifica configurarea (TERMENE_USER/TERMENE_PASSWORD).",
+      message:
+        "Eroare la conectarea cu Termene.ro. Verifica daca ai completat credentialele in Setari -> Integrari (click pe avatarul tau din meniu).",
     };
   }
   if (data.cifraAfaceri === null) {
