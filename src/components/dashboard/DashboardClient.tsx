@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { TrendingUp, Target, Trophy, XCircle, Wrench, AlertTriangle } from "lucide-react";
 import {
   computeKpis,
@@ -77,6 +78,14 @@ export function DashboardClient({
             {filtered.length !== opportunities.length ? " (filtrate)" : ""}
           </p>
         </div>
+        {kpis.leadPoolCount > 0 && (
+          <Link
+            href="/pipeline"
+            className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+          >
+            + {kpis.leadPoolCount} in Lead Pool (exclus din forecast)
+          </Link>
+        )}
       </div>
 
       <div className="mb-5">

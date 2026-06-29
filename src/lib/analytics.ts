@@ -51,9 +51,15 @@ export function applyDashboardFilters(
 }
 
 export function computeKpis(opportunities: Opportunity[]) {
-  const active = opportunities.filter((o) => o.status === "Activa");
-  const won = opportunities.filter((o) => o.status === "Castigata");
-  const lost = opportunities.filter((o) => o.status === "Pierduta");
+  // B-10: Lead Pool e exclus din forecast-ul comercial - sunt suspecti reci,
+  // fara interactiune confirmata, nu oportunitati validate. Se afiseaza
+  // separat ca volum de prospecti (leadPoolCount), nu ca parte din pipeline activ.
+  const leadPool = opportunities.filter((o) => o.stage === "Lead Pool");
+  const pipelineReal = opportunities.filter((o) => o.stage !== "Lead Pool");
+
+  const active = pipelineReal.filter((o) => o.status === "Activa");
+  const won = pipelineReal.filter((o) => o.status === "Castigata");
+  const lost = pipelineReal.filter((o) => o.status === "Pierduta");
   const fataNextStep = active.filter((o) => !o.actiune || !o.data_actiune);
 
   const totalArr = active.reduce((s, o) => s + (o.arr_synergo ?? 0), 0);
@@ -64,7 +70,8 @@ export function computeKpis(opportunities: Opportunity[]) {
   const winRate = closedCount > 0 ? won.length / closedCount : 0;
 
   return {
-    totalOpportunities: opportunities.length,
+    totalOpportunities: pipelineReal.length,
+    leadPoolCount: leadPool.length,
     activeCount: active.length,
     wonCount: won.length,
     lostCount: lost.length,
@@ -179,6 +186,37 @@ export function buildTimeSeries(history: OpportunityHistoryRow[]) {
     const dateTo = `${month}-${String(lastDay).padStart(2, "0")}`;
     return { month, arr, count, dateFrom, dateTo };
   });
+}
+
+export interface StagnationInfo {
+  zileInStage: number;
+  zileDeLaUltimaActiune: number | null;
+  severitate: "ok" | "atentie" | "risc" | "critic";
+}
+
+/**
+ * B-08: calculeaza zilele in stage curent si zilele de la ultima actiune
+ * inregistrata, plus o severitate simpla (galben 7+, rosu 14+, critic 21+
+ * zile fara actiune - cf. roadmap 5.7).
+ */
+export function computeStagnation(o: Opportunity): StagnationInfo {
+  const now = Date.now();
+  const zileInStage = Math.floor((now - new Date(o.stage_changed_at).getTime()) / 86400000);
+
+  let zileDeLaUltimaActiune: number | null = null;
+  if (o.data_actiune) {
+    zileDeLaUltimaActiune = Math.floor(
+      (now - new Date(o.data_actiune.slice(0, 10)).getTime()) / 86400000
+    );
+  }
+
+  const referinta = zileDeLaUltimaActiune ?? zileInStage;
+  let severitate: StagnationInfo["severitate"] = "ok";
+  if (referinta >= 21) severitate = "critic";
+  else if (referinta >= 14) severitate = "risc";
+  else if (referinta >= 7) severitate = "atentie";
+
+  return { zileInStage, zileDeLaUltimaActiune, severitate };
 }
 
 export function upcomingActions(opportunities: Opportunity[]) {

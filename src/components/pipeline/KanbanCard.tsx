@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, AlertTriangle, AlertCircle } from "lucide-react";
+import { GripVertical, AlertTriangle, AlertCircle, Flame } from "lucide-react";
 import { STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
+import { computeStagnation } from "@/lib/analytics";
 import type { Opportunity } from "@/types/opportunity";
 
 export function KanbanCard({
@@ -36,8 +37,9 @@ export function KanbanCard({
     (opportunity.valoare_implementare_synergo ?? 0) +
     (opportunity.licenta_synergo_onpremise ?? 0);
 
-  // Risc: B-04/B-09 din roadmap - "fara next step" (Activa fara actiune/data)
-  // sau "intarziat" (actiune planificata dar data e in trecut).
+  // Risc: B-04/B-09 din roadmap - "fara next step" (Activa fara actiune/data),
+  // "intarziat" (actiune planificata dar data e in trecut), sau "stagnare"
+  // (7+/14+/21+ zile fara miscare, cf. 5.7 din roadmap).
   const todayStr = new Date().toISOString().slice(0, 10);
   const faraNextStep =
     opportunity.status === "Activa" && (!opportunity.actiune || !opportunity.data_actiune);
@@ -46,6 +48,9 @@ export function KanbanCard({
     opportunity.status_actiune === "Planificata" &&
     opportunity.data_actiune &&
     opportunity.data_actiune.slice(0, 10) < todayStr;
+  const stagnare = computeStagnation(opportunity);
+  const showStagnareBadge =
+    !faraNextStep && !intarziat && stagnare.severitate !== "ok" && opportunity.status === "Activa";
 
   const content = (
     <>
@@ -63,24 +68,55 @@ export function KanbanCard({
           {opportunity.status}
         </span>
       </div>
-      <p className="mb-2 text-[11px] text-slate-500">
+      <p className="mb-1.5 text-[11px] text-slate-500">
         {opportunity.judet ?? "—"} · {opportunity.tip_proiect ?? "—"}
       </p>
-      {(faraNextStep || intarziat) && (
+
+      {opportunity.actiune && (
+        <p className="mb-1.5 truncate text-[11px] text-slate-400">
+          <span className="text-slate-500">Next:</span> {opportunity.actiune}
+          {opportunity.data_actiune &&
+            ` · ${new Date(opportunity.data_actiune).toLocaleDateString("ro-RO")}`}
+        </p>
+      )}
+
+      {(faraNextStep || intarziat || showStagnareBadge) && (
         <div className="mb-2 flex items-center gap-1">
           {faraNextStep ? (
             <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
               <AlertTriangle size={10} />
               Fara next step
             </span>
-          ) : (
+          ) : intarziat ? (
             <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
               <AlertCircle size={10} />
               Intarziat
             </span>
+          ) : (
+            <span
+              className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+              style={{
+                backgroundColor:
+                  stagnare.severitate === "critic"
+                    ? "#EF444425"
+                    : stagnare.severitate === "risc"
+                      ? "#FB923C25"
+                      : "#FBBF2425",
+                color:
+                  stagnare.severitate === "critic"
+                    ? "#EF4444"
+                    : stagnare.severitate === "risc"
+                      ? "#FB923C"
+                      : "#FBBF24",
+              }}
+            >
+              <Flame size={10} />
+              Stagnare {stagnare.zileInStage}z
+            </span>
           )}
         </div>
       )}
+
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-[#E8007A]">
           {totalValue > 0 ? formatEur(totalValue) : "—"}

@@ -103,6 +103,7 @@ export interface Opportunity {
   // Meta
   created_at: string;
   updated_at: string;
+  stage_changed_at: string;
   created_by: string | null;
 
   // Relatie populata separat (join)
@@ -201,4 +202,25 @@ export interface Nomenclator {
   ordine: number;
   activ: boolean;
   created_at: string;
+}
+
+export type TimelineEntryType =
+  | "nota"
+  | "call"
+  | "email"
+  | "demo"
+  | "oferta_trimisa"
+  | "follow_up"
+  | "schimbare_stage"
+  | "schimbare_status"
+  | "actiune_finalizata";
+
+export interface TimelineEntry {
+  id: string;
+  opportunity_id: string;
+  tip: TimelineEntryType;
+  continut: string | null;
+  creat_de: string | null;
+  created_at: string;
+  profiles?: { full_name: string } | null;
 }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getOpportunity, getProfiles } from "@/lib/data/opportunities";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
+import { getTimeline } from "@/lib/data/timeline";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -13,6 +14,7 @@ import { PipelineStatusCard } from "@/components/overview/PipelineStatusCard";
 import { ActiuneCard } from "@/components/overview/ActiuneCard";
 import { PricingCard } from "@/components/overview/PricingCard";
 import { SursaCard } from "@/components/overview/SursaCard";
+import { TimelineCard } from "@/components/overview/TimelineCard";
 
 function valori(items: { valoare: string }[] | undefined): string[] {
   return (items ?? []).map((i) => i.valoare);
@@ -31,6 +33,8 @@ export default async function OpportunityOverviewPage({
   ]);
 
   if (!o) notFound();
+
+  const timeline = await getTimeline(id);
 
   const stageColor = nomenclatoare["stage"]?.find((s) => s.valoare === o.stage)?.culoare
     ?? STAGE_COLORS[o.stage]
@@ -108,6 +112,7 @@ export default async function OpportunityOverviewPage({
         />
         <PricingCard o={o} tipuriProiect={valori(nomenclatoare["tip_proiect"])} />
         <SursaCard o={o} canaleIntrare={valori(nomenclatoare["canal_intrare"])} />
+        <TimelineCard opportunityId={o.id} entries={timeline} />
       </div>
 
       <p className="mt-4 text-[11px] text-slate-600">

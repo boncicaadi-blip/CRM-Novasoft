@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { AlertTriangle, AlertCircle, Flame } from "lucide-react";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
+import { computeStagnation } from "@/lib/analytics";
 import type { Opportunity } from "@/types/opportunity";
 
 type SortKey =
@@ -61,6 +63,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
               <th className="whitespace-nowrap px-3 py-2.5 font-medium">Domeniu</th>
               <Th label="Stage" onClick={() => toggleSort("stage")} />
               <Th label="Status" onClick={() => toggleSort("status")} />
+              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Risc</th>
               <th className="whitespace-nowrap px-3 py-2.5 font-medium">Substatus</th>
               <th className="whitespace-nowrap px-3 py-2.5 font-medium">Responsabil</th>
               <th className="whitespace-nowrap px-3 py-2.5 font-medium">Judet</th>
@@ -118,6 +121,9 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
                     {o.status}
                   </span>
                 </td>
+                <td className="whitespace-nowrap px-3 py-2.5">
+                  <RiskBadge o={o} />
+                </td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
                   {o.substatus ?? "—"}
                 </td>
@@ -153,7 +159,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={16} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={17} className="px-3 py-8 text-center text-slate-500">
                   Nicio oportunitate gasita.
                 </td>
               </tr>
@@ -162,7 +168,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
           {sorted.length > 0 && (
             <tfoot>
               <tr className="border-t border-white/10 bg-white/[0.02] font-medium">
-                <td className="sticky left-0 bg-[#111535] px-3 py-2.5 text-white" colSpan={12}>
+                <td className="sticky left-0 bg-[#111535] px-3 py-2.5 text-white" colSpan={13}>
                   Total ({sorted.length} oportunitati)
                 </td>
                 <td className="px-3 py-2.5 text-right font-mono text-slate-200">
@@ -205,4 +211,48 @@ function Th({
       {label}
     </th>
   );
+}
+
+/** Badge de risc (B-09): fara next step, intarziat, sau stagnare - aceeasi logica ca pe KanbanCard. */
+function RiskBadge({ o }: { o: Opportunity }) {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const faraNextStep = o.status === "Activa" && (!o.actiune || !o.data_actiune);
+  const intarziat =
+    !faraNextStep &&
+    o.status_actiune === "Planificata" &&
+    o.data_actiune &&
+    o.data_actiune.slice(0, 10) < todayStr;
+  const stagnare = computeStagnation(o);
+  const showStagnareBadge = !faraNextStep && !intarziat && stagnare.severitate !== "ok" && o.status === "Activa";
+
+  if (faraNextStep) {
+    return (
+      <span className="flex w-fit items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+        <AlertTriangle size={10} />
+        Fara next step
+      </span>
+    );
+  }
+  if (intarziat) {
+    return (
+      <span className="flex w-fit items-center gap-1 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
+        <AlertCircle size={10} />
+        Intarziat
+      </span>
+    );
+  }
+  if (showStagnareBadge) {
+    const color =
+      stagnare.severitate === "critic" ? "#EF4444" : stagnare.severitate === "risc" ? "#FB923C" : "#FBBF24";
+    return (
+      <span
+        className="flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+        style={{ backgroundColor: `${color}25`, color }}
+      >
+        <Flame size={10} />
+        {stagnare.zileInStage}z
+      </span>
+    );
+  }
+  return <span className="text-xs text-slate-600">—</span>;
 }
