@@ -97,7 +97,7 @@ export function RomaniaMap({
   const hoveredDatum = hovered ? dataByJudet.get(normalizeJudetName(hovered)) : null;
 
   return (
-    <div className="relative mx-auto" style={{ maxWidth: 520 }}>
+    <div className="relative" style={{ maxWidth: 680 }}>
       <p className="mb-2 text-[11px] text-slate-500">
         Click pentru a selecta un judet. Ctrl/Cmd+Click pentru selectie multipla.
       </p>

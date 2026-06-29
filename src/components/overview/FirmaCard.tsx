@@ -37,14 +37,20 @@ export function FirmaCard({
   const [isPending, startTransition] = useTransition();
   const [isRefreshingAnaf, setIsRefreshingAnaf] = useState(false);
   const [anafMessage, setAnafMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   useSaveShortcut(formRef, editing);
 
   function handleSubmit(formData: FormData) {
     formData.set("__fields", FIELDS.join(","));
+    setError(null);
     startTransition(async () => {
-      await updateOpportunitySectionAction(o.id, formData);
-      setEditing(false);
+      try {
+        await updateOpportunitySectionAction(o.id, formData);
+        setEditing(false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "A aparut o eroare la salvare.");
+      }
     });
   }
 
@@ -140,6 +146,10 @@ export function FirmaCard({
           <LabeledInput label="Nr angajati">
             <TextInput type="number" name="nr_angajati" defaultValue={o.nr_angajati ?? ""} />
           </LabeledInput>
+
+          {error && (
+            <p className="rounded-md bg-red-500/10 px-2.5 py-2 text-xs text-red-400">{error}</p>
+          )}
 
           <div className="flex items-center gap-2 pt-1">
             <button

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
+import { GripVertical, AlertTriangle, AlertCircle } from "lucide-react";
 import { STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import type { Opportunity } from "@/types/opportunity";
@@ -36,6 +36,17 @@ export function KanbanCard({
     (opportunity.valoare_implementare_synergo ?? 0) +
     (opportunity.licenta_synergo_onpremise ?? 0);
 
+  // Risc: B-04/B-09 din roadmap - "fara next step" (Activa fara actiune/data)
+  // sau "intarziat" (actiune planificata dar data e in trecut).
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const faraNextStep =
+    opportunity.status === "Activa" && (!opportunity.actiune || !opportunity.data_actiune);
+  const intarziat =
+    !faraNextStep &&
+    opportunity.status_actiune === "Planificata" &&
+    opportunity.data_actiune &&
+    opportunity.data_actiune.slice(0, 10) < todayStr;
+
   const content = (
     <>
       <div className="mb-1.5 flex items-start justify-between gap-2">
@@ -55,6 +66,21 @@ export function KanbanCard({
       <p className="mb-2 text-[11px] text-slate-500">
         {opportunity.judet ?? "—"} · {opportunity.tip_proiect ?? "—"}
       </p>
+      {(faraNextStep || intarziat) && (
+        <div className="mb-2 flex items-center gap-1">
+          {faraNextStep ? (
+            <span className="flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+              <AlertTriangle size={10} />
+              Fara next step
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
+              <AlertCircle size={10} />
+              Intarziat
+            </span>
+          )}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <span className="font-mono text-xs text-[#E8007A]">
           {totalValue > 0 ? formatEur(totalValue) : "—"}

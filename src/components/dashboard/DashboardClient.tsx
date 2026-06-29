@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { TrendingUp, Target, Trophy, XCircle, Wrench } from "lucide-react";
+import { TrendingUp, Target, Trophy, XCircle, Wrench, AlertTriangle } from "lucide-react";
 import {
   computeKpis,
   groupByStage,
@@ -90,7 +90,7 @@ export function DashboardClient({
         />
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <KpiCard
           label="ARR activ"
           value={formatEur(kpis.totalArr)}
@@ -123,6 +123,14 @@ export function DashboardClient({
           sublabel={`din ${kpis.totalOpportunities} total`}
           icon={<XCircle size={16} />}
           accent="#EF4444"
+        />
+        <KpiCard
+          label="Fara next step"
+          value={String(kpis.faraNextStepCount)}
+          sublabel="Click pentru lista completa"
+          icon={<AlertTriangle size={16} />}
+          accent="#F59E0B"
+          href="/actiuni"
         />
       </div>
 

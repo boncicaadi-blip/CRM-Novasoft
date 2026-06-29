@@ -98,6 +98,8 @@ export default async function OpportunityOverviewPage({
           o={o}
           stages={nomenclatoare["stage"] ?? []}
           statusuri={nomenclatoare["status"] ?? []}
+          motivePierdere={nomenclatoare["motiv_pierdere"] ?? []}
+          motiveAmanare={nomenclatoare["motiv_amanare"] ?? []}
         />
         <ActiuneCard
           o={o}

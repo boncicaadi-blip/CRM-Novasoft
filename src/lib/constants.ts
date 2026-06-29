@@ -2,6 +2,7 @@
 // Le poti extinde oricand - sunt simple array-uri de string-uri, nu enum-uri rigide in DB.
 
 export const STAGES = [
+  "Lead Pool",
   "Suspect",
   "Calificare",
   "Programare prezentare",
@@ -14,6 +15,7 @@ export const STAGES = [
 export type Stage = (typeof STAGES)[number];
 
 export const STAGE_COLORS: Record<string, string> = {
+  "Lead Pool": "#64748B",
   Suspect: "#94A3B8",
   Calificare: "#60A5FA",
   "Programare prezentare": "#38BDF8",
@@ -115,6 +117,7 @@ export const SUBSTATUS_SUGGESTIONS: Record<string, string[]> = {
 };
 
 export const PROBABILITY_BY_STAGE: Record<string, number> = {
+  "Lead Pool": 0.02,
   Suspect: 0.05,
   Calificare: 0.15,
   "Programare prezentare": 0.2,
@@ -134,4 +137,6 @@ export const NOMENCLATOR_CATEGORII: { value: string; label: string; hasColor: bo
   { value: "canal_intrare", label: "Canal intrare", hasColor: false, hasProbability: false },
   { value: "actiune", label: "Actiune (follow-up)", hasColor: false, hasProbability: false },
   { value: "status_actiune", label: "Status actiune", hasColor: false, hasProbability: false },
+  { value: "motiv_pierdere", label: "Motiv pierdere", hasColor: false, hasProbability: false },
+  { value: "motiv_amanare", label: "Motiv amanare", hasColor: false, hasProbability: false },
 ];

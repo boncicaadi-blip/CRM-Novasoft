@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
+  ListChecks,
   LayoutDashboard,
   GitBranch,
   CalendarDays,
@@ -18,12 +19,16 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS = [
+  { href: "/actiuni", label: "Actiuni", icon: ListChecks },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pipeline", label: "Pipeline", icon: GitBranch },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/dashboard/harta", label: "Harta", icon: Map },
   { href: "/setari/nomenclatoare", label: "Setari", icon: Settings },
 ];
+
+/** Pe mobil aratam doar 5 din cele 6, ca sa nu fie prea inghesuit - Setari ramane accesibil din meniul de Profil pe desktop, sau direct la /setari/nomenclatoare pe mobil prin url. */
+const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((i) => i.href !== "/setari/nomenclatoare");
 
 /** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta. */
 function isNavItemActive(pathname: string, href: string): boolean {
@@ -177,7 +182,7 @@ export function Sidebar({
 
       {/* Bottom nav mobil (sub md) */}
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-[#111535] md:hidden">
-        {NAV_ITEMS.map((item) => {
+        {MOBILE_NAV_ITEMS.map((item) => {
           const isActive = isNavItemActive(pathname, item.href);
           const Icon = item.icon;
           return (

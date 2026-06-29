@@ -46,6 +46,11 @@ export interface Opportunity {
   substatus: string | null;
   motivatia_substatusului: string | null;
   probability: number;
+  motiv_pierdere_id: string | null;
+  motiv_pierdere: string | null;
+  motiv_amanare_id: string | null;
+  motiv_amanare: string | null;
+  data_revenire: string | null;
 
   // Actiune curenta
   actiune: string | null;
@@ -179,7 +184,9 @@ export type NomenclatorCategorie =
   | "tip_proiect"
   | "canal_intrare"
   | "actiune"
-  | "status_actiune";
+  | "status_actiune"
+  | "motiv_pierdere"
+  | "motiv_amanare";
 
 export interface Nomenclator {
   id: string;

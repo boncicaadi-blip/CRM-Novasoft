@@ -26,6 +26,7 @@ const FIELDS = [
 export function PricingCard({ o, tipuriProiect }: { o: Opportunity; tipuriProiect: string[] }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   useSaveShortcut(formRef, editing);
 
@@ -63,9 +64,14 @@ export function PricingCard({ o, tipuriProiect }: { o: Opportunity; tipuriProiec
 
   function handleSubmit(formData: FormData) {
     formData.set("__fields", FIELDS.join(","));
+    setError(null);
     startTransition(async () => {
-      await updateOpportunitySectionAction(o.id, formData);
-      setEditing(false);
+      try {
+        await updateOpportunitySectionAction(o.id, formData);
+        setEditing(false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "A aparut o eroare la salvare.");
+      }
     });
   }
 
@@ -216,6 +222,10 @@ export function PricingCard({ o, tipuriProiect }: { o: Opportunity; tipuriProiec
               defaultValue={o.valoare_implementare_synergo}
             />
           </LabeledInput>
+
+          {error && (
+            <p className="rounded-md bg-red-500/10 px-2.5 py-2 text-xs text-red-400">{error}</p>
+          )}
 
           <div className="flex items-center gap-2 pt-1">
             <button

@@ -54,6 +54,7 @@ export function computeKpis(opportunities: Opportunity[]) {
   const active = opportunities.filter((o) => o.status === "Activa");
   const won = opportunities.filter((o) => o.status === "Castigata");
   const lost = opportunities.filter((o) => o.status === "Pierduta");
+  const fataNextStep = active.filter((o) => !o.actiune || !o.data_actiune);
 
   const totalArr = active.reduce((s, o) => s + (o.arr_synergo ?? 0), 0);
   const totalMrr = active.reduce((s, o) => s + (o.mrr_synergo ?? 0), 0);
@@ -67,6 +68,7 @@ export function computeKpis(opportunities: Opportunity[]) {
     activeCount: active.length,
     wonCount: won.length,
     lostCount: lost.length,
+    faraNextStepCount: fataNextStep.length,
     totalArr,
     totalMrr,
     weightedForecast,
@@ -194,6 +196,75 @@ export function upcomingActions(opportunities: Opportunity[]) {
     }))
     .sort((a, b) => a.data.localeCompare(b.data))
     .slice(0, 8);
+}
+
+export type ActionWorkItemFilter = "azi" | "intarziate" | "saptamana" | "fara_next_step" | "finalizate";
+
+export interface ActionWorkItem {
+  opportunity: Opportunity;
+  daysOverdue: number;
+}
+
+/**
+ * Pagina operationala "Actiuni" (B-05 din roadmap): clasifica oportunitatile
+ * active in functie de data actiunii lor curente, plus cele fara next step
+ * deloc completat - exact regula B-04 ("nicio oportunitate activa fara
+ * next step"), dar aici afisata ca lista de lucru, nu ca eroare de salvare.
+ */
+export function buildActionWorkItems(
+  opportunities: Opportunity[],
+  filter: ActionWorkItemFilter
+): ActionWorkItem[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().slice(0, 10);
+  const in7Days = new Date(today);
+  in7Days.setDate(in7Days.getDate() + 7);
+  const in7DaysStr = in7Days.toISOString().slice(0, 10);
+
+  let rows: Opportunity[];
+
+  if (filter === "fara_next_step") {
+    rows = opportunities.filter((o) => o.status === "Activa" && (!o.actiune || !o.data_actiune));
+  } else if (filter === "finalizate") {
+    rows = opportunities.filter((o) => o.status_actiune === "Finalizata");
+  } else {
+    rows = opportunities.filter((o) => o.data_actiune && o.status_actiune === "Planificata");
+    if (filter === "azi") {
+      rows = rows.filter((o) => o.data_actiune!.slice(0, 10) === todayStr);
+    } else if (filter === "intarziate") {
+      rows = rows.filter((o) => o.data_actiune!.slice(0, 10) < todayStr);
+    } else if (filter === "saptamana") {
+      rows = rows.filter(
+        (o) => o.data_actiune!.slice(0, 10) >= todayStr && o.data_actiune!.slice(0, 10) <= in7DaysStr
+      );
+    }
+  }
+
+  return rows
+    .map((o) => {
+      const daysOverdue = o.data_actiune
+        ? Math.floor((today.getTime() - new Date(o.data_actiune.slice(0, 10)).getTime()) / 86400000)
+        : 0;
+      return { opportunity: o, daysOverdue };
+    })
+    .sort((a, b) => {
+      // Intarziate primele, apoi valoare forecast descrescatoare (cf. cerinta B-05)
+      if (a.daysOverdue !== b.daysOverdue) return b.daysOverdue - a.daysOverdue;
+      const valA = (a.opportunity.forecast_total_saas ?? 0) + (a.opportunity.forecast_total_onpremise ?? 0);
+      const valB = (b.opportunity.forecast_total_saas ?? 0) + (b.opportunity.forecast_total_onpremise ?? 0);
+      return valB - valA;
+    });
+}
+
+export function countActionWorkItems(opportunities: Opportunity[]) {
+  return {
+    azi: buildActionWorkItems(opportunities, "azi").length,
+    intarziate: buildActionWorkItems(opportunities, "intarziate").length,
+    saptamana: buildActionWorkItems(opportunities, "saptamana").length,
+    faraNextStep: buildActionWorkItems(opportunities, "fara_next_step").length,
+    finalizate: buildActionWorkItems(opportunities, "finalizate").length,
+  };
 }
 
 export type ActionCalendarStatus = "restanta" | "viitoare" | "finalizata";

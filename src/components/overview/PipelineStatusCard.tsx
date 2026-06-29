@@ -16,6 +16,9 @@ const FIELDS = [
   "substatus",
   "motivatia_substatusului",
   "probability",
+  "motiv_pierdere_id",
+  "motiv_amanare_id",
+  "data_revenire",
 ];
 
 const optionStyle = { backgroundColor: "#111535", color: "#F1F5F9" };
@@ -34,13 +37,18 @@ export function PipelineStatusCard({
   o,
   stages,
   statusuri,
+  motivePierdere,
+  motiveAmanare,
 }: {
   o: Opportunity;
   stages: Nomenclator[];
   statusuri: Nomenclator[];
+  motivePierdere: Nomenclator[];
+  motiveAmanare: Nomenclator[];
 }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   useSaveShortcut(formRef, editing);
 
@@ -66,9 +74,14 @@ export function PipelineStatusCard({
 
   function handleSubmit(formData: FormData) {
     formData.set("__fields", FIELDS.join(","));
+    setError(null);
     startTransition(async () => {
-      await updateOpportunitySectionAction(o.id, formData);
-      setEditing(false);
+      try {
+        await updateOpportunitySectionAction(o.id, formData);
+        setEditing(false);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "A aparut o eroare la salvare.");
+      }
     });
   }
 
@@ -141,6 +154,54 @@ export function PipelineStatusCard({
             </div>
           </LabeledInput>
 
+          {currentStatusValoare === "Pierduta" && (
+            <LabeledInput label="Motiv pierdere *">
+              <select
+                name="motiv_pierdere_id"
+                defaultValue={o.motiv_pierdere_id ?? ""}
+                className="w-full rounded-md border border-[#E8007A]/40 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+              >
+                <option value="" style={optionStyle}>
+                  Selecteaza...
+                </option>
+                {motivePierdere.map((m) => (
+                  <option key={m.id} value={m.id} style={optionStyle}>
+                    {m.valoare}
+                  </option>
+                ))}
+              </select>
+            </LabeledInput>
+          )}
+
+          {currentStatusValoare === "Amanata" && (
+            <>
+              <LabeledInput label="Motiv amanare *">
+                <select
+                  name="motiv_amanare_id"
+                  defaultValue={o.motiv_amanare_id ?? ""}
+                  className="w-full rounded-md border border-[#E8007A]/40 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                >
+                  <option value="" style={optionStyle}>
+                    Selecteaza...
+                  </option>
+                  {motiveAmanare.map((m) => (
+                    <option key={m.id} value={m.id} style={optionStyle}>
+                      {m.valoare}
+                    </option>
+                  ))}
+                </select>
+              </LabeledInput>
+              <LabeledInput label="Data revenire *">
+                <TextInput
+                  type="date"
+                  name="data_revenire"
+                  defaultValue={toDateInputValue(o.data_revenire)}
+                  className="border-[#E8007A]/40"
+                />
+              </LabeledInput>
+            </>
+          )}
+
           <LabeledInput label="Substatus">
             <input
               name="substatus"
@@ -171,6 +232,17 @@ export function PipelineStatusCard({
               onChange={(e) => setProbability(Number(e.target.value))}
             />
           </LabeledInput>
+
+          {currentStatusValoare === "Activa" && (
+            <p className="rounded-md bg-[#0070F3]/10 px-2.5 py-2 text-[11px] text-[#0070F3]">
+              Status Activa necesita Actiune, Data actiunii si Responsabil completate (caseta
+              &quot;Actiune curenta&quot;).
+            </p>
+          )}
+
+          {error && (
+            <p className="rounded-md bg-red-500/10 px-2.5 py-2 text-xs text-red-400">{error}</p>
+          )}
 
           <div className="flex items-center gap-2 pt-1">
             <button
@@ -220,6 +292,13 @@ export function PipelineStatusCard({
               </span>
             }
           />
+          {o.status === "Pierduta" && <InfoRow label="Motiv pierdere" value={o.motiv_pierdere} />}
+          {o.status === "Amanata" && (
+            <>
+              <InfoRow label="Motiv amanare" value={o.motiv_amanare} />
+              <InfoRow label="Data revenire" value={fmtDate(o.data_revenire)} />
+            </>
+          )}
           <InfoRow label="Substatus" value={o.substatus} />
           <InfoRow label="Motivatia substatusului" value={o.motivatia_substatusului} />
           <InfoRow label="Probability" value={`${Math.round((o.probability ?? 0) * 100)}%`} />

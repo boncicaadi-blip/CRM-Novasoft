@@ -66,8 +66,8 @@ export function MapDashboardClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
           <RomaniaMap
             geoData={geoData}
             data={data}

@@ -6,7 +6,9 @@ import {
   createOpportunity,
   updateOpportunity,
   deleteOpportunity,
+  getOpportunity,
 } from "@/lib/data/opportunities";
+import { validateOpportunityBusinessRules } from "@/lib/validation";
 import type { OpportunityInsert } from "@/types/opportunity";
 
 function parsePayload(formData: FormData): OpportunityInsert {
@@ -60,6 +62,11 @@ function parsePayload(formData: FormData): OpportunityInsert {
     substatus: get("substatus"),
     motivatia_substatusului: get("motivatia_substatusului"),
     probability: getNum("probability") ?? 0,
+    motiv_pierdere: get("motiv_pierdere"),
+    motiv_pierdere_id: get("motiv_pierdere_id"),
+    motiv_amanare: get("motiv_amanare"),
+    motiv_amanare_id: get("motiv_amanare_id"),
+    data_revenire: get("data_revenire"),
 
     actiune: get("actiune"),
     actiune_id: get("actiune_id"),
@@ -95,6 +102,17 @@ function parsePayload(formData: FormData): OpportunityInsert {
 
 export async function createOpportunityAction(formData: FormData) {
   const payload = parsePayload(formData);
+  const errors = validateOpportunityBusinessRules({
+    status: payload.status ?? "Activa",
+    actiune: payload.actiune ?? null,
+    data_actiune: payload.data_actiune ?? null,
+    responsabil_vanzare_id: payload.responsabil_vanzare_id ?? null,
+    motiv_pierdere: payload.motiv_pierdere ?? null,
+    motiv_amanare: payload.motiv_amanare ?? null,
+    data_revenire: payload.data_revenire ?? null,
+  });
+  if (errors.length > 0) throw new Error(errors.join(" "));
+
   const opp = await createOpportunity(payload);
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
@@ -103,6 +121,17 @@ export async function createOpportunityAction(formData: FormData) {
 
 export async function updateOpportunityAction(id: string, formData: FormData) {
   const payload = parsePayload(formData);
+  const errors = validateOpportunityBusinessRules({
+    status: payload.status ?? "Activa",
+    actiune: payload.actiune ?? null,
+    data_actiune: payload.data_actiune ?? null,
+    responsabil_vanzare_id: payload.responsabil_vanzare_id ?? null,
+    motiv_pierdere: payload.motiv_pierdere ?? null,
+    motiv_amanare: payload.motiv_amanare ?? null,
+    data_revenire: payload.data_revenire ?? null,
+  });
+  if (errors.length > 0) throw new Error(errors.join(" "));
+
   await updateOpportunity(id, payload);
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
@@ -179,10 +208,77 @@ export async function updateOpportunitySectionAction(
     }
   }
 
+  // Validam starea FINALA a oportunitatii (curenta din DB + modificarile din
+  // acest card), nu doar campurile editate aici - altfel un card care nu
+  // contine status/actiune ar putea "trece" validarea fara sa vada
+  // problema reala (ex. editezi Firma pe o oportunitate Activa fara next step).
+  const current = await getOpportunity(id);
+  if (!current) throw new Error("Oportunitatea nu a fost gasita.");
+
+  const merged = { ...current, ...payload } as unknown as Record<string, unknown>;
+  const errors = validateOpportunityBusinessRules({
+    status: (merged.status as string) ?? "Activa",
+    actiune: (merged.actiune as string | null) ?? null,
+    data_actiune: (merged.data_actiune as string | null) ?? null,
+    responsabil_vanzare_id: (merged.responsabil_vanzare_id as string | null) ?? null,
+    motiv_pierdere: (merged.motiv_pierdere as string | null) ?? null,
+    motiv_amanare: (merged.motiv_amanare as string | null) ?? null,
+    data_revenire: (merged.data_revenire as string | null) ?? null,
+  });
+  if (errors.length > 0) throw new Error(errors.join(" "));
+
   await updateOpportunity(id, payload);
   revalidatePath(`/oportunitati/${id}`);
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
+}
+
+/**
+ * B-01 din modul Actiuni: finalizeaza actiunea curenta, cere rezultat
+ * obligatoriu (salvat in observatii_actiune) si, daca e dat, programeaza
+ * automat urmatorul pas (next step).
+ */
+export async function finalizeActionAction(
+  opportunityId: string,
+  rezultat: string,
+  nextStep?: { actiune: string; dataActiune: string }
+) {
+  const updates: Record<string, unknown> = {
+    status_actiune: "Finalizata",
+    data_finalizare_actiune: new Date().toISOString().slice(0, 10),
+    observatii_actiune: rezultat,
+  };
+
+  if (nextStep) {
+    updates.actiune = nextStep.actiune;
+    updates.data_actiune = nextStep.dataActiune;
+    updates.status_actiune = "Planificata"; // urmatoarea actiune e activa, nu finalizata
+  }
+
+  await updateOpportunity(opportunityId, updates);
+  revalidatePath("/actiuni");
+  revalidatePath(`/oportunitati/${opportunityId}`);
+  revalidatePath("/calendar");
+}
+
+/** Amana actiunea curenta cu N zile, pastrand aceeasi actiune/responsabil. */
+export async function postponeActionAction(opportunityId: string, days: number) {
+  const opp = await getOpportunity(opportunityId);
+  if (!opp || !opp.data_actiune) return;
+
+  const base = new Date(opp.data_actiune.slice(0, 10));
+  base.setDate(base.getDate() + days);
+
+  await updateOpportunity(opportunityId, { data_actiune: base.toISOString().slice(0, 10) });
+  revalidatePath("/actiuni");
+  revalidatePath("/calendar");
+}
+
+/** Reprogrameaza actiunea curenta la o data specifica aleasa de utilizator. */
+export async function rescheduleActionAction(opportunityId: string, newDate: string) {
+  await updateOpportunity(opportunityId, { data_actiune: newDate });
+  revalidatePath("/actiuni");
+  revalidatePath("/calendar");
 }
 
 export async function deleteOpportunityAction(id: string) {
