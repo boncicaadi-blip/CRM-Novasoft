@@ -1,10 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { LayoutDashboard, GitBranch, CalendarDays, Map, Settings, Plus, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  GitBranch,
+  CalendarDays,
+  Map,
+  Settings,
+  Plus,
+  LogOut,
+  User,
+  Users,
+} from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -20,10 +31,17 @@ function isNavItemActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
-export function Sidebar({ userName }: { userName: string }) {
+export function Sidebar({
+  userName,
+  isAdmin = false,
+}: {
+  userName: string;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -52,6 +70,13 @@ export function Sidebar({ userName }: { userName: string }) {
           >
             <Plus size={14} />
             Noua
+          </Link>
+          <Link
+            href="/profil"
+            title="Profilul meu"
+            className="rounded-md p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+          >
+            <User size={16} />
           </Link>
           <button
             onClick={handleLogout}
@@ -106,12 +131,39 @@ export function Sidebar({ userName }: { userName: string }) {
           })}
         </nav>
 
-        <div className="border-t border-white/10 pt-3">
-          <div className="flex items-center gap-2 px-2 py-1.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-slate-200">
-              {userName.charAt(0).toUpperCase()}
+        <div className="relative border-t border-white/10 pt-3">
+          {menuOpen && (
+            <div className="absolute bottom-full left-0 mb-1 w-full rounded-lg border border-white/10 bg-[#161B45] p-1 shadow-xl">
+              <Link
+                href="/profil"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+              >
+                <User size={15} />
+                Profilul meu
+              </Link>
+              {isAdmin && (
+                <Link
+                  href="/setari/utilizatori"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                >
+                  <Users size={15} />
+                  Utilizatori
+                </Link>
+              )}
             </div>
-            <p className="flex-1 truncate text-sm text-slate-300">{userName}</p>
+          )}
+          <div className="flex items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-white/5">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="flex flex-1 items-center gap-2 text-left"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-slate-200">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+              <p className="flex-1 truncate text-sm text-slate-300">{userName}</p>
+            </button>
             <button
               onClick={handleLogout}
               title="Deconectare"

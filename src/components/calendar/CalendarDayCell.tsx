@@ -37,7 +37,7 @@ export function CalendarDayCell({
         isOver ? "bg-[#0070F3]/10 ring-1 ring-inset ring-[#0070F3]" : "hover:bg-white/[0.02]"
       }`}
     >
-      <span className={`mb-1 text-[11px] sm:text-xs ${isToday ? "font-bold text-[#E8007A]" : "text-slate-400"}`}>
+      <span className={`mb-1 text-sm font-medium sm:text-base ${isToday ? "font-bold text-[#E8007A]" : "text-slate-300"}`}>
         {format(day, "d")}
       </span>
 

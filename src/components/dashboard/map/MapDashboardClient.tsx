@@ -5,10 +5,8 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { normalizeJudetName } from "@/lib/geo";
-import { groupByStatus } from "@/lib/analytics";
 import { STAGE_COLORS } from "@/lib/constants";
 import { RomaniaMap } from "./RomaniaMap";
-import { StatusChart } from "@/components/dashboard/StatusChart";
 import type { JudetMapDatum } from "@/lib/analytics";
 import type { Opportunity } from "@/types/opportunity";
 import type { FeatureCollection, Geometry } from "geojson";
@@ -40,11 +38,6 @@ export function MapDashboardClient({
       (o) => o.judet && selectedNormalized.has(normalizeJudetName(o.judet))
     );
   }, [opportunities, selectedNormalized, selectedJudete]);
-
-  const statusDataForSelection = useMemo(
-    () => groupByStatus(selectedJudete.length > 0 ? opportunitiesInSelection : opportunities),
-    [opportunitiesInSelection, opportunities, selectedJudete]
-  );
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -151,11 +144,6 @@ export function MapDashboardClient({
             </div>
           )}
         </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2" />
-        <StatusChart data={statusDataForSelection} />
       </div>
     </div>
   );

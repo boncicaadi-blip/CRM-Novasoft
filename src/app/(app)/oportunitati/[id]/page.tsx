@@ -6,6 +6,7 @@ import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
+import { BackButton } from "@/components/BackButton";
 import { FirmaCard } from "@/components/overview/FirmaCard";
 import { CalificareCard } from "@/components/overview/CalificareCard";
 import { PipelineStatusCard } from "@/components/overview/PipelineStatusCard";
@@ -40,6 +41,7 @@ export default async function OpportunityOverviewPage({
 
   return (
     <div className="px-3 py-4 sm:px-6">
+      <BackButton />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link

@@ -4,8 +4,8 @@
 export const STAGES = [
   "Suspect",
   "Calificare",
-  "Prezentare",
   "Programare prezentare",
+  "Prezentare",
   "Ofertare",
   "Negociere",
   "Contractare",

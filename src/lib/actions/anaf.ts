@@ -11,14 +11,21 @@ import { updateOpportunity } from "@/lib/data/opportunities";
  */
 export async function refreshAnafFinancialsAction(opportunityId: string, cui: string) {
   const data = await fetchAnafFinancials(cui);
-  if (!data || data.cifraAfaceri === null) {
-    return { success: false, message: "Nu am gasit date financiare pentru acest CUI." };
+  if (!data) {
+    return {
+      success: false,
+      message: "Eroare la conectarea cu Termene.ro. Verifica configurarea (TERMENE_USER/TERMENE_PASSWORD).",
+    };
+  }
+  if (data.cifraAfaceri === null) {
+    return { success: false, message: `Nu am gasit date financiare pentru acest CUI${data.numeFirma ? ` (${data.numeFirma})` : ""}.` };
   }
 
   await updateOpportunity(opportunityId, {
     cifra_afaceri: data.cifraAfaceri,
     cifra_afaceri_an: data.an,
     cifra_afaceri_actualizat_la: new Date().toISOString(),
+    nr_angajati: data.numarAngajati ?? undefined,
   });
 
   revalidatePath(`/oportunitati/${opportunityId}`);

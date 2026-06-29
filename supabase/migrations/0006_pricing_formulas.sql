@@ -32,17 +32,17 @@ alter table public.opportunities disable trigger trg_record_history;
 -- Coloanele generate originale (din 0001_init.sql) trebuie inlocuite -
 -- Postgres nu permite ALTER pe o generated column, trebuie drop + recreate.
 
-alter table public.opportunities drop column if exists valoare_saas_anuala;
-alter table public.opportunities drop column if exists arr_synergo;
-alter table public.opportunities drop column if exists valoare_pret_per_user;
-alter table public.opportunities drop column if exists licenta_synergo_onpremise;
-alter table public.opportunities drop column if exists valoare_mentenanta_lunara_onpremise;
 alter table public.opportunities drop column if exists forecast_implementare;
 alter table public.opportunities drop column if exists forecast_licente_onpremise;
 alter table public.opportunities drop column if exists forecast_mentenanta_onpremise_lunar;
 alter table public.opportunities drop column if exists forecast_saas_lunar;
 alter table public.opportunities drop column if exists forecast_total_saas;
 alter table public.opportunities drop column if exists forecast_total_onpremise;
+alter table public.opportunities drop column if exists valoare_saas_anuala;
+alter table public.opportunities drop column if exists arr_synergo;
+alter table public.opportunities drop column if exists valoare_pret_per_user;
+alter table public.opportunities drop column if exists licenta_synergo_onpremise;
+alter table public.opportunities drop column if exists valoare_mentenanta_lunara_onpremise;
 
 -- --- SaaS: calculate ---
 

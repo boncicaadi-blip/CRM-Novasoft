@@ -28,6 +28,7 @@ export function RomaniaMap({
   onSelectionChange: (judete: string[]) => void;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
 
   const dataByJudet = useMemo(() => {
     const map = new Map<string, JudetMapDatum>();
@@ -88,14 +89,25 @@ export function RomaniaMap({
     }
   }
 
+  function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  }
+
   const hoveredDatum = hovered ? dataByJudet.get(normalizeJudetName(hovered)) : null;
 
   return (
-    <div className="relative">
+    <div className="relative mx-auto" style={{ maxWidth: 520 }}>
       <p className="mb-2 text-[11px] text-slate-500">
         Click pentru a selecta un judet. Ctrl/Cmd+Click pentru selectie multipla.
       </p>
-      <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img" aria-label="Harta Romaniei cu oportunitati pe judet">
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        className="w-full"
+        role="img"
+        aria-label="Harta Romaniei cu oportunitati pe judet"
+        onMouseMove={handleMouseMove}
+      >
         {geoData.features.map((feature) => {
           const name = feature.properties.name;
           const path = pathGenerator(feature) ?? "";
@@ -117,21 +129,27 @@ export function RomaniaMap({
         })}
       </svg>
 
-      {hoveredDatum && (
-        <div className="pointer-events-none absolute left-3 top-3 rounded-lg border border-white/20 bg-[#111535] px-3 py-2 text-xs shadow-xl">
-          <p className="mb-1 font-medium text-white">{hoveredDatum.judet}</p>
-          <p className="text-slate-400">
-            Oportunitati: <span className="text-slate-200">{hoveredDatum.count}</span>
-          </p>
-          <p className="text-slate-400">
-            ARR: <span className="font-mono text-[#E8007A]">{formatEur(hoveredDatum.arr)}</span>
-          </p>
-        </div>
-      )}
-      {hovered && !hoveredDatum && (
-        <div className="pointer-events-none absolute left-3 top-3 rounded-lg border border-white/20 bg-[#111535] px-3 py-2 text-xs shadow-xl">
-          <p className="font-medium text-white">{hovered}</p>
-          <p className="text-slate-500">Nicio oportunitate</p>
+      {hovered && mousePos && (
+        <div
+          className="pointer-events-none absolute rounded-lg border border-white/20 bg-[#111535] px-3 py-2 text-xs shadow-xl"
+          style={{
+            left: Math.min(mousePos.x + 12, 400),
+            top: Math.max(mousePos.y - 50, 0),
+          }}
+        >
+          <p className="mb-1 font-medium text-white">{hovered}</p>
+          {hoveredDatum ? (
+            <>
+              <p className="text-slate-400">
+                Oportunitati: <span className="text-slate-200">{hoveredDatum.count}</span>
+              </p>
+              <p className="text-slate-400">
+                ARR: <span className="font-mono text-[#E8007A]">{formatEur(hoveredDatum.arr)}</span>
+              </p>
+            </>
+          ) : (
+            <p className="text-slate-500">Nicio oportunitate</p>
+          )}
         </div>
       )}
     </div>

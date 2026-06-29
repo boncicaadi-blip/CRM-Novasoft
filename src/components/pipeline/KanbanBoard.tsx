@@ -20,9 +20,12 @@ import type { Opportunity } from "@/types/opportunity";
 
 export function KanbanBoard({
   opportunities,
+  stages = STAGES as unknown as string[],
   stageColors,
 }: {
   opportunities: Opportunity[];
+  /** Ordinea coloanelor - vine din nomenclatoare (sortate dupa `ordine`); fallback la STAGES. */
+  stages?: string[];
   stageColors?: Record<string, string>;
 }) {
   const router = useRouter();
@@ -88,7 +91,7 @@ export function KanbanBoard({
       onDragCancel={() => setActiveId(null)}
     >
       <div className="flex h-full gap-3 overflow-x-auto px-6 py-4">
-        {STAGES.map((stage) => (
+        {stages.map((stage) => (
           <KanbanColumn
             key={stage}
             stage={stage}

@@ -1,20 +1,52 @@
 /**
- * Integrare cu DemoANAF.ro - API REST public si gratuit (fara cheie, fara cont)
- * pentru date financiare ale firmelor romanesti, pe baza CUI.
- * Documentatie: https://demoanaf.ro/api-docs
+ * Integrare cu Termene.ro - API documentat oficial, necesita cont de membru
+ * (user + parola), configurat prin variabilele de mediu TERMENE_USER si
+ * TERMENE_PASSWORD. Documentatie: https://termene.ro/documentatie-api
  *
- * Nota: structura exacta a raspunsului poate varia usor; functia gestioneaza
- * defensiv campurile posibil absente, pentru robustete.
+ * Nota despre autentificare: documentatia oficiala nu specifica explicit
+ * formatul de transmitere a credentialelor (doar mentioneaza ca "sunt
+ * necesare user si parola"). Implementarea de mai jos foloseste HTTP Basic
+ * Auth (cel mai comun pentru API-uri GET simple ca acesta). Daca contul tau
+ * Termene.ro arata un format diferit (ex. parametri user/pass in URL, sau
+ * o cheie API separata), schimba doar functia `buildAuthHeaders` de mai jos.
  */
+
+const TERMENE_API_URL = "https://termene.ro/api/dateFirmaSumar.php";
+
+function buildAuthHeaders(): Record<string, string> {
+  const user = process.env.TERMENE_USER;
+  const pass = process.env.TERMENE_PASSWORD;
+  if (!user || !pass) return {};
+  const encoded = Buffer.from(`${user}:${pass}`).toString("base64");
+  return { Authorization: `Basic ${encoded}` };
+}
 
 export interface AnafFinancialData {
   cifraAfaceri: number | null;
   an: number | null;
   numeFirma: string | null;
+  numarAngajati: number | null;
 }
 
 function cleanCui(cui: string): string {
   return cui.replace(/^RO/i, "").replace(/\D/g, "");
+}
+
+interface TermeneBilantRow {
+  an?: string;
+  cifra_de_afaceri_neta?: string;
+  numar_mediu_angajati?: string;
+}
+
+interface TermeneResponse {
+  "Date Generale"?: {
+    cui?: string;
+    nume?: string;
+    judet?: string;
+    localitate?: string;
+    cifra_de_afaceri_neta?: string;
+  };
+  Bilanturi?: TermeneBilantRow | TermeneBilantRow[];
 }
 
 export async function fetchAnafFinancials(cuiRaw: string): Promise<AnafFinancialData | null> {
@@ -22,51 +54,32 @@ export async function fetchAnafFinancials(cuiRaw: string): Promise<AnafFinancial
   if (!cui) return null;
 
   try {
-    const res = await fetch(`https://demoanaf.ro/api/company/${cui}/financials`, {
-      headers: { Accept: "application/json" },
+    const res = await fetch(`${TERMENE_API_URL}?cui=${cui}&tip=0`, {
+      headers: { Accept: "application/json", ...buildAuthHeaders() },
       cache: "no-store",
     });
-    if (!res.ok) return null;
-
-    const json = await res.json();
-    if (!json?.success || !json?.data) return null;
-
-    // Structura exacta poate fi un array de ani sau un obiect cu cheie "bilanturi"/"years" -
-    // verificam cele mai probabile forme si luam cel mai recent an disponibil.
-    const records: Array<Record<string, unknown>> = Array.isArray(json.data)
-      ? json.data
-      : Array.isArray(json.data?.bilanturi)
-        ? json.data.bilanturi
-        : Array.isArray(json.data?.years)
-          ? json.data.years
-          : [];
-
-    if (records.length === 0) {
-      // Poate fi un singur obiect cu cifra de afaceri direct.
-      const ca = json.data?.cifraAfaceri ?? json.data?.cifra_afaceri ?? null;
-      if (ca !== null) {
-        return {
-          cifraAfaceri: Number(ca),
-          an: json.data?.an ?? json.data?.year ?? null,
-          numeFirma: json.data?.denumire ?? null,
-        };
-      }
+    if (!res.ok) {
+      console.error("Termene.ro financials error:", res.status, await res.text());
       return null;
     }
 
-    // Sortam descrescator pe an si luam cel mai recent.
-    const sorted = [...records].sort((a, b) => {
-      const yearA = Number(a.an ?? a.year ?? 0);
-      const yearB = Number(b.an ?? b.year ?? 0);
-      return yearB - yearA;
-    });
+    const json: TermeneResponse = await res.json();
+    const numeFirma = json["Date Generale"]?.nume ?? null;
+
+    const bilanturi = json.Bilanturi;
+    if (!bilanturi) return numeFirma ? { cifraAfaceri: null, an: null, numeFirma, numarAngajati: null } : null;
+
+    // Bilanturi poate fi un singur obiect sau un array (ani multipli) - luam cel mai recent.
+    const rows = Array.isArray(bilanturi) ? bilanturi : [bilanturi];
+    const sorted = [...rows].sort((a, b) => Number(b.an ?? 0) - Number(a.an ?? 0));
     const latest = sorted[0];
-    const ca = latest.cifraAfaceri ?? latest.cifra_afaceri ?? latest.venituriTotale ?? null;
+    if (!latest) return null;
 
     return {
-      cifraAfaceri: ca !== null ? Number(ca) : null,
-      an: Number(latest.an ?? latest.year ?? null) || null,
-      numeFirma: (json.data?.denumire as string) ?? null,
+      cifraAfaceri: latest.cifra_de_afaceri_neta ? Number(latest.cifra_de_afaceri_neta) : null,
+      an: latest.an ? Number(latest.an) : null,
+      numarAngajati: latest.numar_mediu_angajati ? Number(latest.numar_mediu_angajati) : null,
+      numeFirma,
     };
   } catch (error) {
     console.error("fetchAnafFinancials error:", error);
@@ -86,20 +99,20 @@ export async function fetchAnafCompanyInfo(cuiRaw: string): Promise<AnafCompanyI
   if (!cui) return null;
 
   try {
-    const res = await fetch(`https://demoanaf.ro/api/company/${cui}`, {
-      headers: { Accept: "application/json" },
+    const res = await fetch(`${TERMENE_API_URL}?cui=${cui}&tip=0`, {
+      headers: { Accept: "application/json", ...buildAuthHeaders() },
       cache: "no-store",
     });
     if (!res.ok) return null;
 
-    const json = await res.json();
-    if (!json?.success || !json?.data) return null;
+    const json: TermeneResponse = await res.json();
+    const dateGenerale = json["Date Generale"];
+    if (!dateGenerale) return null;
 
-    const data = json.data;
     return {
-      denumire: data.denumire ?? data.name ?? null,
-      judet: data.judet ?? data.county ?? null,
-      oras: data.localitate ?? data.oras ?? data.city ?? null,
+      denumire: dateGenerale.nume ?? null,
+      judet: dateGenerale.judet ?? null,
+      oras: dateGenerale.localitate ?? null,
     };
   } catch (error) {
     console.error("fetchAnafCompanyInfo error:", error);

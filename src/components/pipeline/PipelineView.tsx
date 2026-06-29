@@ -9,9 +9,12 @@ import type { Opportunity } from "@/types/opportunity";
 
 export function PipelineView({
   opportunities,
+  stages: stageOrder,
   stageColors,
 }: {
   opportunities: Opportunity[];
+  /** Ordinea completa a stage-urilor (din nomenclatoare), pentru coloanele Kanban. */
+  stages?: string[];
   stageColors?: Record<string, string>;
 }) {
   const [view, setView] = useState<"kanban" | "table">("kanban");
@@ -19,7 +22,7 @@ export function PipelineView({
   const [stageFilter, setStageFilter] = useState(STAGE_FILTER_ALL);
   const [statusFilter, setStatusFilter] = useState(STATUS_FILTER_ALL);
 
-  const stages = useMemo(
+  const stagesInData = useMemo(
     () => Array.from(new Set(opportunities.map((o) => o.stage))),
     [opportunities]
   );
@@ -68,14 +71,14 @@ export function PipelineView({
           onStageFilterChange={setStageFilter}
           statusFilter={statusFilter}
           onStatusFilterChange={setStatusFilter}
-          stages={stages}
+          stages={stagesInData}
           statuses={statuses}
         />
       </div>
       <div className="flex-1 overflow-hidden">
         {view === "kanban" ? (
           <div className="h-full overflow-x-auto">
-            <KanbanBoard opportunities={filtered} stageColors={stageColors} />
+            <KanbanBoard opportunities={filtered} stages={stageOrder} stageColors={stageColors} />
           </div>
         ) : (
           <div className="h-full overflow-y-auto">
