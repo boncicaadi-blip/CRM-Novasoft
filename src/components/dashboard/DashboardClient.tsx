@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { TrendingUp, Target, Trophy, XCircle } from "lucide-react";
+import { TrendingUp, Target, Trophy, XCircle, Wrench } from "lucide-react";
 import {
   computeKpis,
   groupByStage,
@@ -90,7 +90,7 @@ export function DashboardClient({
         />
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <KpiCard
           label="ARR activ"
           value={formatEur(kpis.totalArr)}
@@ -102,6 +102,13 @@ export function DashboardClient({
           value={formatEur(kpis.weightedForecast)}
           sublabel="ARR x Probability"
           icon={<Target size={16} />}
+        />
+        <KpiCard
+          label="Forecast Implementare"
+          value={formatEur(kpis.forecastImplementare)}
+          sublabel="Implementare x Probability"
+          icon={<Wrench size={16} />}
+          accent="#0070F3"
         />
         <KpiCard
           label="Castigate"

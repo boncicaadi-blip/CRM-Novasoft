@@ -1,20 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { EditableCard } from "@/components/overview/EditableCard";
+import { useState, useRef, useTransition } from "react";
+import { Pencil, Check, X } from "lucide-react";
 import { InfoRow, LabeledInput } from "@/components/overview/InfoCard";
-import { TextInput, Select } from "@/components/form/fields";
-import { SUBSTATUS_SUGGESTIONS } from "@/lib/constants";
+import { TextInput } from "@/components/form/fields";
+import { SUBSTATUS_SUGGESTIONS, STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
+import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
+import { updateOpportunitySectionAction } from "@/lib/actions/opportunities";
 import type { Nomenclator, Opportunity } from "@/types/opportunity";
 
 const FIELDS = [
   "data_contactarii",
-  "stage",
-  "status",
+  "stage_id",
+  "status_id",
   "substatus",
   "motivatia_substatusului",
   "probability",
 ];
+
+const optionStyle = { backgroundColor: "#111535", color: "#F1F5F9" };
 
 function fmtDate(value: string | null) {
   if (!value) return null;
@@ -29,47 +33,64 @@ function toDateInputValue(v: string | null | undefined) {
 export function PipelineStatusCard({
   o,
   stages,
-  statuses,
+  statusuri,
 }: {
   o: Opportunity;
   stages: Nomenclator[];
-  statuses: string[];
+  statusuri: Nomenclator[];
 }) {
-  const [stage, setStage] = useState(o.stage);
-  const [status, setStatus] = useState(o.status);
+  const [editing, setEditing] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+  useSaveShortcut(formRef, editing);
+
+  const [stageId, setStageId] = useState(o.stage_id ?? "");
+  const [statusId, setStatusId] = useState(o.status_id ?? "");
   const [probability, setProbability] = useState(o.probability ?? 0);
 
-  const probabilityByStage: Record<string, number> = {};
-  for (const s of stages) {
-    if (s.probability !== null) probabilityByStage[s.valoare] = s.probability;
-  }
+  const stageColor =
+    stages.find((s) => s.id === stageId)?.culoare ?? STAGE_COLORS[o.stage] ?? "#94A3B8";
+  const statusColor =
+    statusuri.find((s) => s.id === statusId)?.culoare ?? STATUS_COLORS[o.status] ?? "#94A3B8";
 
-  function handleStageChange(value: string) {
-    setStage(value);
-    if (probabilityByStage[value] !== undefined) {
-      setProbability(probabilityByStage[value]);
+  const currentStatusValoare = statusuri.find((s) => s.id === statusId)?.valoare ?? o.status;
+  const substatusOptions = SUBSTATUS_SUGGESTIONS[currentStatusValoare] ?? [];
+
+  function handleStageChange(id: string) {
+    setStageId(id);
+    const probabilityForStage = stages.find((s) => s.id === id)?.probability;
+    if (probabilityForStage !== null && probabilityForStage !== undefined) {
+      setProbability(probabilityForStage);
     }
   }
 
-  const substatusOptions = SUBSTATUS_SUGGESTIONS[status] ?? [];
+  function handleSubmit(formData: FormData) {
+    formData.set("__fields", FIELDS.join(","));
+    startTransition(async () => {
+      await updateOpportunitySectionAction(o.id, formData);
+      setEditing(false);
+    });
+  }
 
   return (
-    <EditableCard
-      title="Pipeline & status"
-      opportunityId={o.id}
-      fields={FIELDS}
-      viewContent={
-        <>
-          <InfoRow label="Data contactarii" value={fmtDate(o.data_contactarii)} />
-          <InfoRow label="Stage" value={o.stage} />
-          <InfoRow label="Status" value={o.status} />
-          <InfoRow label="Substatus" value={o.substatus} />
-          <InfoRow label="Motivatia substatusului" value={o.motivatia_substatusului} />
-          <InfoRow label="Probability" value={`${Math.round((o.probability ?? 0) * 100)}%`} />
-        </>
-      }
-      editContent={
-        <>
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          Pipeline & status
+        </p>
+        {!editing && (
+          <button
+            onClick={() => setEditing(true)}
+            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            title="Editeaza Pipeline & status"
+          >
+            <Pencil size={13} />
+          </button>
+        )}
+      </div>
+
+      {editing ? (
+        <form ref={formRef} action={handleSubmit} className="space-y-2.5">
           <LabeledInput label="Data contactarii">
             <TextInput
               type="date"
@@ -77,22 +98,49 @@ export function PipelineStatusCard({
               defaultValue={toDateInputValue(o.data_contactarii)}
             />
           </LabeledInput>
+
           <LabeledInput label="Stage">
-            <Select
-              name="stage"
-              value={stage}
-              onChange={(e) => handleStageChange(e.target.value)}
-              options={stages.map((s) => s.valoare)}
-            />
+            <div className="flex items-center gap-2">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: stageColor }}
+              />
+              <select
+                name="stage_id"
+                value={stageId}
+                onChange={(e) => handleStageChange(e.target.value)}
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+              >
+                {stages.map((s) => (
+                  <option key={s.id} value={s.id} style={optionStyle}>
+                    {s.valoare}
+                  </option>
+                ))}
+              </select>
+            </div>
           </LabeledInput>
+
           <LabeledInput label="Status">
-            <Select
-              name="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              options={statuses}
-            />
+            <div className="flex items-center gap-2">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: statusColor }}
+              />
+              <select
+                name="status_id"
+                value={statusId}
+                onChange={(e) => setStatusId(e.target.value)}
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+              >
+                {statusuri.map((s) => (
+                  <option key={s.id} value={s.id} style={optionStyle}>
+                    {s.valoare}
+                  </option>
+                ))}
+              </select>
+            </div>
           </LabeledInput>
+
           <LabeledInput label="Substatus">
             <input
               name="substatus"
@@ -123,8 +171,60 @@ export function PipelineStatusCard({
               onChange={(e) => setProbability(Number(e.target.value))}
             />
           </LabeledInput>
-        </>
-      }
-    />
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              type="submit"
+              disabled={isPending}
+              className="flex items-center gap-1 rounded-md bg-[#E8007A] px-2.5 py-1.5 text-xs font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
+              title="Salveaza (Ctrl+S)"
+            >
+              <Check size={13} />
+              {isPending ? "Se salveaza..." : "Salveaza"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              disabled={isPending}
+              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+            >
+              <X size={13} />
+              Anuleaza
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="divide-y divide-white/5">
+          <InfoRow label="Data contactarii" value={fmtDate(o.data_contactarii)} />
+          <InfoRow
+            label="Stage"
+            value={
+              <span className="flex items-center justify-end gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: stageColor }}
+                />
+                {o.stage}
+              </span>
+            }
+          />
+          <InfoRow
+            label="Status"
+            value={
+              <span className="flex items-center justify-end gap-1.5">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: statusColor }}
+                />
+                {o.status}
+              </span>
+            }
+          />
+          <InfoRow label="Substatus" value={o.substatus} />
+          <InfoRow label="Motivatia substatusului" value={o.motivatia_substatusului} />
+          <InfoRow label="Probability" value={`${Math.round((o.probability ?? 0) * 100)}%`} />
+        </div>
+      )}
+    </div>
   );
 }

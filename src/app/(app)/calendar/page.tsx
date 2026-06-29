@@ -9,7 +9,7 @@ export default async function CalendarPage() {
   const counts = calendarActionCounts(actions);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden md:h-screen">
       <div className="border-b border-white/10 px-3 py-4 sm:px-6">
         <h1 className="text-lg font-heading text-white">Calendar actiuni</h1>
         <p className="text-sm text-slate-500">
@@ -17,7 +17,7 @@ export default async function CalendarPage() {
         </p>
       </div>
       <CalendarKpis today={counts.today} overdue={counts.overdue} upcoming={counts.upcoming} />
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <ActionsCalendar actions={actions} />
       </div>
     </div>

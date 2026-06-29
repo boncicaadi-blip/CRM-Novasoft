@@ -8,14 +8,20 @@ export interface Opportunity {
   cod_fiscal: string | null;
   responsabil_vanzare_id: string | null;
   domeniul_activitate: string | null;
+  domeniul_activitate_id: string | null;
   judet: string | null;
   oras: string | null;
+  cifra_afaceri: number | null;
+  nr_angajati: number | null;
+  cifra_afaceri_an: number | null;
+  cifra_afaceri_actualizat_la: string | null;
 
   // Calificare tehnica
   solutia_existenta: string | null;
   client_novasoft: boolean;
   client_windsoft: boolean;
   produs_serviciu_propus: string | null;
+  produs_serviciu_propus_id: string | null;
   contabilitate_interna: string | null;
   solutie_contabilitate: string | null;
   mai_multe_firme_grup: boolean;
@@ -34,20 +40,26 @@ export interface Opportunity {
   // Pipeline & status
   data_contactarii: string | null;
   stage: string;
+  stage_id: string | null;
   status: string;
+  status_id: string | null;
   substatus: string | null;
   motivatia_substatusului: string | null;
   probability: number;
 
   // Actiune curenta
   actiune: string | null;
+  actiune_id: string | null;
   data_actiune: string | null;
   status_actiune: string | null;
+  status_actiune_id: string | null;
   data_finalizare_actiune: string | null;
   observatii_actiune: string | null;
 
   // Tip proiect & pricing
   tip_proiect: string | null;
+  tip_proiect_id: string | null;
+  pricing_mode: "saas" | "onpremise";
   nr_utilizatori_synergo: number | null;
   valoare_saas_anuala: number;
   valoare_pachet_server_anual: number;
@@ -73,6 +85,7 @@ export interface Opportunity {
 
   // Sursa & context
   canal_intrare: string | null;
+  canal_intrare_id: string | null;
   nume_canal_intrare: string | null;
   oportunitati: string | null;
   feedback: string | null;
@@ -92,6 +105,11 @@ export type OpportunityInsert = Partial<
     Opportunity,
     | "id"
     | "opportunity_code"
+    | "valoare_saas_anuala"
+    | "arr_synergo"
+    | "valoare_pret_per_user"
+    | "licenta_synergo_onpremise"
+    | "valoare_mentenanta_lunara_onpremise"
     | "forecast_implementare"
     | "forecast_licente_onpremise"
     | "forecast_mentenanta_onpremise_lunar"
@@ -114,6 +132,11 @@ export type OpportunityUpdate = Partial<
     Opportunity,
     | "id"
     | "opportunity_code"
+    | "valoare_saas_anuala"
+    | "arr_synergo"
+    | "valoare_pret_per_user"
+    | "licenta_synergo_onpremise"
+    | "valoare_mentenanta_lunara_onpremise"
     | "forecast_implementare"
     | "forecast_licente_onpremise"
     | "forecast_mentenanta_onpremise_lunar"

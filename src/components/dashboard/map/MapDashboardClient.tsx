@@ -1,22 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { X } from "lucide-react";
 import { formatEur } from "@/lib/format";
+import { normalizeJudetName } from "@/lib/geo";
+import { groupByStatus } from "@/lib/analytics";
+import { STAGE_COLORS } from "@/lib/constants";
 import { RomaniaMap } from "./RomaniaMap";
+import { StatusChart } from "@/components/dashboard/StatusChart";
 import type { JudetMapDatum } from "@/lib/analytics";
+import type { Opportunity } from "@/types/opportunity";
 import type { FeatureCollection, Geometry } from "geojson";
 
 export function MapDashboardClient({
   geoData,
   data,
+  opportunities,
 }: {
   geoData: FeatureCollection<Geometry, { name: string }>;
   data: JudetMapDatum[];
+  opportunities: Opportunity[];
 }) {
   const [metric, setMetric] = useState<"count" | "arr">("count");
+  const [selectedJudete, setSelectedJudete] = useState<string[]>([]);
 
   const sorted = [...data].sort((a, b) =>
     metric === "count" ? b.count - a.count : b.arr - a.arr
+  );
+
+  const selectedNormalized = useMemo(
+    () => new Set(selectedJudete.map(normalizeJudetName)),
+    [selectedJudete]
+  );
+
+  const opportunitiesInSelection = useMemo(() => {
+    if (selectedJudete.length === 0) return [];
+    return opportunities.filter(
+      (o) => o.judet && selectedNormalized.has(normalizeJudetName(o.judet))
+    );
+  }, [opportunities, selectedNormalized, selectedJudete]);
+
+  const statusDataForSelection = useMemo(
+    () => groupByStatus(selectedJudete.length > 0 ? opportunitiesInSelection : opportunities),
+    [opportunitiesInSelection, opportunities, selectedJudete]
   );
 
   return (
@@ -48,25 +75,87 @@ export function MapDashboardClient({
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-2">
-          <RomaniaMap geoData={geoData} data={data} metric={metric} />
+          <RomaniaMap
+            geoData={geoData}
+            data={data}
+            metric={metric}
+            selectedJudete={selectedJudete}
+            onSelectionChange={setSelectedJudete}
+          />
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="mb-3 text-sm font-medium text-white">Top judete</p>
-          <div className="space-y-2">
-            {sorted.slice(0, 12).map((d) => (
-              <div key={d.judet} className="flex items-center justify-between text-sm">
-                <span className="text-slate-300">{d.judet}</span>
-                <span className="font-mono text-xs text-slate-400">
-                  {metric === "count" ? `${d.count} oport.` : formatEur(d.arr)}
-                </span>
-              </div>
-            ))}
-            {sorted.length === 0 && (
-              <p className="text-xs text-slate-500">Nicio oportunitate cu judet completat.</p>
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-medium text-white">
+              {selectedJudete.length > 0
+                ? `Oportunitati: ${selectedJudete.join(", ")}`
+                : "Top judete"}
+            </p>
+            {selectedJudete.length > 0 && (
+              <button
+                onClick={() => setSelectedJudete([])}
+                className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-white"
+                title="Sterge selectia"
+              >
+                <X size={14} />
+              </button>
             )}
           </div>
+
+          {selectedJudete.length > 0 ? (
+            <div className="max-h-[360px] space-y-1.5 overflow-y-auto">
+              {opportunitiesInSelection.map((o) => (
+                <Link
+                  key={o.id}
+                  href={`/oportunitati/${o.id}`}
+                  className="block rounded-lg border border-white/5 bg-white/[0.02] p-2 transition hover:border-white/20"
+                >
+                  <p className="truncate text-sm text-white">{o.nume_potential}</p>
+                  <div className="mt-0.5 flex items-center gap-1.5">
+                    <span
+                      className="rounded-full px-1.5 py-0.5 text-[10px]"
+                      style={{
+                        backgroundColor: `${STAGE_COLORS[o.stage] ?? "#94A3B8"}20`,
+                        color: STAGE_COLORS[o.stage] ?? "#94A3B8",
+                      }}
+                    >
+                      {o.stage}
+                    </span>
+                    <span className="text-[11px] text-slate-500">{o.judet}</span>
+                  </div>
+                </Link>
+              ))}
+              {opportunitiesInSelection.length === 0 && (
+                <p className="text-xs text-slate-500">
+                  Nicio oportunitate in judetele selectate.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {sorted.slice(0, 12).map((d) => (
+                <button
+                  key={d.judet}
+                  onClick={() => setSelectedJudete([d.judet])}
+                  className="flex w-full items-center justify-between rounded-md px-1.5 py-1 text-sm transition hover:bg-white/5"
+                >
+                  <span className="text-slate-300">{d.judet}</span>
+                  <span className="font-mono text-xs text-slate-400">
+                    {metric === "count" ? `${d.count} oport.` : formatEur(d.arr)}
+                  </span>
+                </button>
+              ))}
+              {sorted.length === 0 && (
+                <p className="text-xs text-slate-500">Nicio oportunitate cu judet completat.</p>
+              )}
+            </div>
+          )}
         </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2" />
+        <StatusChart data={statusDataForSelection} />
       </div>
     </div>
   );

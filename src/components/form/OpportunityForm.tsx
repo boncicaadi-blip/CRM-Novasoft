@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Field, TextInput, TextArea, Select, Checkbox, MoneyInput } from "@/components/form/fields";
 import { formatEur } from "@/lib/format";
+import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
 import {
   DA_NU_NUSTIU,
   JUDETE,
@@ -25,6 +26,7 @@ import {
   createOpportunityAction,
   updateOpportunityAction,
 } from "@/lib/actions/opportunities";
+import { lookupAnafCompanyAction } from "@/lib/actions/anaf";
 
 const STEPS = [
   { key: "firma", label: "Firma", icon: Building2 },
@@ -57,6 +59,8 @@ export function OpportunityForm({
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+  useSaveShortcut(formRef);
   const isEdit = !!opportunity;
 
   const stages = nomenclatoare["stage"] ?? [];
@@ -81,6 +85,78 @@ export function OpportunityForm({
 
   const substatusOptions = SUBSTATUS_SUGGESTIONS[status] ?? [];
 
+  // --- Pricing: state pentru preview live al formulelor (calculul real, sursa
+  // de adevar, se face in baza de date la salvare - astea sunt doar pentru UX) ---
+  const [pricingMode, setPricingMode] = useState<"saas" | "onpremise">(
+    opportunity?.pricing_mode ?? "saas"
+  );
+  const [codFiscal, setCodFiscal] = useState(opportunity?.cod_fiscal ?? "");
+  const [numeGrup, setNumeGrup] = useState(opportunity?.nume_grup ?? "");
+  const [numePotential, setNumePotential] = useState(opportunity?.nume_potential ?? "");
+  const [judetField, setJudetField] = useState(opportunity?.judet ?? "");
+  const [orasField, setOrasField] = useState(opportunity?.oras ?? "");
+  const [cifraAfaceriPreview, setCifraAfaceriPreview] = useState<number | null>(
+    opportunity?.cifra_afaceri ?? null
+  );
+  const [anafLookupState, setAnafLookupState] = useState<"idle" | "loading" | "done" | "error">(
+    "idle"
+  );
+
+  function handleAnafLookup() {
+    if (!codFiscal) return;
+    setAnafLookupState("loading");
+    lookupAnafCompanyAction(codFiscal)
+      .then((res) => {
+        if (!res.success) {
+          setAnafLookupState("error");
+          return;
+        }
+        if (res.denumire && !numePotential) setNumePotential(res.denumire);
+        if (res.denumire && !numeGrup) setNumeGrup(res.denumire);
+        if (res.judet) setJudetField(res.judet);
+        if (res.oras) setOrasField(res.oras);
+        if (res.cifraAfaceri) setCifraAfaceriPreview(res.cifraAfaceri);
+        setAnafLookupState("done");
+      })
+      .catch(() => setAnafLookupState("error"));
+  }
+  const [nrUtilizatori, setNrUtilizatori] = useState(
+    String(opportunity?.nr_utilizatori_synergo ?? "")
+  );
+  const [mrrSynergo, setMrrSynergo] = useState(String(opportunity?.mrr_synergo ?? ""));
+  const [pachetServerAnual, setPachetServerAnual] = useState(
+    String(opportunity?.valoare_pachet_server_anual ?? "")
+  );
+  const [firmaSuplimentara, setFirmaSuplimentara] = useState(
+    String(opportunity?.valoare_firma_suplimentara ?? "")
+  );
+  const [pachetOnpremise, setPachetOnpremise] = useState(
+    String(opportunity?.pachet_synergo_onpremise ?? "")
+  );
+  const [licentaCompanie, setLicentaCompanie] = useState(
+    String(opportunity?.licenta_companie_suplimentara ?? "")
+  );
+  const [licentaUseri, setLicentaUseri] = useState(
+    String(opportunity?.licenta_useri_suplimentari_onpremise ?? "")
+  );
+  const [mentenantaPerUser, setMentenantaPerUser] = useState(
+    String(opportunity?.valoare_mentenanta_per_user_onpremise ?? "")
+  );
+
+  const nrUtilizatoriNum = Number(nrUtilizatori) || 0;
+  const mrrNum = Number(mrrSynergo) || 0;
+  const previewSaasAnuala = Math.round(mrrNum * 12);
+  const previewArr = Math.round(
+    (Number(pachetServerAnual) || 0) + (Number(firmaSuplimentara) || 0) + mrrNum * 12
+  );
+  const previewPretPerUser = nrUtilizatoriNum > 0 ? Math.round(mrrNum / nrUtilizatoriNum) : 0;
+  const previewLicentaOnpremise = Math.round(
+    (Number(pachetOnpremise) || 0) +
+      (Number(licentaCompanie) || 0) +
+      (Number(licentaUseri) || 0)
+  );
+  const previewMentenantaLunara = Math.round((Number(mentenantaPerUser) || 0) * nrUtilizatoriNum);
+
   function handleStageChange(value: string) {
     setStage(value);
     if (probabilityByStage[value] !== undefined) {
@@ -103,7 +179,7 @@ export function OpportunityForm({
   const isFirstStep = stepIndex === 0;
 
   return (
-    <form action={handleSubmit} className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
+    <form ref={formRef} action={handleSubmit} className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       {/* Stepper */}
       <p className="mb-2 text-center text-xs text-slate-500 sm:hidden">
         Pasul {stepIndex + 1} din {STEPS.length}: {STEPS[stepIndex].label}
@@ -155,7 +231,8 @@ export function OpportunityForm({
               <TextInput
                 name="nume_grup"
                 required
-                defaultValue={opportunity?.nume_grup}
+                value={numeGrup}
+                onChange={(e) => setNumeGrup(e.target.value)}
                 placeholder="ex: AAS TRANSFREIGHT"
               />
             </Field>
@@ -163,12 +240,42 @@ export function OpportunityForm({
               <TextInput
                 name="nume_potential"
                 required
-                defaultValue={opportunity?.nume_potential}
+                value={numePotential}
+                onChange={(e) => setNumePotential(e.target.value)}
                 placeholder="ex: AAS TRANSFREIGHT SRL"
               />
             </Field>
-            <Field label="Cod fiscal">
-              <TextInput name="cod_fiscal" defaultValue={opportunity?.cod_fiscal ?? ""} />
+            <Field label="Cod fiscal" hint={!isEdit ? "Completeaza si apasa Cauta pentru auto-completare" : undefined}>
+              <div className="flex gap-2">
+                <TextInput
+                  name="cod_fiscal"
+                  value={codFiscal}
+                  onChange={(e) => setCodFiscal(e.target.value)}
+                />
+                {!isEdit && (
+                  <button
+                    type="button"
+                    onClick={handleAnafLookup}
+                    disabled={!codFiscal || anafLookupState === "loading"}
+                    className="shrink-0 rounded-md border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
+                  >
+                    {anafLookupState === "loading" ? "..." : "Cauta"}
+                  </button>
+                )}
+              </div>
+              {anafLookupState === "done" && (
+                <p className="mt-1 text-[11px] text-green-400">
+                  Date gasite{cifraAfaceriPreview ? ` — CA: ${formatEur(cifraAfaceriPreview)}` : ""}.
+                </p>
+              )}
+              {anafLookupState === "error" && (
+                <p className="mt-1 text-[11px] text-red-400">
+                  Nu am gasit date pentru acest CUI.
+                </p>
+              )}
+              {cifraAfaceriPreview !== null && (
+                <input type="hidden" name="cifra_afaceri" value={cifraAfaceriPreview} />
+              )}
             </Field>
             <Field label="Responsabil vanzare">
               <select
@@ -199,14 +306,27 @@ export function OpportunityForm({
             </Field>
             <div />
             <Field label="Judet">
-              <Select
+              <select
                 name="judet"
-                defaultValue={opportunity?.judet ?? ""}
-                options={JUDETE}
-              />
+                value={judetField}
+                onChange={(e) => setJudetField(e.target.value)}
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+              >
+                <option value="" style={{ backgroundColor: "#111535", color: "#F1F5F9" }}>
+                  Selecteaza...
+                </option>
+                {JUDETE.map((j) => (
+                  <option key={j} value={j} style={{ backgroundColor: "#111535", color: "#F1F5F9" }}>
+                    {j}
+                  </option>
+                ))}
+              </select>
             </Field>
             <Field label="Oras">
-              <TextInput name="oras" defaultValue={opportunity?.oras ?? ""} />
+              <TextInput name="oras" value={orasField} onChange={(e) => setOrasField(e.target.value)} />
+            </Field>
+            <Field label="Nr angajati">
+              <TextInput type="number" name="nr_angajati" defaultValue={opportunity?.nr_angajati ?? ""} />
             </Field>
           </div>
         </div>
@@ -442,102 +562,146 @@ export function OpportunityForm({
         <div className={stepIndex === 4 ? "space-y-4" : "hidden"}>
           <h2 className="mb-1 text-base font-semibold text-white">Pricing</h2>
           <p className="mb-4 text-xs text-slate-500">
-            Valorile financiare. Forecast-ul se calculeaza automat din Probability.
+            Valorile calculate (ARR, Forecast etc) se actualizeaza automat la salvare.
           </p>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Field label="Nr utilizatori Synergo">
-              <TextInput
-                type="number"
-                name="nr_utilizatori_synergo"
-                defaultValue={opportunity?.nr_utilizatori_synergo ?? ""}
-              />
-            </Field>
-            <Field label="Valoare pret / user">
-              <MoneyInput
-                name="valoare_pret_per_user"
-                defaultValue={opportunity?.valoare_pret_per_user ?? 0}
-              />
-            </Field>
-            <Field label="Valoare implementare Synergo">
-              <MoneyInput
-                name="valoare_implementare_synergo"
-                defaultValue={opportunity?.valoare_implementare_synergo ?? 0}
-              />
-            </Field>
 
-            <Field label="Valoare SaaS anuala">
-              <MoneyInput
-                name="valoare_saas_anuala"
-                defaultValue={opportunity?.valoare_saas_anuala ?? 0}
-              />
-            </Field>
-            <Field label="ARR Synergo">
-              <MoneyInput name="arr_synergo" defaultValue={opportunity?.arr_synergo ?? 0} />
-            </Field>
-            <Field label="MRR Synergo">
-              <MoneyInput name="mrr_synergo" defaultValue={opportunity?.mrr_synergo ?? 0} />
-            </Field>
-
-            <Field label="Valoare pachet server anual">
-              <MoneyInput
-                name="valoare_pachet_server_anual"
-                defaultValue={opportunity?.valoare_pachet_server_anual ?? 0}
-              />
-            </Field>
-            <Field label="Valoare firma suplimentara">
-              <MoneyInput
-                name="valoare_firma_suplimentara"
-                defaultValue={opportunity?.valoare_firma_suplimentara ?? 0}
-              />
-            </Field>
-            <Field label="Pachet Synergo OnPremise">
-              <MoneyInput
-                name="pachet_synergo_onpremise"
-                defaultValue={opportunity?.pachet_synergo_onpremise ?? 0}
-              />
-            </Field>
-
-            <Field label="Licenta Synergo OnPremise">
-              <MoneyInput
-                name="licenta_synergo_onpremise"
-                defaultValue={opportunity?.licenta_synergo_onpremise ?? 0}
-              />
-            </Field>
-            <Field label="Licenta companie suplimentara">
-              <MoneyInput
-                name="licenta_companie_suplimentara"
-                defaultValue={opportunity?.licenta_companie_suplimentara ?? 0}
-              />
-            </Field>
-            <Field label="Licenta useri suplimentari OnPremise">
-              <MoneyInput
-                name="licenta_useri_suplimentari_onpremise"
-                defaultValue={opportunity?.licenta_useri_suplimentari_onpremise ?? 0}
-              />
-            </Field>
-
-            <Field label="Mentenanta / user OnPremise">
-              <MoneyInput
-                name="valoare_mentenanta_per_user_onpremise"
-                defaultValue={opportunity?.valoare_mentenanta_per_user_onpremise ?? 0}
-              />
-            </Field>
-            <Field label="Mentenanta lunara OnPremise">
-              <MoneyInput
-                name="valoare_mentenanta_lunara_onpremise"
-                defaultValue={opportunity?.valoare_mentenanta_lunara_onpremise ?? 0}
-              />
-            </Field>
+          <div className="mb-4 flex gap-1 rounded-lg bg-white/5 p-1 text-sm">
+            <button
+              type="button"
+              onClick={() => setPricingMode("saas")}
+              className={`flex-1 rounded-md py-2 transition ${
+                pricingMode === "saas" ? "bg-[#E8007A] font-medium text-[#0B0D1A]" : "text-slate-400"
+              }`}
+            >
+              SaaS
+            </button>
+            <button
+              type="button"
+              onClick={() => setPricingMode("onpremise")}
+              className={`flex-1 rounded-md py-2 transition ${
+                pricingMode === "onpremise"
+                  ? "bg-[#E8007A] font-medium text-[#0B0D1A]"
+                  : "text-slate-400"
+              }`}
+            >
+              OnPremise
+            </button>
           </div>
+          <input type="hidden" name="pricing_mode" value={pricingMode} />
+
+          <Field label="Nr utilizatori Synergo">
+            <TextInput
+              type="number"
+              name="nr_utilizatori_synergo"
+              value={nrUtilizatori}
+              onChange={(e) => setNrUtilizatori(e.target.value)}
+            />
+          </Field>
+
+          {pricingMode === "saas" ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field label="MRR Synergo" hint="Introdus manual">
+                <MoneyInput
+                  name="mrr_synergo"
+                  value={mrrSynergo}
+                  onChange={(e) => setMrrSynergo(e.target.value)}
+                />
+              </Field>
+              <Field label="Valoare pachet server anual" hint="Introdus manual">
+                <MoneyInput
+                  name="valoare_pachet_server_anual"
+                  value={pachetServerAnual}
+                  onChange={(e) => setPachetServerAnual(e.target.value)}
+                />
+              </Field>
+              <Field label="Valoare firma suplimentara" hint="Introdus manual">
+                <MoneyInput
+                  name="valoare_firma_suplimentara"
+                  value={firmaSuplimentara}
+                  onChange={(e) => setFirmaSuplimentara(e.target.value)}
+                />
+              </Field>
+
+              <ReadOnlyMoneyField label="Valoare pret / user" value={previewPretPerUser} />
+              <ReadOnlyMoneyField label="Valoare SaaS anuala" value={previewSaasAnuala} />
+              <ReadOnlyMoneyField label="ARR Synergo" value={previewArr} />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Field label="Pachet Synergo OnPremise" hint="Introdus manual">
+                <MoneyInput
+                  name="pachet_synergo_onpremise"
+                  value={pachetOnpremise}
+                  onChange={(e) => setPachetOnpremise(e.target.value)}
+                />
+              </Field>
+              <Field label="Licenta companie suplimentara" hint="Introdus manual">
+                <MoneyInput
+                  name="licenta_companie_suplimentara"
+                  value={licentaCompanie}
+                  onChange={(e) => setLicentaCompanie(e.target.value)}
+                />
+              </Field>
+              <Field label="Licenta useri suplimentari OnPremise" hint="Introdus manual">
+                <MoneyInput
+                  name="licenta_useri_suplimentari_onpremise"
+                  value={licentaUseri}
+                  onChange={(e) => setLicentaUseri(e.target.value)}
+                />
+              </Field>
+              <Field label="Mentenanta / user OnPremise" hint="Introdus manual">
+                <MoneyInput
+                  name="valoare_mentenanta_per_user_onpremise"
+                  value={mentenantaPerUser}
+                  onChange={(e) => setMentenantaPerUser(e.target.value)}
+                />
+              </Field>
+
+              <ReadOnlyMoneyField label="Licenta Synergo OnPremise" value={previewLicentaOnpremise} />
+              <ReadOnlyMoneyField
+                label="Mentenanta lunara OnPremise"
+                value={previewMentenantaLunara}
+              />
+            </div>
+          )}
+
+          {/* Campurile din modul inactiv raman in DOM (hidden) pentru a nu pierde
+              datele existente la submit, daca utilizatorul comuta modul inainte de salvare. */}
+          {pricingMode === "onpremise" && (
+            <>
+              <input type="hidden" name="mrr_synergo" value={mrrSynergo || "0"} />
+              <input type="hidden" name="valoare_pachet_server_anual" value={pachetServerAnual || "0"} />
+              <input type="hidden" name="valoare_firma_suplimentara" value={firmaSuplimentara || "0"} />
+            </>
+          )}
+          {pricingMode === "saas" && (
+            <>
+              <input type="hidden" name="pachet_synergo_onpremise" value={pachetOnpremise || "0"} />
+              <input type="hidden" name="licenta_companie_suplimentara" value={licentaCompanie || "0"} />
+              <input type="hidden" name="licenta_useri_suplimentari_onpremise" value={licentaUseri || "0"} />
+              <input type="hidden" name="valoare_mentenanta_per_user_onpremise" value={mentenantaPerUser || "0"} />
+            </>
+          )}
+
+          <Field label="Valoare implementare Synergo" hint="Comuna pentru SaaS si OnPremise">
+            <MoneyInput
+              name="valoare_implementare_synergo"
+              defaultValue={opportunity?.valoare_implementare_synergo ?? 0}
+            />
+          </Field>
 
           {isEdit && (
             <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3 rounded-lg border border-[#E8007A]/20 bg-[#E8007A]/5 p-4">
-              <ForecastPreview label="Forecast Total SaaS" value={opportunity.forecast_total_saas} />
-              <ForecastPreview
-                label="Forecast Total OnPremise"
-                value={opportunity.forecast_total_onpremise}
-              />
-              <ForecastPreview label="Forecast SaaS lunar" value={opportunity.forecast_saas_lunar} />
+              {opportunity.forecast_total_saas !== null && (
+                <ForecastPreview label="Forecast Total SaaS" value={opportunity.forecast_total_saas} />
+              )}
+              {opportunity.forecast_total_onpremise !== null && (
+                <ForecastPreview
+                  label="Forecast Total OnPremise"
+                  value={opportunity.forecast_total_onpremise}
+                />
+              )}
+              <ForecastPreview label="Forecast Implementare" value={opportunity.forecast_implementare} />
             </div>
           )}
         </div>
@@ -626,5 +790,15 @@ function ForecastPreview({ label, value }: { label: string; value: number }) {
       <p className="text-[11px] text-slate-500">{label}</p>
       <p className="font-mono text-lg text-[#E8007A]">{formatEur(value)}</p>
     </div>
+  );
+}
+
+function ReadOnlyMoneyField({ label, value }: { label: string; value: number }) {
+  return (
+    <Field label={label} hint="Calculat automat">
+      <div className="flex items-center justify-between rounded-md border border-white/5 bg-white/[0.02] px-3 py-2 text-sm text-slate-300">
+        <span className="font-mono">{formatEur(value)}</span>
+      </div>
+    </Field>
   );
 }

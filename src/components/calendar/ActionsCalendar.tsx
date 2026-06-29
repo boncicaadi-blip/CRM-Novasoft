@@ -142,7 +142,7 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
       onDragCancel={() => setActiveId(null)}
     >
       <div className="flex h-full flex-col gap-4 px-3 py-4 sm:px-6 lg:flex-row">
-        <div className="flex-1">
+        <div className={`flex-1 transition-all ${selectedAction ? "lg:max-w-[calc(100%-19rem)]" : ""}`}>
           {/* Header navigare */}
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -214,8 +214,8 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
             detaliata, click pe o actiune pentru detalii in panoul din dreapta.
           </p>
 
-          {/* Grila calendar */}
-          <div className="overflow-hidden rounded-xl border border-white/10">
+          {/* Grila calendar - ocupa tot spatiul disponibil pe verticala */}
+          <div className="flex h-[calc(100%-7rem)] flex-col overflow-hidden rounded-xl border border-white/10">
             <div className="grid grid-cols-7 border-b border-white/10 bg-[#111535]">
               {weekdayLabels.map((d) => (
                 <div key={d} className="px-2 py-2 text-center text-xs font-medium text-slate-500">
@@ -223,7 +223,7 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7">
+            <div className="grid flex-1 grid-cols-7 grid-rows-6">
               {days.map((day) => {
                 const dayStr = format(day, "yyyy-MM-dd");
                 return (
@@ -242,10 +242,15 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
           </div>
         </div>
 
-        {/* Panou lateral cu detalii actiune selectata */}
-        <div className="w-full shrink-0 lg:w-72">
-          <ActionDetailPanel action={selectedAction} />
-        </div>
+        {/* Panou lateral - apare doar cand o actiune e selectata, calendarul se ingusteaza */}
+        {selectedAction && (
+          <div className="w-full shrink-0 lg:w-72">
+            <ActionDetailPanel
+              action={selectedAction}
+              onClose={() => setSelectedAction(null)}
+            />
+          </div>
+        )}
       </div>
 
       {openDay && (

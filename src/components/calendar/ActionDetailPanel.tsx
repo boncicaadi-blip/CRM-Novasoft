@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, Clock, CheckCircle2, ArrowRight } from "lucide-react";
+import { AlertCircle, Clock, CheckCircle2, ArrowRight, X } from "lucide-react";
 import type { CalendarAction } from "@/lib/analytics";
 import { STAGE_COLORS } from "@/lib/constants";
 
@@ -11,22 +11,27 @@ const STATUS_LABELS: Record<CalendarAction["status"], string> = {
   finalizata: "Finalizata",
 };
 
-export function ActionDetailPanel({ action }: { action: CalendarAction | null }) {
-  if (!action) {
-    return (
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-        <p className="text-sm text-slate-500">
-          Click pe o actiune din calendar pentru a vedea detaliile complete aici.
-        </p>
-      </div>
-    );
-  }
-
+export function ActionDetailPanel({
+  action,
+  onClose,
+}: {
+  action: CalendarAction;
+  onClose: () => void;
+}) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <div className="mb-3 flex items-center gap-1.5">
-        <StatusIcon status={action.status} />
-        <span className="text-xs text-slate-400">{STATUS_LABELS[action.status]}</span>
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <StatusIcon status={action.status} />
+          <span className="text-xs text-slate-400">{STATUS_LABELS[action.status]}</span>
+        </div>
+        <button
+          onClick={onClose}
+          className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-white"
+          title="Inchide"
+        >
+          <X size={15} />
+        </button>
       </div>
 
       <p className="mb-1 text-base font-medium text-white">{action.numePotential}</p>

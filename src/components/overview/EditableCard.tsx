@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useState, useTransition, useRef, type ReactNode } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import { updateOpportunitySectionAction } from "@/lib/actions/opportunities";
+import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
 
 export function EditableCard({
   title,
@@ -20,6 +21,9 @@ export function EditableCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useSaveShortcut(formRef, editing);
 
   function handleSubmit(formData: FormData) {
     formData.set("__fields", fields.join(","));
@@ -45,13 +49,14 @@ export function EditableCard({
       </div>
 
       {editing ? (
-        <form action={handleSubmit} className="space-y-2.5">
+        <form ref={formRef} action={handleSubmit} className="space-y-2.5">
           {editContent}
           <div className="flex items-center gap-2 pt-1">
             <button
               type="submit"
               disabled={isPending}
               className="flex items-center gap-1 rounded-md bg-[#E8007A] px-2.5 py-1.5 text-xs font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
+              title="Salveaza (Ctrl+S)"
             >
               <Check size={13} />
               {isPending ? "Se salveaza..." : "Salveaza"}

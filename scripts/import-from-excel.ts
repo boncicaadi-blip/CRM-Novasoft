@@ -164,18 +164,23 @@ async function main() {
       nr_utilizatori_synergo: row["Nr utilizatori solicitati Synergo"]
         ? toNum(row["Nr utilizatori solicitati Synergo"])
         : null,
-      valoare_saas_anuala: toNum(row["Valoare SaaS Anuala"]),
+      // pricing_mode: determinat automat - daca rândul are vreo valoare OnPremise
+      // introdusa (pachet, licenta companie, licenta useri, mentenanta per user),
+      // consideram modul OnPremise; altfel SaaS (implicit).
+      pricing_mode:
+        toNum(row["Pachet Synergo OnPremise"]) > 0 ||
+        toNum(row["Licenta companie suplimentara"]) > 0 ||
+        toNum(row["Licenta Useri suplimentari OnPremise"]) > 0 ||
+        toNum(row["Valoare mentenanta per user On Premise"]) > 0
+          ? "onpremise"
+          : "saas",
       valoare_pachet_server_anual: toNum(row["Valoare Pachet Server Anual"]),
       valoare_firma_suplimentara: toNum(row["Valoare firma suplimentara"]),
-      arr_synergo: toNum(row["ARR Synergo"]),
       mrr_synergo: toNum(row["MRR Synergo"]),
-      valoare_pret_per_user: toNum(row["Valoare pret / user"]),
       pachet_synergo_onpremise: toNum(row["Pachet Synergo OnPremise"]),
       licenta_companie_suplimentara: toNum(row["Licenta companie suplimentara"]),
       licenta_useri_suplimentari_onpremise: toNum(row["Licenta Useri suplimentari OnPremise"]),
-      licenta_synergo_onpremise: toNum(row["Licenta Synergo OnPremise"]),
       valoare_mentenanta_per_user_onpremise: toNum(row["Valoare mentenanta per user On Premise"]),
-      valoare_mentenanta_lunara_onpremise: toNum(row["Valoare mentenanta lunara Synergo OnPremise"]),
       valoare_implementare_synergo: toNum(row["Valoare implementare Synergo"]),
 
       canal_intrare: row["Canal intrare"] ?? null,

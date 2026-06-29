@@ -71,20 +71,31 @@ export default async function OpportunityOverviewPage({
       </div>
 
       {/* KPI rapide */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
         <KpiMini label="ARR" value={formatEur(o.arr_synergo)} accent="#E8007A" />
         <KpiMini label="MRR" value={formatEur(o.mrr_synergo)} />
-        <KpiMini label="Forecast SaaS" value={formatEur(o.forecast_total_saas)} accent="#0070F3" />
+        <KpiMini
+          label="Forecast Implementare"
+          value={formatEur(o.forecast_implementare)}
+          accent="#0070F3"
+        />
+        <KpiMini
+          label={o.pricing_mode === "saas" ? "Forecast SaaS" : "Forecast OnPremise"}
+          value={formatEur(
+            o.pricing_mode === "saas" ? o.forecast_total_saas : o.forecast_total_onpremise
+          )}
+          accent="#0070F3"
+        />
         <KpiMini label="Probability" value={`${Math.round((o.probability ?? 0) * 100)}%`} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <FirmaCard o={o} profiles={profiles} domeniiActivitate={valori(nomenclatoare["domeniu_activitate"])} />
+        <FirmaCard o={o} profiles={profiles} domeniiActivitate={nomenclatoare["domeniu_activitate"] ?? []} />
         <CalificareCard o={o} produseServicii={valori(nomenclatoare["produs_serviciu"])} />
         <PipelineStatusCard
           o={o}
           stages={nomenclatoare["stage"] ?? []}
-          statuses={valori(nomenclatoare["status"])}
+          statusuri={nomenclatoare["status"] ?? []}
         />
         <ActiuneCard
           o={o}

@@ -58,6 +58,7 @@ export function computeKpis(opportunities: Opportunity[]) {
   const totalArr = active.reduce((s, o) => s + (o.arr_synergo ?? 0), 0);
   const totalMrr = active.reduce((s, o) => s + (o.mrr_synergo ?? 0), 0);
   const weightedForecast = active.reduce((s, o) => s + (o.forecast_total_saas ?? 0), 0);
+  const forecastImplementare = active.reduce((s, o) => s + (o.forecast_implementare ?? 0), 0);
   const closedCount = won.length + lost.length;
   const winRate = closedCount > 0 ? won.length / closedCount : 0;
 
@@ -69,6 +70,7 @@ export function computeKpis(opportunities: Opportunity[]) {
     totalArr,
     totalMrr,
     weightedForecast,
+    forecastImplementare,
     winRate,
   };
 }

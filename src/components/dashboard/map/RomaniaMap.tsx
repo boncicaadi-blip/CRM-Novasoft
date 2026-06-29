@@ -18,10 +18,14 @@ export function RomaniaMap({
   geoData,
   data,
   metric,
+  selectedJudete,
+  onSelectionChange,
 }: {
   geoData: FeatureCollection<Geometry, JudetFeatureProps>;
   data: JudetMapDatum[];
   metric: "count" | "arr";
+  selectedJudete: string[];
+  onSelectionChange: (judete: string[]) => void;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
 
@@ -47,6 +51,10 @@ export function RomaniaMap({
   );
 
   const pathGenerator = useMemo(() => geoPath(projection), [projection]);
+  const selectedNormalized = useMemo(
+    () => new Set(selectedJudete.map(normalizeJudetName)),
+    [selectedJudete]
+  );
 
   function colorFor(judetName: string): string {
     const datum = dataByJudet.get(normalizeJudetName(judetName));
@@ -60,24 +68,49 @@ export function RomaniaMap({
     return `rgb(${r},${g},${b})`;
   }
 
+  function handleJudetClick(name: string, e: React.MouseEvent) {
+    const isMulti = e.ctrlKey || e.metaKey;
+    const isSelected = selectedNormalized.has(normalizeJudetName(name));
+
+    if (isMulti) {
+      if (isSelected) {
+        onSelectionChange(selectedJudete.filter((j) => normalizeJudetName(j) !== normalizeJudetName(name)));
+      } else {
+        onSelectionChange([...selectedJudete, name]);
+      }
+    } else {
+      // Click simplu: daca era deja unica selectie, deselecteaza; altfel selecteaza doar acesta.
+      if (isSelected && selectedJudete.length === 1) {
+        onSelectionChange([]);
+      } else {
+        onSelectionChange([name]);
+      }
+    }
+  }
+
   const hoveredDatum = hovered ? dataByJudet.get(normalizeJudetName(hovered)) : null;
 
   return (
     <div className="relative">
+      <p className="mb-2 text-[11px] text-slate-500">
+        Click pentru a selecta un judet. Ctrl/Cmd+Click pentru selectie multipla.
+      </p>
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img" aria-label="Harta Romaniei cu oportunitati pe judet">
         {geoData.features.map((feature) => {
           const name = feature.properties.name;
           const path = pathGenerator(feature) ?? "";
           const isHovered = hovered === name;
+          const isSelected = selectedNormalized.has(normalizeJudetName(name));
           return (
             <path
               key={name}
               d={path}
               fill={colorFor(name)}
-              stroke={isHovered ? "#E8007A" : "#0B0D1A"}
-              strokeWidth={isHovered ? 1.5 : 0.75}
+              stroke={isSelected ? "#E8007A" : isHovered ? "#FF4FAA" : "#0B0D1A"}
+              strokeWidth={isSelected ? 2.5 : isHovered ? 1.5 : 0.75}
               onMouseEnter={() => setHovered(name)}
               onMouseLeave={() => setHovered(null)}
+              onClick={(e) => handleJudetClick(name, e)}
               className="cursor-pointer transition-colors"
             />
           );

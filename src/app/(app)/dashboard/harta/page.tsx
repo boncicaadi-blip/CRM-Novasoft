@@ -14,5 +14,5 @@ export default async function MapDashboardPage() {
   const geoData: FeatureCollection<Geometry, { name: string }> = JSON.parse(geoJsonRaw);
   const data = groupByJudetFull(opportunities);
 
-  return <MapDashboardClient geoData={geoData} data={data} />;
+  return <MapDashboardClient geoData={geoData} data={data} opportunities={opportunities} />;
 }
