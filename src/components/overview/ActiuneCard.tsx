@@ -1,8 +1,14 @@
 "use client";
 
-import { EditableCard } from "@/components/overview/EditableCard";
+import { useState, useRef, useTransition } from "react";
+import { Pencil, Check, X, CheckCircle2 } from "lucide-react";
 import { InfoRow, LabeledInput } from "@/components/overview/InfoCard";
 import { TextInput, TextArea, Select } from "@/components/form/fields";
+import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
+import {
+  updateOpportunitySectionAction,
+  finalizeActionAction,
+} from "@/lib/actions/opportunities";
 import type { Opportunity } from "@/types/opportunity";
 
 const FIELDS = [
@@ -32,56 +38,244 @@ export function ActiuneCard({
   actiuni: string[];
   statusActiune: string[];
 }) {
+  const [mode, setMode] = useState<"view" | "edit" | "finalize">("view");
+
+  if (mode === "finalize") {
+    return <FinalizeForm o={o} onDone={() => setMode("view")} />;
+  }
+
+  if (mode === "edit") {
+    return (
+      <EditForm
+        o={o}
+        actiuni={actiuni}
+        statusActiune={statusActiune}
+        onDone={() => setMode("view")}
+      />
+    );
+  }
+
   return (
-    <EditableCard
-      title="Actiune curenta"
-      opportunityId={o.id}
-      fields={FIELDS}
-      viewContent={
-        <>
-          <InfoRow label="Actiune" value={o.actiune} />
-          <InfoRow label="Status actiune" value={o.status_actiune} />
-          <InfoRow label="Data actiune" value={fmtDate(o.data_actiune)} />
-          <InfoRow label="Data finalizare" value={fmtDate(o.data_finalizare_actiune)} />
-          {o.observatii_actiune && (
-            <div className="py-1.5">
-              <span className="text-xs text-slate-500">Observatii actiune</span>
-              <p className="mt-1 text-sm text-slate-300">{o.observatii_actiune}</p>
-            </div>
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+          Actiune curenta
+        </p>
+        <div className="flex items-center gap-1">
+          {o.actiune && o.status_actiune === "Planificata" && (
+            <button
+              onClick={() => setMode("finalize")}
+              className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-green-400"
+              title="Finalizeaza si introdu next step"
+            >
+              <CheckCircle2 size={13} />
+            </button>
           )}
-        </>
+          <button
+            onClick={() => setMode("edit")}
+            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            title="Editeaza Actiune curenta"
+          >
+            <Pencil size={13} />
+          </button>
+        </div>
+      </div>
+      <div className="divide-y divide-white/5">
+        <InfoRow label="Actiune" value={o.actiune} />
+        <InfoRow label="Status actiune" value={o.status_actiune} />
+        <InfoRow label="Data actiune" value={fmtDate(o.data_actiune)} />
+        <InfoRow label="Data finalizare" value={fmtDate(o.data_finalizare_actiune)} />
+        {o.observatii_actiune && (
+          <div className="py-1.5">
+            <span className="text-xs text-slate-500">Observatii actiune</span>
+            <p className="mt-1 text-sm text-slate-300">{o.observatii_actiune}</p>
+          </div>
+        )}
+        {!o.actiune && (
+          <p className="py-1.5 text-xs text-slate-500">Nicio actiune programata.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Editare directa, neschimbata - modifica actiunea curenta in loc, fara sa stearga nimic. */
+function EditForm({
+  o,
+  actiuni,
+  statusActiune,
+  onDone,
+}: {
+  o: Opportunity;
+  actiuni: string[];
+  statusActiune: string[];
+  onDone: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  useSaveShortcut(formRef, true);
+
+  function handleSubmit(formData: FormData) {
+    formData.set("__fields", FIELDS.join(","));
+    setError(null);
+    startTransition(async () => {
+      const result = await updateOpportunitySectionAction(o.id, formData);
+      if (result.success) {
+        onDone();
+      } else {
+        setError(result.message ?? "A aparut o eroare la salvare.");
       }
-      editContent={
-        <>
-          <LabeledInput label="Actiune">
-            <Select name="actiune" defaultValue={o.actiune ?? ""} options={actiuni} />
-          </LabeledInput>
-          <LabeledInput label="Status actiune">
-            <Select
-              name="status_actiune"
-              defaultValue={o.status_actiune ?? ""}
-              options={statusActiune}
-            />
-          </LabeledInput>
-          <LabeledInput label="Data actiune">
-            <TextInput
-              type="date"
-              name="data_actiune"
-              defaultValue={toDateInputValue(o.data_actiune)}
-            />
-          </LabeledInput>
-          <LabeledInput label="Data finalizare">
-            <TextInput
-              type="date"
-              name="data_finalizare_actiune"
-              defaultValue={toDateInputValue(o.data_finalizare_actiune)}
-            />
-          </LabeledInput>
-          <LabeledInput label="Observatii actiune">
-            <TextArea name="observatii_actiune" defaultValue={o.observatii_actiune ?? ""} />
-          </LabeledInput>
-        </>
-      }
-    />
+    });
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+        Actiune curenta
+      </p>
+      <form ref={formRef} action={handleSubmit} className="space-y-2.5">
+        <LabeledInput label="Actiune">
+          <Select name="actiune" defaultValue={o.actiune ?? ""} options={actiuni} />
+        </LabeledInput>
+        <LabeledInput label="Status actiune">
+          <Select
+            name="status_actiune"
+            defaultValue={o.status_actiune ?? ""}
+            options={statusActiune}
+          />
+        </LabeledInput>
+        <LabeledInput label="Data actiune">
+          <TextInput type="date" name="data_actiune" defaultValue={toDateInputValue(o.data_actiune)} />
+        </LabeledInput>
+        <LabeledInput label="Data finalizare">
+          <TextInput
+            type="date"
+            name="data_finalizare_actiune"
+            defaultValue={toDateInputValue(o.data_finalizare_actiune)}
+          />
+        </LabeledInput>
+        <LabeledInput label="Observatii actiune">
+          <TextArea name="observatii_actiune" defaultValue={o.observatii_actiune ?? ""} />
+        </LabeledInput>
+
+        {error && (
+          <p className="rounded-md bg-red-500/10 px-2.5 py-2 text-xs text-red-400">{error}</p>
+        )}
+
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="flex items-center gap-1 rounded-md bg-[#E8007A] px-2.5 py-1.5 text-xs font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
+            title="Salveaza (Ctrl+S)"
+          >
+            <Check size={13} />
+            {isPending ? "Se salveaza..." : "Salveaza"}
+          </button>
+          <button
+            type="button"
+            onClick={onDone}
+            disabled={isPending}
+            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+          >
+            <X size={13} />
+            Anuleaza
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+/**
+ * Finalizare: cere rezultat (obligatoriu), curata complet campurile vechi
+ * de Observatii/Data finalizare, si permite programarea optionala a unui
+ * urmator next step - acelasi flux ca pe pagina Actiuni, dar disponibil
+ * direct pe fisa.
+ */
+function FinalizeForm({ o, onDone }: { o: Opportunity; onDone: () => void }) {
+  const [isPending, startTransition] = useTransition();
+  const [rezultat, setRezultat] = useState("");
+  const [nextActiune, setNextActiune] = useState("");
+  const [nextData, setNextData] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!rezultat.trim()) {
+      setError("Rezultatul actiunii este obligatoriu.");
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      await finalizeActionAction(
+        o.id,
+        rezultat,
+        nextActiune && nextData ? { actiune: nextActiune, dataActiune: nextData } : undefined
+      );
+      onDone();
+    });
+  }
+
+  return (
+    <div className="rounded-xl border border-green-500/30 bg-green-500/[0.03] p-4">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+        Finalizeaza: {o.actiune}
+      </p>
+      <form onSubmit={handleSubmit} className="space-y-2.5">
+        <LabeledInput label="Rezultat actiune *">
+          <TextArea
+            value={rezultat}
+            onChange={(e) => setRezultat(e.target.value)}
+            placeholder="Ce s-a discutat / rezultat..."
+          />
+        </LabeledInput>
+
+        <div className="border-t border-white/5 pt-2.5">
+          <p className="mb-2 text-[11px] text-slate-500">Urmatorul pas (optional)</p>
+          <div className="grid grid-cols-2 gap-2">
+            <LabeledInput label="Actiune">
+              <TextInput
+                value={nextActiune}
+                onChange={(e) => setNextActiune(e.target.value)}
+                placeholder="opțional"
+              />
+            </LabeledInput>
+            <LabeledInput label="Data">
+              <TextInput
+                type="date"
+                value={nextData}
+                onChange={(e) => setNextData(e.target.value)}
+              />
+            </LabeledInput>
+          </div>
+        </div>
+
+        {error && (
+          <p className="rounded-md bg-red-500/10 px-2.5 py-2 text-xs text-red-400">{error}</p>
+        )}
+
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="flex items-center gap-1 rounded-md bg-green-500 px-2.5 py-1.5 text-xs font-medium text-[#0B0D1A] transition hover:bg-green-400 disabled:opacity-50"
+          >
+            <Check size={13} />
+            {isPending ? "Se salveaza..." : "Confirma finalizarea"}
+          </button>
+          <button
+            type="button"
+            onClick={onDone}
+            disabled={isPending}
+            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+          >
+            <X size={13} />
+            Anuleaza
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }

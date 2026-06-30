@@ -292,6 +292,13 @@ export async function finalizeActionAction(
     updates.actiune = nextStep.actiune;
     updates.data_actiune = nextStep.dataActiune;
     updates.status_actiune = "Planificata"; // urmatoarea actiune e activa, nu finalizata
+  } else {
+    // Fara next step programat: golim actiunea curenta, ca redeschiderea
+    // fisei sa arate campuri goale, gata de completat unul nou - nu
+    // ramane afisata vechea actiune (deja finalizata) ca si cum ar fi
+    // inca activa.
+    updates.actiune = null;
+    updates.data_actiune = null;
   }
 
   await updateOpportunity(opportunityId, updates);

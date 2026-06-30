@@ -18,7 +18,6 @@ const FILTERS: { key: ActionWorkItemFilter; label: string }[] = [
   { key: "intarziate", label: "Intarziate" },
   { key: "saptamana", label: "Urmatoarele 7 zile" },
   { key: "fara_next_step", label: "Fara next step" },
-  { key: "finalizate", label: "Finalizate" },
 ];
 
 export function ActiuniClient({

@@ -168,6 +168,7 @@ export interface Profile {
   full_name: string;
   email: string;
   role: "admin" | "user";
+  theme: "light" | "dark" | "system";
   created_at: string;
 }
 

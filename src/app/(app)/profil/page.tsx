@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BackButton } from "@/components/BackButton";
 import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm";
+import { ThemeSelector } from "@/components/profile/ThemeSelector";
 
 export default async function ProfilPage() {
   const supabase = await createClient();
@@ -48,6 +49,16 @@ export default async function ProfilPage() {
             Schimba parola
           </p>
           <ChangePasswordForm />
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+            Aspect
+          </p>
+          <ThemeSelector initialTheme={profile?.theme ?? "dark"} />
+          <p className="mt-2 text-[11px] text-slate-500">
+            Tema luminoasa e disponibila momentan partial - o extindem treptat la toate paginile.
+          </p>
         </div>
       </div>
     </div>

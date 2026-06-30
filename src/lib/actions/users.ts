@@ -40,3 +40,20 @@ export async function updateUserAction(
     return { success: false, message: e instanceof Error ? e.message : "Eroare necunoscuta." };
   }
 }
+
+/** Fiecare user isi poate schimba doar propria preferinta de tema. */
+export async function updateThemePreferenceAction(
+  theme: "light" | "dark" | "system"
+): Promise<{ success: boolean; message?: string }> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data?.user) return { success: false, message: "Neautentificat." };
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ theme })
+    .eq("id", data.user.id);
+
+  if (error) return { success: false, message: error.message };
+  return { success: true };
+}

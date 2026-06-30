@@ -44,7 +44,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ro" className={`${barlow.variable} ${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#0B0D1A] text-slate-100">
+      <head>
+        {/* Aplica tema (light/dark/system) inainte de randare, ca sa evitam
+            flash-ul de continut nestilizat (FOUC). Citeste intai din
+            localStorage (cache rapid local, scris la fiecare schimbare din
+            Profil), cu fallback la 'dark' daca nu exista inca nimic salvat. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var stored = localStorage.getItem('novasoft-theme') || 'dark';
+                  var resolved = stored;
+                  if (stored === 'system') {
+                    resolved = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                  }
+                  document.documentElement.classList.add(resolved);
+                } catch (e) {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="flex min-h-full flex-col bg-[var(--surface-0)] text-[var(--text-primary)]">
         {children}
       </body>
     </html>
