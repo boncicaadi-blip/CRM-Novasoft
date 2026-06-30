@@ -96,13 +96,11 @@ export function OpportunityForm({
   const [numePotential, setNumePotential] = useState(opportunity?.nume_potential ?? "");
   const [judetField, setJudetField] = useState(opportunity?.judet ?? "");
   const [orasField, setOrasField] = useState(opportunity?.oras ?? "");
-  const [cifraAfaceriPreview, setCifraAfaceriPreview] = useState<number | null>(
-    opportunity?.cifra_afaceri ?? null
-  );
   const [anafLookupState, setAnafLookupState] = useState<"idle" | "loading" | "done" | "error">(
     "idle"
   );
   const [anafLookupError, setAnafLookupError] = useState<string | null>(null);
+  const [anafDomeniuGasit, setAnafDomeniuGasit] = useState<string | null>(null);
 
   function handleAnafLookup() {
     if (!codFiscal) return;
@@ -119,7 +117,7 @@ export function OpportunityForm({
         if (res.denumire && !numeGrup) setNumeGrup(res.denumire);
         if (res.judet) setJudetField(res.judet);
         if (res.oras) setOrasField(res.oras);
-        if (res.cifraAfaceri) setCifraAfaceriPreview(res.cifraAfaceri);
+        setAnafDomeniuGasit(res.domeniulActivitate ?? null);
         setAnafLookupState("done");
       })
       .catch((e) => {
@@ -282,16 +280,13 @@ export function OpportunityForm({
               </div>
               {anafLookupState === "done" && (
                 <p className="mt-1 text-[11px] text-green-400">
-                  Date gasite{cifraAfaceriPreview ? ` — CA: ${formatEur(cifraAfaceriPreview)}` : ""}.
+                  Date gasite{anafDomeniuGasit ? ` — Domeniu: ${anafDomeniuGasit}` : ""}.
                 </p>
               )}
               {anafLookupState === "error" && (
                 <p className="mt-1 text-[11px] text-red-400">
                   {anafLookupError ?? "Nu am gasit date pentru acest CUI."}
                 </p>
-              )}
-              {cifraAfaceriPreview !== null && (
-                <input type="hidden" name="cifra_afaceri" value={cifraAfaceriPreview} />
               )}
             </Field>
             <Field label="Responsabil vanzare">
@@ -344,6 +339,9 @@ export function OpportunityForm({
             </Field>
             <Field label="Nr angajati">
               <TextInput type="number" name="nr_angajati" defaultValue={opportunity?.nr_angajati ?? ""} />
+            </Field>
+            <Field label="Cifra de afaceri" hint="Introdusa manual (EUR)">
+              <MoneyInput name="cifra_afaceri" defaultValue={opportunity?.cifra_afaceri ?? 0} />
             </Field>
           </div>
         </div>

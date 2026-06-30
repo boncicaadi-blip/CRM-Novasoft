@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
-import { Pencil, Check, X, RefreshCw } from "lucide-react";
+import { Pencil, Check, X } from "lucide-react";
 import { InfoRow, LabeledInput } from "@/components/overview/InfoCard";
-import { TextInput } from "@/components/form/fields";
+import { TextInput, MoneyInput } from "@/components/form/fields";
 import { JUDETE } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
 import { updateOpportunitySectionAction } from "@/lib/actions/opportunities";
-import { refreshAnafFinancialsAction } from "@/lib/actions/anaf";
 import type { Nomenclator, Opportunity, Profile } from "@/types/opportunity";
 
 const FIELDS = [
@@ -20,6 +19,7 @@ const FIELDS = [
   "judet",
   "oras",
   "nr_angajati",
+  "cifra_afaceri",
 ];
 
 const optionStyle = { backgroundColor: "#111535", color: "#F1F5F9" };
@@ -35,8 +35,6 @@ export function FirmaCard({
 }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [isRefreshingAnaf, setIsRefreshingAnaf] = useState(false);
-  const [anafMessage, setAnafMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   useSaveShortcut(formRef, editing);
@@ -56,18 +54,6 @@ export function FirmaCard({
         setError(e instanceof Error ? e.message : "A aparut o eroare la salvare.");
       }
     });
-  }
-
-  function handleRefreshAnaf() {
-    if (!o.cod_fiscal) {
-      setAnafMessage("Completeaza mai intai codul fiscal.");
-      return;
-    }
-    setIsRefreshingAnaf(true);
-    setAnafMessage(null);
-    refreshAnafFinancialsAction(o.id, o.cod_fiscal)
-      .then((res) => setAnafMessage(res.message))
-      .finally(() => setIsRefreshingAnaf(false));
   }
 
   return (
@@ -150,6 +136,9 @@ export function FirmaCard({
           <LabeledInput label="Nr angajati">
             <TextInput type="number" name="nr_angajati" defaultValue={o.nr_angajati ?? ""} />
           </LabeledInput>
+          <LabeledInput label="Cifra de afaceri (EUR, manual)">
+            <MoneyInput name="cifra_afaceri" defaultValue={o.cifra_afaceri ?? 0} />
+          </LabeledInput>
 
           {error && (
             <p className="rounded-md bg-red-500/10 px-2.5 py-2 text-xs text-red-400">{error}</p>
@@ -177,39 +166,17 @@ export function FirmaCard({
           </div>
         </form>
       ) : (
-        <>
-          <div className="divide-y divide-white/5">
-            <InfoRow label="Nume grup" value={o.nume_grup} />
-            <InfoRow label="Nume potential" value={o.nume_potential} />
-            <InfoRow label="Cod fiscal" value={o.cod_fiscal} />
-            <InfoRow label="Responsabil vanzare" value={o.profiles?.full_name} />
-            <InfoRow label="Domeniu activitate" value={o.domeniul_activitate} />
-            <InfoRow label="Judet" value={o.judet} />
-            <InfoRow label="Oras" value={o.oras} />
-            <InfoRow label="Nr angajati" value={o.nr_angajati} />
-            <InfoRow
-              label="Cifra de afaceri"
-              value={
-                o.cifra_afaceri
-                  ? `${formatEur(o.cifra_afaceri)} (${o.cifra_afaceri_an ?? "?"})`
-                  : null
-              }
-            />
-          </div>
-          <button
-            onClick={handleRefreshAnaf}
-            disabled={isRefreshingAnaf}
-            className="mt-3 flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
-          >
-            <RefreshCw size={12} className={isRefreshingAnaf ? "animate-spin" : ""} />
-            {isRefreshingAnaf ? "Se actualizeaza..." : "Actualizeaza din ANAF"}
-          </button>
-          {anafMessage && (
-            <p className="mt-1.5 break-all font-mono text-[10px] leading-relaxed text-slate-500">
-              {anafMessage}
-            </p>
-          )}
-        </>
+        <div className="divide-y divide-white/5">
+          <InfoRow label="Nume grup" value={o.nume_grup} />
+          <InfoRow label="Nume potential" value={o.nume_potential} />
+          <InfoRow label="Cod fiscal" value={o.cod_fiscal} />
+          <InfoRow label="Responsabil vanzare" value={o.profiles?.full_name} />
+          <InfoRow label="Domeniu activitate" value={o.domeniul_activitate} />
+          <InfoRow label="Judet" value={o.judet} />
+          <InfoRow label="Oras" value={o.oras} />
+          <InfoRow label="Nr angajati" value={o.nr_angajati} />
+          <InfoRow label="Cifra de afaceri" value={o.cifra_afaceri ? formatEur(o.cifra_afaceri) : null} />
+        </div>
       )}
     </div>
   );
