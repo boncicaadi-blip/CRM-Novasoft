@@ -23,6 +23,7 @@ import { StatusChart } from "@/components/dashboard/StatusChart";
 import { TimeSeriesChart } from "@/components/dashboard/TimeSeriesChart";
 import { ResponsabilChart } from "@/components/dashboard/ResponsabilChart";
 import { ActionsList } from "@/components/dashboard/ActionsList";
+import { FilteredOpportunitiesList } from "@/components/dashboard/FilteredOpportunitiesList";
 import { DashboardFilterBar } from "@/components/dashboard/DashboardFilterBar";
 import type { Opportunity, OpportunityHistoryRow } from "@/types/opportunity";
 
@@ -33,9 +34,11 @@ function toggleInArray(arr: string[], value: string): string[] {
 export function DashboardClient({
   opportunities,
   history,
+  stageOrder,
 }: {
   opportunities: Opportunity[];
   history: OpportunityHistoryRow[];
+  stageOrder: string[];
 }) {
   const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
 
@@ -63,7 +66,15 @@ export function DashboardClient({
   );
 
   const kpis = useMemo(() => computeKpis(filtered), [filtered]);
-  const stageData = useMemo(() => groupByStage(filtered), [filtered]);
+  const stageData = useMemo(() => {
+    const grouped = groupByStage(filtered);
+    // Sortam dupa ordinea reala de business (identica cu Kanban), nu dupa
+    // ordinea de aparitie in date - altfel graficul arata stage-urile
+    // intr-o ordine arbitrara, fara legatura cu fluxul comercial real.
+    return [...grouped].sort(
+      (a, b) => stageOrder.indexOf(a.stage) - stageOrder.indexOf(b.stage)
+    );
+  }, [filtered, stageOrder]);
   const statusData = useMemo(() => groupByStatus(filtered), [filtered]);
   const responsabilData = useMemo(() => groupByResponsabil(filtered), [filtered]);
   const timeSeries = useMemo(() => buildTimeSeries(history), [history]);
@@ -74,6 +85,21 @@ export function DashboardClient({
     filters.dateFrom && filters.dateTo
       ? { dateFrom: filters.dateFrom, dateTo: filters.dateTo }
       : null;
+
+  // Daca userul a dat click pe o bara/sectiune din Stage/Status/Responsabil,
+  // inlocuim widget-ul "Actiuni planificate" cu lista filtrata corespunzator
+  // - mult mai util decat un grafic separat, fiindca poti vedea direct
+  // oportunitatile selectate, fara sa mai navighezi in alt meniu.
+  const hasChartSelection =
+    filters.stages.length > 0 || filters.statuses.length > 0 || filters.responsabili.length > 0;
+
+  const selectionLabel = (() => {
+    const parts: string[] = [];
+    if (filters.stages.length > 0) parts.push(filters.stages.join(", "));
+    if (filters.statuses.length > 0) parts.push(filters.statuses.join(", "));
+    if (filters.responsabili.length > 0) parts.push(filters.responsabili.join(", "));
+    return parts.length > 0 ? `Oportunitati: ${parts.join(" · ")}` : "Oportunitati filtrate";
+  })();
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -210,7 +236,11 @@ export function DashboardClient({
             probabilitateMareFaraActiune={riskLists.probabilitateMareFaraActiune}
             amanateFaraDataRevenire={riskLists.amanateFaraDataRevenire}
           />
-          <ActionsList actions={actions} />
+          {hasChartSelection ? (
+            <FilteredOpportunitiesList opportunities={filtered} label={selectionLabel} />
+          ) : (
+            <ActionsList actions={actions} />
+          )}
         </div>
       </div>
     </div>

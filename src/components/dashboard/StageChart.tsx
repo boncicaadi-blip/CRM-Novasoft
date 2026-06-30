@@ -54,6 +54,7 @@ export function StageChart({
           />
           <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} allowDecimals={false} />
           <Tooltip
+            cursor={false}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const d = payload[0].payload as StageDatum;

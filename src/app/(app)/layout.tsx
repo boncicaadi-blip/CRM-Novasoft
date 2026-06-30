@@ -34,6 +34,12 @@ export default async function AppLayout({
 
   const todayOpportunities = await getTodayAndOverdueOpportunities();
 
+  // Vercel expune automat SHA-ul commit-ului curent la build (fara
+  // configurare suplimentara) - afisam ultimele 7 caractere, identic cu ce
+  // se vede in lista de Deployments din Vercel, ca sa stii usor pe ce
+  // versiune lucrezi.
+  const deployVersion = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null;
+
   return (
     <div className="flex h-screen flex-col overflow-hidden md:flex-row">
       <ThemeSync dbTheme={profile?.theme ?? "dark"} />
@@ -41,6 +47,7 @@ export default async function AppLayout({
       <Sidebar
         userName={profile?.full_name ?? data.user.email ?? "Utilizator"}
         isAdmin={profile?.role === "admin"}
+        deployVersion={deployVersion}
       />
       <main className="flex-1 overflow-y-auto pb-14 md:pb-0">{children}</main>
     </div>

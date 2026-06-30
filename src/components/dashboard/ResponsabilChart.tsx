@@ -43,6 +43,7 @@ export function ResponsabilChart({
             width={110}
           />
           <Tooltip
+            cursor={{ fill: "rgba(255,255,255,0.04)" }}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const d = payload[0].payload as ResponsabilDatum;

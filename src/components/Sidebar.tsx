@@ -40,9 +40,11 @@ function isNavItemActive(pathname: string, href: string): boolean {
 export function Sidebar({
   userName,
   isAdmin = false,
+  deployVersion = null,
 }: {
   userName: string;
   isAdmin?: boolean;
+  deployVersion?: string | null;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -188,6 +190,9 @@ export function Sidebar({
               <LogOut size={15} />
             </button>
           </div>
+          {deployVersion && (
+            <p className="mt-1 px-2 text-[10px] text-slate-600">v{deployVersion}</p>
+          )}
         </div>
       </aside>
 

@@ -134,7 +134,7 @@ export function computeKpis(opportunities: Opportunity[]) {
   };
 }
 
-export function groupByStage(opportunities: Opportunity[]) {
+export function groupByStage(opportunities: Opportunity[], stageOrder?: string[]) {
   const map = new Map<string, { stage: string; count: number; value: number }>();
   for (const o of opportunities) {
     const entry = map.get(o.stage) ?? { stage: o.stage, count: 0, value: 0 };
@@ -142,7 +142,20 @@ export function groupByStage(opportunities: Opportunity[]) {
     entry.value += (o.arr_synergo ?? 0) + (o.valoare_implementare_synergo ?? 0);
     map.set(o.stage, entry);
   }
-  return Array.from(map.values());
+  const rows = Array.from(map.values());
+
+  // Sortam dupa ordinea reala a stage-urilor (cea din Kanban/nomenclatoare),
+  // nu ordinea de aparitie in date - altfel graficul arata stage-urile
+  // intr-o ordine arbitrara, inconsistenta cu restul aplicatiei.
+  if (stageOrder && stageOrder.length > 0) {
+    rows.sort((a, b) => {
+      const ia = stageOrder.indexOf(a.stage);
+      const ib = stageOrder.indexOf(b.stage);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    });
+  }
+
+  return rows;
 }
 
 export function groupByStatus(opportunities: Opportunity[]) {
