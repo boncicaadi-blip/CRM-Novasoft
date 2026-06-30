@@ -228,7 +228,10 @@ function FinalizeForm({ opportunityId, onDone }: { opportunityId: string; onDone
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 space-y-2 rounded-md bg-white/[0.03] p-2.5">
+    <form
+      onSubmit={handleSubmit}
+      className="mt-2 max-w-sm space-y-2 rounded-md bg-white/[0.03] p-2.5"
+    >
       <div>
         <label className="mb-1 block text-[11px] text-slate-500">Rezultat actiune *</label>
         <input
@@ -302,13 +305,13 @@ function RescheduleForm({ opportunityId, onDone }: { opportunityId: string; onDo
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 flex gap-1.5 rounded-md bg-white/[0.03] p-2.5">
+    <form onSubmit={handleSubmit} className="mt-2 flex max-w-xs gap-1.5 rounded-md bg-white/[0.03] p-2.5">
       <input
         type="date"
         required
         value={date}
         onChange={(e) => setDate(e.target.value)}
-        className="flex-1 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+        className="w-40 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
       />
       <button
         type="submit"

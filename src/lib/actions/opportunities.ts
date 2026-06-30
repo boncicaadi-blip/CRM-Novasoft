@@ -303,11 +303,21 @@ export async function finalizeActionAction(
       status_actiune: "Planificata",
     });
   } else {
-    // Fara next step programat: golim actiunea curenta, ca redeschiderea
-    // fisei sa arate campuri goale, gata de completat unul nou - nu
-    // ramane afisata vechea actiune (deja finalizata) ca si cum ar fi
-    // inca activa.
-    await updateOpportunity(opportunityId, { actiune: null, data_actiune: null });
+    // Fara next step programat: golim TOATE campurile actiunii curente
+    // (actiune, data, status, data finalizare, observatii) - nu doar
+    // actiune/data. Altfel formularul de Editare ulterioara ar porni cu
+    // Status="Finalizata" si Observatii vechi precompletate, dand
+    // impresia gresita ca mai exista o actiune activa de editat, cand de
+    // fapt cea veche s-a incheiat si userul vrea sa introduca una noua,
+    // complet curata. Timeline-ul ramane neschimbat (e istoric, nu se
+    // actualizeaza retroactiv) - doar starea curenta se reseteaza.
+    await updateOpportunity(opportunityId, {
+      actiune: null,
+      data_actiune: null,
+      status_actiune: null,
+      data_finalizare_actiune: null,
+      observatii_actiune: null,
+    });
   }
 
   revalidatePath("/actiuni");
