@@ -169,6 +169,7 @@ export interface Profile {
   email: string;
   role: "admin" | "user";
   theme: "light" | "dark" | "system";
+  approved: boolean;
   created_at: string;
 }
 

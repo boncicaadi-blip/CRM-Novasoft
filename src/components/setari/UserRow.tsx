@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Check, X } from "lucide-react";
-import { updateUserAction } from "@/lib/actions/users";
+import { Pencil, Check, X, UserCheck } from "lucide-react";
+import { updateUserAction, approveUserAction } from "@/lib/actions/users";
 import type { Profile } from "@/types/opportunity";
 
 export function UserRow({ user }: { user: Profile }) {
@@ -10,6 +10,7 @@ export function UserRow({ user }: { user: Profile }) {
   const [fullName, setFullName] = useState(user.full_name);
   const [role, setRole] = useState<"admin" | "user">(user.role);
   const [isPending, startTransition] = useTransition();
+  const [isApproving, startApproving] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   function handleSave() {
@@ -21,6 +22,12 @@ export function UserRow({ user }: { user: Profile }) {
       } else {
         setError(result.message ?? "Eroare la salvare.");
       }
+    });
+  }
+
+  function handleApprove() {
+    startApproving(async () => {
+      await approveUserAction(user.id);
     });
   }
 
@@ -56,6 +63,7 @@ export function UserRow({ user }: { user: Profile }) {
             </option>
           </select>
         </td>
+        <td className="px-3 py-2.5"></td>
         <td className="px-3 py-2.5">
           <div className="flex items-center gap-1.5">
             <button
@@ -94,13 +102,37 @@ export function UserRow({ user }: { user: Profile }) {
         </span>
       </td>
       <td className="px-3 py-2.5">
-        <button
-          onClick={() => setEditing(true)}
-          className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
-          title="Editeaza"
-        >
-          <Pencil size={14} />
-        </button>
+        {user.approved ? (
+          <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[11px] font-medium text-green-400">
+            Activ
+          </span>
+        ) : (
+          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-400">
+            In asteptare
+          </span>
+        )}
+      </td>
+      <td className="px-3 py-2.5">
+        <div className="flex items-center gap-1">
+          {!user.approved && (
+            <button
+              onClick={handleApprove}
+              disabled={isApproving}
+              className="flex items-center gap-1 rounded-md bg-green-500/15 px-2 py-1 text-xs font-medium text-green-400 transition hover:bg-green-500/25 disabled:opacity-50"
+              title="Aproba acest cont"
+            >
+              <UserCheck size={12} />
+              {isApproving ? "..." : "Aproba"}
+            </button>
+          )}
+          <button
+            onClick={() => setEditing(true)}
+            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            title="Editeaza"
+          >
+            <Pencil size={14} />
+          </button>
+        </div>
       </td>
     </tr>
   );

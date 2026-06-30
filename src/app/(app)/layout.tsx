@@ -4,6 +4,7 @@ import { getTodayAndOverdueOpportunities } from "@/lib/data/opportunities";
 import { Sidebar } from "@/components/Sidebar";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DailySummaryPopup } from "@/components/DailySummaryPopup";
+import { PendingApprovalScreen } from "@/components/PendingApprovalScreen";
 
 export default async function AppLayout({
   children,
@@ -17,10 +18,21 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  const [{ data: profile }, todayOpportunities] = await Promise.all([
-    supabase.from("profiles").select("full_name, role, theme").eq("id", data.user.id).single(),
-    getTodayAndOverdueOpportunities(),
-  ]);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, role, theme, approved")
+    .eq("id", data.user.id)
+    .single();
+
+  // Userul si-a confirmat emailul (altfel n-ar fi putut ajunge aici, Supabase
+  // Auth blocheaza login-ul fara confirmare), dar contul nu a fost inca
+  // aprobat de un admin - arata un ecran dedicat de asteptare, fara acces
+  // la restul aplicatiei (fara Sidebar, fara fetch de date).
+  if (profile && !profile.approved) {
+    return <PendingApprovalScreen />;
+  }
+
+  const todayOpportunities = await getTodayAndOverdueOpportunities();
 
   return (
     <div className="flex h-screen flex-col overflow-hidden md:flex-row">

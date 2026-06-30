@@ -19,6 +19,27 @@ async function assertAdmin() {
   return supabase;
 }
 
+/** Aproba un cont nou, dandu-i acces la aplicatie. */
+export async function approveUserAction(
+  userId: string
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const supabase = await assertAdmin();
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ approved: true })
+      .eq("id", userId);
+
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath("/setari/utilizatori");
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: e instanceof Error ? e.message : "Eroare necunoscuta." };
+  }
+}
+
 export async function updateUserAction(
   userId: string,
   fullName: string,
