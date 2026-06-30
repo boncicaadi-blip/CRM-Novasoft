@@ -15,6 +15,31 @@ export async function getOpportunities(): Promise<Opportunity[]> {
   return data as unknown as Opportunity[];
 }
 
+/**
+ * Query usor, doar pentru oportunitatile relevante in popup-ul de rezumat
+ * zilnic (B-05 zona "Azi"/"Intarziate") - selecteaza doar oportunitati cu
+ * actiune planificata in trecut sau azi, ca sa nu tragem toate cele ~134
+ * de oportunitati complete la fiecare randare de layout, doar pentru un
+ * popup care oricum se afiseaza o singura data per sesiune.
+ */
+export async function getTodayAndOverdueOpportunities(): Promise<Opportunity[]> {
+  const supabase = await createClient();
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("opportunities")
+    .select("*, profiles:responsabil_vanzare_id(id, full_name)")
+    .eq("status_actiune", "Planificata")
+    .lte("data_actiune", todayStr)
+    .order("data_actiune", { ascending: true });
+
+  if (error) {
+    console.error("getTodayAndOverdueOpportunities error:", error.message);
+    return [];
+  }
+  return data as unknown as Opportunity[];
+}
+
 export async function getOpportunity(id: string): Promise<Opportunity | null> {
   const supabase = await createClient();
   const { data, error } = await supabase

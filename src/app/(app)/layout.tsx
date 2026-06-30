@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getTodayAndOverdueOpportunities } from "@/lib/data/opportunities";
 import { Sidebar } from "@/components/Sidebar";
 import { ThemeSync } from "@/components/ThemeSync";
+import { DailySummaryPopup } from "@/components/DailySummaryPopup";
 
 export default async function AppLayout({
   children,
@@ -15,15 +17,15 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, role, theme")
-    .eq("id", data.user.id)
-    .single();
+  const [{ data: profile }, todayOpportunities] = await Promise.all([
+    supabase.from("profiles").select("full_name, role, theme").eq("id", data.user.id).single(),
+    getTodayAndOverdueOpportunities(),
+  ]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden md:flex-row">
       <ThemeSync dbTheme={profile?.theme ?? "dark"} />
+      <DailySummaryPopup opportunities={todayOpportunities} />
       <Sidebar
         userName={profile?.full_name ?? data.user.email ?? "Utilizator"}
         isAdmin={profile?.role === "admin"}
