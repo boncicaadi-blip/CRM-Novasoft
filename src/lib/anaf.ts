@@ -130,60 +130,99 @@ export async function fetchAnafFinancials(cuiRaw: string): Promise<FinancialsRes
   const { data: json, error } = await callTermene(cui);
   if (error || !json) return { data: null, error };
 
+  // Structura reala v2 (descoperita din raspuns live): { "firma": { ... } }.
+  // Cautam cifra de afaceri si numarul de angajati in mai multe locatii
+  // posibile in interiorul acestui obiect, plus variantele "vechi" (Date
+  // Generale/Bilanturi, structura plata) ca fallback, ca sa fim robusti
+  // la orice varianta reala.
+  const firma = json["firma"] as Record<string, unknown> | undefined;
   const dateGenerale = json["Date Generale"] as Record<string, unknown> | undefined;
   const bilanturi = json["Bilanturi"];
 
-  if (dateGenerale || bilanturi) {
-    const rows = Array.isArray(bilanturi)
-      ? (bilanturi as Record<string, unknown>[])
-      : bilanturi
-        ? [bilanturi as Record<string, unknown>]
-        : [];
-    const sorted = [...rows].sort((a, b) => Number(b.an ?? 0) - Number(a.an ?? 0));
-    const latest = sorted[0];
+  // Posibile chei pentru bilant/financiar in interiorul "firma" - Termene.ro
+  // foloseste de obicei un array de bilanturi anuale sub o cheie ca
+  // "bilant", "bilanturi" sau "financiar".
+  const firmaBilantRaw =
+    (firma?.["bilant"] as unknown) ??
+    (firma?.["bilanturi"] as unknown) ??
+    (firma?.["financiar"] as unknown) ??
+    (firma?.["date_financiare"] as unknown);
 
-    const cifraAfaceriRon =
-      (latest?.cifra_de_afaceri_neta as string | number | undefined) ??
-      (dateGenerale?.cifra_de_afaceri_neta as string | number | undefined);
-    const numarAngajati = latest?.numar_mediu_angajati as string | number | undefined;
+  const candidateSources: Record<string, unknown>[] = [];
+  if (Array.isArray(firmaBilantRaw)) candidateSources.push(...(firmaBilantRaw as Record<string, unknown>[]));
+  else if (firmaBilantRaw && typeof firmaBilantRaw === "object")
+    candidateSources.push(firmaBilantRaw as Record<string, unknown>);
+  if (Array.isArray(bilanturi)) candidateSources.push(...(bilanturi as Record<string, unknown>[]));
+  else if (bilanturi && typeof bilanturi === "object")
+    candidateSources.push(bilanturi as Record<string, unknown>);
+  if (dateGenerale) candidateSources.push(dateGenerale);
+  if (firma) candidateSources.push(firma);
+  candidateSources.push(json);
 
-    if (cifraAfaceriRon === undefined) {
-      return {
-        data: null,
-        error: `Raspuns primit de la Termene.ro, dar fara cifra de afaceri recognoscibila. Raspuns brut: ${JSON.stringify(json).slice(0, 300)}`,
-      };
+  const sorted = [...candidateSources].sort((a, b) => Number(b.an ?? 0) - Number(a.an ?? 0));
+
+  const CA_KEYS = [
+    "cifra_de_afaceri_neta",
+    "cifra_afaceri",
+    "cifraAfaceri",
+    "cifra_de_afaceri",
+    "venituri_totale",
+    "venituri",
+  ];
+  const ANGAJATI_KEYS = [
+    "numar_mediu_angajati",
+    "numar_angajati",
+    "numarAngajati",
+    "nr_angajati",
+    "angajati",
+  ];
+
+  function findFirst(source: Record<string, unknown>, keys: string[]): unknown {
+    for (const k of keys) {
+      if (source[k] !== undefined && source[k] !== null) return source[k];
     }
+    return undefined;
+  }
 
-    const rate = await getRonToEurRate();
+  let cifraAfaceriRon: unknown;
+  let numarAngajati: unknown;
+  let anGasit: unknown;
+  for (const source of sorted) {
+    if (cifraAfaceriRon === undefined) {
+      const v = findFirst(source, CA_KEYS);
+      if (v !== undefined) {
+        cifraAfaceriRon = v;
+        anGasit = source.an;
+      }
+    }
+    if (numarAngajati === undefined) {
+      const v = findFirst(source, ANGAJATI_KEYS);
+      if (v !== undefined) numarAngajati = v;
+    }
+  }
+
+  const numeFirma =
+    (firma?.["nume_recom"] as string) ??
+    (firma?.["nume_mfinante"] as string) ??
+    (dateGenerale?.["nume"] as string) ??
+    null;
+
+  if (cifraAfaceriRon === undefined) {
     return {
-      data: {
-        cifraAfaceri: Math.round(Number(cifraAfaceriRon) * rate),
-        an: latest?.an ? Number(latest.an) : null,
-        numeFirma: (dateGenerale?.nume as string) ?? null,
-        numarAngajati: numarAngajati !== undefined ? Number(numarAngajati) : null,
-      },
-      error: null,
+      data: null,
+      error: `Raspuns primit de la Termene.ro, dar fara cifra de afaceri recognoscibila. Raspuns brut: ${JSON.stringify(json)}`,
     };
   }
 
-  const cifraAfaceriRon = json.cifra_de_afaceri_neta ?? json.cifraAfaceri ?? null;
-  const numarAngajati = json.numar_mediu_angajati ?? json.numarAngajati ?? null;
-  if (cifraAfaceriRon !== null) {
-    const rate = await getRonToEurRate();
-    return {
-      data: {
-        cifraAfaceri: Math.round(Number(cifraAfaceriRon) * rate),
-        an: json.an ? Number(json.an) : null,
-        numeFirma: (json.nume as string) ?? null,
-        numarAngajati: numarAngajati !== null ? Number(numarAngajati) : null,
-      },
-      error: null,
-    };
-  }
-
+  const rate = await getRonToEurRate();
   return {
-    data: null,
-    error: `Raspuns primit de la Termene.ro, dar structura e necunoscuta. Raspuns brut: ${JSON.stringify(json).slice(0, 300)}`,
+    data: {
+      cifraAfaceri: Math.round(Number(cifraAfaceriRon) * rate),
+      an: anGasit ? Number(anGasit) : null,
+      numeFirma,
+      numarAngajati: numarAngajati !== undefined ? Number(numarAngajati) : null,
+    },
+    error: null,
   };
 }
 
@@ -194,11 +233,21 @@ export async function fetchAnafCompanyInfo(cuiRaw: string): Promise<AnafCompanyI
   const { data: json } = await callTermene(cui);
   if (!json) return null;
 
+  const firma = json["firma"] as Record<string, unknown> | undefined;
   const dateGenerale = (json["Date Generale"] as Record<string, unknown> | undefined) ?? json;
+  const adresa = firma?.["adresa"] as Record<string, unknown> | undefined;
 
   return {
-    denumire: (dateGenerale.nume as string) ?? null,
-    judet: (dateGenerale.judet as string) ?? null,
-    oras: (dateGenerale.localitate as string) ?? null,
+    denumire:
+      (firma?.["nume_recom"] as string) ??
+      (firma?.["nume_mfinante"] as string) ??
+      (dateGenerale.nume as string) ??
+      null,
+    judet: (adresa?.["judet"] as string) ?? (dateGenerale.judet as string) ?? null,
+    oras:
+      (adresa?.["localitate"] as string) ??
+      (adresa?.["oras"] as string) ??
+      (dateGenerale.localitate as string) ??
+      null,
   };
 }

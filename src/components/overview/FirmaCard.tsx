@@ -204,7 +204,11 @@ export function FirmaCard({
             <RefreshCw size={12} className={isRefreshingAnaf ? "animate-spin" : ""} />
             {isRefreshingAnaf ? "Se actualizeaza..." : "Actualizeaza din ANAF"}
           </button>
-          {anafMessage && <p className="mt-1.5 text-[11px] text-slate-500">{anafMessage}</p>}
+          {anafMessage && (
+            <p className="mt-1.5 break-all font-mono text-[10px] leading-relaxed text-slate-500">
+              {anafMessage}
+            </p>
+          )}
         </>
       )}
     </div>
