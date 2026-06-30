@@ -21,8 +21,14 @@ const FILTERS: { key: ActionWorkItemFilter; label: string }[] = [
   { key: "finalizate", label: "Finalizate" },
 ];
 
-export function ActiuniClient({ opportunities }: { opportunities: Opportunity[] }) {
-  const [filter, setFilter] = useState<ActionWorkItemFilter>("intarziate");
+export function ActiuniClient({
+  opportunities,
+  initialFilter,
+}: {
+  opportunities: Opportunity[];
+  initialFilter?: ActionWorkItemFilter;
+}) {
+  const [filter, setFilter] = useState<ActionWorkItemFilter>(initialFilter ?? "intarziate");
   const items = buildActionWorkItems(opportunities, filter);
 
   const counts = {

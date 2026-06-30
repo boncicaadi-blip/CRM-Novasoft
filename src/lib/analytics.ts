@@ -1,26 +1,72 @@
 import type { Opportunity, OpportunityHistoryRow, TimelineEntry } from "@/types/opportunity";
 
+export type PeriodPreset = "saptamana" | "luna" | "trimestru" | "an" | "custom" | null;
+
 export interface DashboardFilters {
-  stage: string | null;
-  status: string | null;
-  responsabil: string | null;
-  judet: string | null;
-  /** Interval de date (inclusiv) selectat prin drag pe graficul de evolutie. */
+  stages: string[];
+  statuses: string[];
+  responsabili: string[];
+  judete: string[];
+  /** Interval de date (inclusiv) - din presetare rapida SAU din drag pe graficul de evolutie. */
   dateFrom: string | null;
   dateTo: string | null;
+  periodPreset: PeriodPreset;
 }
 
 export const EMPTY_FILTERS: DashboardFilters = {
-  stage: null,
-  status: null,
-  responsabil: null,
-  judet: null,
+  stages: [],
+  statuses: [],
+  responsabili: [],
+  judete: [],
   dateFrom: null,
   dateTo: null,
+  periodPreset: null,
 };
 
 export function hasActiveFilters(filters: DashboardFilters): boolean {
-  return Object.values(filters).some((v) => v !== null);
+  return (
+    filters.stages.length > 0 ||
+    filters.statuses.length > 0 ||
+    filters.responsabili.length > 0 ||
+    filters.judete.length > 0 ||
+    filters.dateFrom !== null ||
+    filters.dateTo !== null
+  );
+}
+
+function startOfWeek(d: Date): Date {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day; // Luni ca prima zi
+  date.setDate(date.getDate() + diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+/** Calculeaza dateFrom/dateTo pentru o presetare de perioada, relativ la azi. */
+export function computePeriodRange(preset: PeriodPreset): { dateFrom: string; dateTo: string } | null {
+  if (!preset || preset === "custom") return null;
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  if (preset === "saptamana") {
+    const start = startOfWeek(now);
+    return { dateFrom: start.toISOString().slice(0, 10), dateTo: todayStr };
+  }
+  if (preset === "luna") {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { dateFrom: start.toISOString().slice(0, 10), dateTo: todayStr };
+  }
+  if (preset === "trimestru") {
+    const startMonth = Math.floor(now.getMonth() / 3) * 3;
+    const start = new Date(now.getFullYear(), startMonth, 1);
+    return { dateFrom: start.toISOString().slice(0, 10), dateTo: todayStr };
+  }
+  if (preset === "an") {
+    const start = new Date(now.getFullYear(), 0, 1);
+    return { dateFrom: start.toISOString().slice(0, 10), dateTo: todayStr };
+  }
+  return null;
 }
 
 /**
@@ -35,12 +81,16 @@ export function applyDashboardFilters(
   filters: DashboardFilters
 ): Opportunity[] {
   let rows = opportunities;
-  if (filters.stage) rows = rows.filter((o) => o.stage === filters.stage);
-  if (filters.status) rows = rows.filter((o) => o.status === filters.status);
-  if (filters.responsabil) {
-    rows = rows.filter((o) => (o.profiles?.full_name ?? "Neasignat") === filters.responsabil);
+  if (filters.stages.length > 0) rows = rows.filter((o) => filters.stages.includes(o.stage));
+  if (filters.statuses.length > 0) rows = rows.filter((o) => filters.statuses.includes(o.status));
+  if (filters.responsabili.length > 0) {
+    rows = rows.filter((o) =>
+      filters.responsabili.includes(o.profiles?.full_name ?? "Neasignat")
+    );
   }
-  if (filters.judet) rows = rows.filter((o) => (o.judet ?? "Necunoscut") === filters.judet);
+  if (filters.judete.length > 0) {
+    rows = rows.filter((o) => filters.judete.includes(o.judet ?? "Necunoscut"));
+  }
   if (filters.dateFrom) {
     rows = rows.filter((o) => o.updated_at.slice(0, 10) >= filters.dateFrom!);
   }

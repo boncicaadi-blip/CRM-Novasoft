@@ -26,6 +26,10 @@ import { ActionsList } from "@/components/dashboard/ActionsList";
 import { DashboardFilterBar } from "@/components/dashboard/DashboardFilterBar";
 import type { Opportunity, OpportunityHistoryRow } from "@/types/opportunity";
 
+function toggleInArray(arr: string[], value: string): string[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+}
+
 export function DashboardClient({
   opportunities,
   history,
@@ -91,7 +95,7 @@ export function DashboardClient({
         )}
       </div>
 
-      <div className="mb-5">
+      <div className="mb-4">
         <DashboardFilterBar
           filters={filters}
           onChange={setFilters}
@@ -102,14 +106,7 @@ export function DashboardClient({
         />
       </div>
 
-      <RiskZone
-        ofertareFaraFollowUp={riskLists.ofertareFaraFollowUp}
-        negociereStagnanta={riskLists.negociereStagnanta}
-        probabilitateMareFaraActiune={riskLists.probabilitateMareFaraActiune}
-        amanateFaraDataRevenire={riskLists.amanateFaraDataRevenire}
-      />
-
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <KpiCard
           label="ARR activ"
           value={formatEur(kpis.totalArr)}
@@ -153,23 +150,29 @@ export function DashboardClient({
         />
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <StageChart
-            data={stageData}
-            selected={filters.stage}
-            onSelect={(stage) => setFilters((f) => ({ ...f, stage }))}
-          />
-        </div>
-        <StatusChart
-          data={statusData}
-          selected={filters.status}
-          onSelect={(status) => setFilters((f) => ({ ...f, status }))}
-        />
-      </div>
+      {/* Layout compact pe 2 coloane: stanga grafice principale, dreapta zona
+          operationala (risc + actiuni) - evita golurile mari cand listele
+          sunt scurte, fiindca fiecare bloc isi ia doar inaltimea necesara. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <StageChart
+              data={stageData}
+              selected={filters.stages[0] ?? null}
+              onSelect={(stage) =>
+                stage && setFilters((f) => ({ ...f, stages: toggleInArray(f.stages, stage) }))
+              }
+            />
+            <StatusChart
+              data={statusData}
+              selected={filters.statuses[0] ?? null}
+              onSelect={(status) =>
+                status &&
+                setFilters((f) => ({ ...f, statuses: toggleInArray(f.statuses, status) }))
+              }
+            />
+          </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
           <TimeSeriesChart
             data={timeSeries}
             selectedRange={selectedRange}
@@ -178,19 +181,33 @@ export function DashboardClient({
                 ...f,
                 dateFrom: range?.dateFrom ?? null,
                 dateTo: range?.dateTo ?? null,
+                periodPreset: range ? "custom" : null,
+              }))
+            }
+          />
+
+          <ResponsabilChart
+            data={responsabilData}
+            selected={filters.responsabili[0] ?? null}
+            onSelect={(responsabil) =>
+              responsabil &&
+              setFilters((f) => ({
+                ...f,
+                responsabili: toggleInArray(f.responsabili, responsabil),
               }))
             }
           />
         </div>
-        <ActionsList actions={actions} />
-      </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        <ResponsabilChart
-          data={responsabilData}
-          selected={filters.responsabil}
-          onSelect={(responsabil) => setFilters((f) => ({ ...f, responsabil }))}
-        />
+        <div className="space-y-4">
+          <RiskZone
+            ofertareFaraFollowUp={riskLists.ofertareFaraFollowUp}
+            negociereStagnanta={riskLists.negociereStagnanta}
+            probabilitateMareFaraActiune={riskLists.probabilitateMareFaraActiune}
+            amanateFaraDataRevenire={riskLists.amanateFaraDataRevenire}
+          />
+          <ActionsList actions={actions} />
+        </div>
       </div>
     </div>
   );

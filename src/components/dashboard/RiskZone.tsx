@@ -26,13 +26,13 @@ export function RiskZone({
   if (!hasAny) return null;
 
   return (
-    <div className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4">
+    <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4">
       <div className="mb-3 flex items-center gap-2">
         <AlertTriangle size={16} className="text-amber-400" />
         <p className="text-sm font-medium text-white">Zona de risc</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="space-y-4">
         <RiskGroup
           title="Oferte fara follow-up"
           icon={<Clock size={13} />}

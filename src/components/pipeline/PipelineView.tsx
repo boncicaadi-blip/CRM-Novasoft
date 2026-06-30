@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { ViewToggle } from "./ViewToggle";
 import { KanbanBoard } from "./KanbanBoard";
 import { PipelineTable } from "./PipelineTable";
-import { PipelineFilters, STAGE_FILTER_ALL, STATUS_FILTER_ALL } from "./PipelineFilters";
+import { PipelineFilters } from "./PipelineFilters";
 import type { Opportunity } from "@/types/opportunity";
 
 export function PipelineView({
@@ -19,8 +19,8 @@ export function PipelineView({
 }) {
   const [view, setView] = useState<"kanban" | "table">("kanban");
   const [search, setSearch] = useState("");
-  const [stageFilter, setStageFilter] = useState(STAGE_FILTER_ALL);
-  const [statusFilter, setStatusFilter] = useState(STATUS_FILTER_ALL);
+  const [stageFilter, setStageFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
   const stagesInData = useMemo(
     () => Array.from(new Set(opportunities.map((o) => o.stage))),
@@ -43,11 +43,11 @@ export function PipelineView({
           (o.cod_fiscal ?? "").toLowerCase().includes(q)
       );
     }
-    if (stageFilter !== STAGE_FILTER_ALL) {
-      rows = rows.filter((o) => o.stage === stageFilter);
+    if (stageFilter.length > 0) {
+      rows = rows.filter((o) => stageFilter.includes(o.stage));
     }
-    if (statusFilter !== STATUS_FILTER_ALL) {
-      rows = rows.filter((o) => o.status === statusFilter);
+    if (statusFilter.length > 0) {
+      rows = rows.filter((o) => statusFilter.includes(o.status));
     }
     return rows;
   }, [opportunities, search, stageFilter, statusFilter]);

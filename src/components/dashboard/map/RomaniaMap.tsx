@@ -97,13 +97,14 @@ export function RomaniaMap({
   const hoveredDatum = hovered ? dataByJudet.get(normalizeJudetName(hovered)) : null;
 
   return (
-    <div className="relative" style={{ maxWidth: 680 }}>
+    <div className="relative">
       <p className="mb-2 text-[11px] text-slate-500">
         Click pentru a selecta un judet. Ctrl/Cmd+Click pentru selectie multipla.
       </p>
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="w-full"
+        className="mx-auto w-full"
+        style={{ maxHeight: "60vh" }}
         role="img"
         aria-label="Harta Romaniei cu oportunitati pe judet"
         onMouseMove={handleMouseMove}
