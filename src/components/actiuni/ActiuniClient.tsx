@@ -152,32 +152,33 @@ function ActionRow({
       </div>
 
       {filter !== "finalizate" && filter !== "fara_next_step" && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        <div className="mt-2.5 flex flex-wrap gap-2">
           <button
             onClick={() => setShowFinalize((v) => !v)}
-            className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-slate-300 transition hover:bg-white/5"
+            className="flex items-center gap-1 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/20"
           >
+            <CheckCircle2 size={13} />
             Finalizeaza
           </button>
           <button
             onClick={handlePostpone}
             disabled={isPending}
-            className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-slate-300 transition hover:bg-white/5"
+            className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
           >
             Amana 7 zile
           </button>
           <button
             onClick={() => setShowReschedule((v) => !v)}
-            className="rounded-md border border-white/10 px-2 py-1 text-[11px] text-slate-300 transition hover:bg-white/5"
+            className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
           >
             Reprogrameaza
           </button>
           <Link
             href={`/oportunitati/${o.id}`}
-            className="flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[11px] text-slate-300 transition hover:bg-white/5"
+            className="flex items-center gap-1 rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
           >
             Deschide
-            <ArrowRight size={11} />
+            <ArrowRight size={12} />
           </Link>
         </div>
       )}
@@ -208,6 +209,7 @@ function ActionRow({
 function FinalizeForm({ opportunityId, onDone }: { opportunityId: string; onDone: () => void }) {
   const [isPending, startTransition] = useTransition();
   const [rezultat, setRezultat] = useState("");
+  const [dataFinalizare, setDataFinalizare] = useState(new Date().toISOString().slice(0, 10));
   const [nextActiune, setNextActiune] = useState("");
   const [nextData, setNextData] = useState("");
 
@@ -218,7 +220,8 @@ function FinalizeForm({ opportunityId, onDone }: { opportunityId: string; onDone
       await finalizeActionAction(
         opportunityId,
         rezultat,
-        nextActiune && nextData ? { actiune: nextActiune, dataActiune: nextData } : undefined
+        nextActiune && nextData ? { actiune: nextActiune, dataActiune: nextData } : undefined,
+        dataFinalizare
       );
       onDone();
     });
@@ -233,6 +236,15 @@ function FinalizeForm({ opportunityId, onDone }: { opportunityId: string; onDone
           value={rezultat}
           onChange={(e) => setRezultat(e.target.value)}
           placeholder="Ce s-a discutat / rezultat..."
+          className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-[11px] text-slate-500">Data finalizare</label>
+        <input
+          type="date"
+          value={dataFinalizare}
+          onChange={(e) => setDataFinalizare(e.target.value)}
           className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
         />
       </div>

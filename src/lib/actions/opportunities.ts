@@ -280,28 +280,36 @@ export async function updateOpportunitySectionAction(
 export async function finalizeActionAction(
   opportunityId: string,
   rezultat: string,
-  nextStep?: { actiune: string; dataActiune: string }
+  nextStep?: { actiune: string; dataActiune: string },
+  dataFinalizare?: string
 ) {
-  const updates: Record<string, unknown> = {
+  // Important: facem finalizarea si programarea next step-ului in DOUA
+  // update-uri SQL separate, nu unul singur. Trigger-ul de timeline
+  // (log_opportunity_timeline_changes) e un if/elsif: daca am face totul
+  // intr-un singur UPDATE, doar UNUL din cele doua evenimente (finalizare
+  // SAU programare) ar aparea in cronologie, niciodata ambele - exact
+  // bug-ul raportat (Timeline arata doar "Actiune programata", pierzand
+  // complet evenimentul de finalizare a actiunii vechi).
+  await updateOpportunity(opportunityId, {
     status_actiune: "Finalizata",
-    data_finalizare_actiune: new Date().toISOString().slice(0, 10),
+    data_finalizare_actiune: dataFinalizare || new Date().toISOString().slice(0, 10),
     observatii_actiune: rezultat,
-  };
+  });
 
   if (nextStep) {
-    updates.actiune = nextStep.actiune;
-    updates.data_actiune = nextStep.dataActiune;
-    updates.status_actiune = "Planificata"; // urmatoarea actiune e activa, nu finalizata
+    await updateOpportunity(opportunityId, {
+      actiune: nextStep.actiune,
+      data_actiune: nextStep.dataActiune,
+      status_actiune: "Planificata",
+    });
   } else {
     // Fara next step programat: golim actiunea curenta, ca redeschiderea
     // fisei sa arate campuri goale, gata de completat unul nou - nu
     // ramane afisata vechea actiune (deja finalizata) ca si cum ar fi
     // inca activa.
-    updates.actiune = null;
-    updates.data_actiune = null;
+    await updateOpportunity(opportunityId, { actiune: null, data_actiune: null });
   }
 
-  await updateOpportunity(opportunityId, updates);
   revalidatePath("/actiuni");
   revalidatePath(`/oportunitati/${opportunityId}`);
   revalidatePath("/calendar");

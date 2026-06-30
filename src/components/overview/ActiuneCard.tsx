@@ -61,24 +61,13 @@ export function ActiuneCard({
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Actiune curenta
         </p>
-        <div className="flex items-center gap-1">
-          {o.actiune && o.status_actiune === "Planificata" && (
-            <button
-              onClick={() => setMode("finalize")}
-              className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-green-400"
-              title="Finalizeaza si introdu next step"
-            >
-              <CheckCircle2 size={13} />
-            </button>
-          )}
-          <button
-            onClick={() => setMode("edit")}
-            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
-            title="Editeaza Actiune curenta"
-          >
-            <Pencil size={13} />
-          </button>
-        </div>
+        <button
+          onClick={() => setMode("edit")}
+          className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+          title="Editeaza Actiune curenta"
+        >
+          <Pencil size={13} />
+        </button>
       </div>
       <div className="divide-y divide-white/5">
         <InfoRow label="Actiune" value={o.actiune} />
@@ -95,6 +84,16 @@ export function ActiuneCard({
           <p className="py-1.5 text-xs text-slate-500">Nicio actiune programata.</p>
         )}
       </div>
+
+      {o.actiune && o.status_actiune === "Planificata" && (
+        <button
+          onClick={() => setMode("finalize")}
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-green-500/30 bg-green-500/10 py-2 text-sm font-medium text-green-400 transition hover:bg-green-500/20"
+        >
+          <CheckCircle2 size={15} />
+          Finalizeaza actiunea
+        </button>
+      )}
     </div>
   );
 }
@@ -197,6 +196,7 @@ function EditForm({
 function FinalizeForm({ o, onDone }: { o: Opportunity; onDone: () => void }) {
   const [isPending, startTransition] = useTransition();
   const [rezultat, setRezultat] = useState("");
+  const [dataFinalizare, setDataFinalizare] = useState(new Date().toISOString().slice(0, 10));
   const [nextActiune, setNextActiune] = useState("");
   const [nextData, setNextData] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -212,7 +212,8 @@ function FinalizeForm({ o, onDone }: { o: Opportunity; onDone: () => void }) {
       await finalizeActionAction(
         o.id,
         rezultat,
-        nextActiune && nextData ? { actiune: nextActiune, dataActiune: nextData } : undefined
+        nextActiune && nextData ? { actiune: nextActiune, dataActiune: nextData } : undefined,
+        dataFinalizare
       );
       onDone();
     });
@@ -229,6 +230,13 @@ function FinalizeForm({ o, onDone }: { o: Opportunity; onDone: () => void }) {
             value={rezultat}
             onChange={(e) => setRezultat(e.target.value)}
             placeholder="Ce s-a discutat / rezultat..."
+          />
+        </LabeledInput>
+        <LabeledInput label="Data finalizare">
+          <TextInput
+            type="date"
+            value={dataFinalizare}
+            onChange={(e) => setDataFinalizare(e.target.value)}
           />
         </LabeledInput>
 
