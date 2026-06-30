@@ -4,7 +4,6 @@ import { ArrowLeft, History } from "lucide-react";
 import { getOpportunity, getProfiles } from "@/lib/data/opportunities";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { getTimeline } from "@/lib/data/timeline";
-import { computeOpportunityScore, scoreLevel } from "@/lib/analytics";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -16,6 +15,7 @@ import { ActiuneCard } from "@/components/overview/ActiuneCard";
 import { PricingCard } from "@/components/overview/PricingCard";
 import { SursaCard } from "@/components/overview/SursaCard";
 import { TimelineCard } from "@/components/overview/TimelineCard";
+import { ScoreBadge } from "@/components/ScoreBadge";
 import type { Opportunity } from "@/types/opportunity";
 
 function valori(items: { valoare: string }[] | undefined): string[] {
@@ -154,25 +154,5 @@ function KpiMini({
 }
 
 function ScoreKpi({ o }: { o: Opportunity }) {
-  const score = computeOpportunityScore(o);
-  const level = scoreLevel(score.total);
-  const tooltip = score.detalii
-    .map((d) => `${d.criteriu}: ${d.puncte}/${d.maxim}`)
-    .join("\n");
-
-  return (
-    <div
-      className="rounded-lg border border-white/10 bg-white/[0.02] p-3"
-      title={tooltip}
-    >
-      <p className="text-[11px] text-slate-500">Scor oportunitate</p>
-      <p className="font-mono text-lg" style={{ color: level.color }}>
-        {score.total}
-        <span className="text-xs text-slate-500">/100</span>
-      </p>
-      <p className="text-[10px]" style={{ color: level.color }}>
-        {level.label}
-      </p>
-    </div>
-  );
+  return <ScoreBadge o={o} size="lg" />;
 }

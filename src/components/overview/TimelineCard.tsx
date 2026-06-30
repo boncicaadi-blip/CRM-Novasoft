@@ -102,7 +102,7 @@ export function TimelineCard({
         {error && <p className="text-xs text-red-400">{error}</p>}
       </form>
 
-      <div className="max-h-[400px] space-y-3 overflow-y-auto">
+      <div className="max-h-[400px] space-y-3 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent">
         {entries.map((entry) => {
           const config = TYPE_CONFIG[entry.tip];
           const Icon = config.icon;

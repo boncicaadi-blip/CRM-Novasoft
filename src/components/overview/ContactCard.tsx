@@ -8,7 +8,16 @@ import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
 import { updateOpportunitySectionAction } from "@/lib/actions/opportunities";
 import type { Opportunity } from "@/types/opportunity";
 
-const FIELDS = ["contact_nume", "contact_functie", "contact_telefon", "contact_email"];
+const FIELDS = [
+  "contact_nume",
+  "contact_functie",
+  "contact_telefon",
+  "contact_email",
+  "contact2_nume",
+  "contact2_functie",
+  "contact2_telefon",
+  "contact2_email",
+];
 
 export function ContactCard({ o }: { o: Opportunity }) {
   const [editing, setEditing] = useState(false);
@@ -34,19 +43,20 @@ export function ContactCard({ o }: { o: Opportunity }) {
     });
   }
 
-  const hasContact = o.contact_nume || o.contact_telefon || o.contact_email;
+  const hasContact1 = o.contact_nume || o.contact_telefon || o.contact_email;
+  const hasContact2 = o.contact2_nume || o.contact2_telefon || o.contact2_email;
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-2 flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-          Persoana de contact
+          Persoane de contact
         </p>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
             className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
-            title="Editeaza Persoana de contact"
+            title="Editeaza Persoane de contact"
           >
             <Pencil size={13} />
           </button>
@@ -54,19 +64,42 @@ export function ContactCard({ o }: { o: Opportunity }) {
       </div>
 
       {editing ? (
-        <form ref={formRef} action={handleSubmit} className="space-y-2.5">
-          <LabeledInput label="Nume">
-            <TextInput name="contact_nume" defaultValue={o.contact_nume ?? ""} />
-          </LabeledInput>
-          <LabeledInput label="Functie">
-            <TextInput name="contact_functie" defaultValue={o.contact_functie ?? ""} />
-          </LabeledInput>
-          <LabeledInput label="Telefon">
-            <TextInput type="tel" name="contact_telefon" defaultValue={o.contact_telefon ?? ""} />
-          </LabeledInput>
-          <LabeledInput label="Email">
-            <TextInput type="email" name="contact_email" defaultValue={o.contact_email ?? ""} />
-          </LabeledInput>
+        <form ref={formRef} action={handleSubmit} className="space-y-3">
+          <div className="space-y-2.5">
+            <p className="text-[11px] font-medium text-slate-500">Contact principal</p>
+            <LabeledInput label="Nume">
+              <TextInput name="contact_nume" defaultValue={o.contact_nume ?? ""} />
+            </LabeledInput>
+            <LabeledInput label="Functie">
+              <TextInput name="contact_functie" defaultValue={o.contact_functie ?? ""} />
+            </LabeledInput>
+            <LabeledInput label="Telefon">
+              <TextInput type="tel" name="contact_telefon" defaultValue={o.contact_telefon ?? ""} />
+            </LabeledInput>
+            <LabeledInput label="Email">
+              <TextInput type="email" name="contact_email" defaultValue={o.contact_email ?? ""} />
+            </LabeledInput>
+          </div>
+
+          <div className="space-y-2.5 border-t border-white/5 pt-3">
+            <p className="text-[11px] font-medium text-slate-500">Contact secundar</p>
+            <LabeledInput label="Nume">
+              <TextInput name="contact2_nume" defaultValue={o.contact2_nume ?? ""} />
+            </LabeledInput>
+            <LabeledInput label="Functie">
+              <TextInput name="contact2_functie" defaultValue={o.contact2_functie ?? ""} />
+            </LabeledInput>
+            <LabeledInput label="Telefon">
+              <TextInput
+                type="tel"
+                name="contact2_telefon"
+                defaultValue={o.contact2_telefon ?? ""}
+              />
+            </LabeledInput>
+            <LabeledInput label="Email">
+              <TextInput type="email" name="contact2_email" defaultValue={o.contact2_email ?? ""} />
+            </LabeledInput>
+          </div>
 
           {error && (
             <p className="rounded-md bg-red-500/10 px-2.5 py-2 text-xs text-red-400">{error}</p>
@@ -93,30 +126,60 @@ export function ContactCard({ o }: { o: Opportunity }) {
             </button>
           </div>
         </form>
-      ) : hasContact ? (
-        <div className="divide-y divide-white/5">
-          <InfoRow label="Nume" value={o.contact_nume} />
-          <InfoRow label="Functie" value={o.contact_functie} />
-          <InfoRow
-            label="Telefon"
-            value={
-              o.contact_telefon ? (
-                <a href={`tel:${o.contact_telefon}`} className="hover:text-[#E8007A]">
-                  {o.contact_telefon}
-                </a>
-              ) : null
-            }
-          />
-          <InfoRow
-            label="Email"
-            value={
-              o.contact_email ? (
-                <a href={`mailto:${o.contact_email}`} className="hover:text-[#E8007A]">
-                  {o.contact_email}
-                </a>
-              ) : null
-            }
-          />
+      ) : hasContact1 || hasContact2 ? (
+        <div className="space-y-3">
+          {hasContact1 && (
+            <div className="divide-y divide-white/5">
+              <InfoRow label="Nume" value={o.contact_nume} />
+              <InfoRow label="Functie" value={o.contact_functie} />
+              <InfoRow
+                label="Telefon"
+                value={
+                  o.contact_telefon ? (
+                    <a href={`tel:${o.contact_telefon}`} className="hover:text-[#E8007A]">
+                      {o.contact_telefon}
+                    </a>
+                  ) : null
+                }
+              />
+              <InfoRow
+                label="Email"
+                value={
+                  o.contact_email ? (
+                    <a href={`mailto:${o.contact_email}`} className="hover:text-[#E8007A]">
+                      {o.contact_email}
+                    </a>
+                  ) : null
+                }
+              />
+            </div>
+          )}
+          {hasContact2 && (
+            <div className={`divide-y divide-white/5 ${hasContact1 ? "border-t border-white/5 pt-3" : ""}`}>
+              <InfoRow label="Nume" value={o.contact2_nume} />
+              <InfoRow label="Functie" value={o.contact2_functie} />
+              <InfoRow
+                label="Telefon"
+                value={
+                  o.contact2_telefon ? (
+                    <a href={`tel:${o.contact2_telefon}`} className="hover:text-[#E8007A]">
+                      {o.contact2_telefon}
+                    </a>
+                  ) : null
+                }
+              />
+              <InfoRow
+                label="Email"
+                value={
+                  o.contact2_email ? (
+                    <a href={`mailto:${o.contact2_email}`} className="hover:text-[#E8007A]">
+                      {o.contact2_email}
+                    </a>
+                  ) : null
+                }
+              />
+            </div>
+          )}
         </div>
       ) : (
         <p className="text-xs text-slate-500">Nicio persoana de contact adaugata.</p>

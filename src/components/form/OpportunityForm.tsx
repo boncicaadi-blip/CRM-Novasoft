@@ -102,14 +102,17 @@ export function OpportunityForm({
   const [anafLookupState, setAnafLookupState] = useState<"idle" | "loading" | "done" | "error">(
     "idle"
   );
+  const [anafLookupError, setAnafLookupError] = useState<string | null>(null);
 
   function handleAnafLookup() {
     if (!codFiscal) return;
     setAnafLookupState("loading");
+    setAnafLookupError(null);
     lookupAnafCompanyAction(codFiscal)
       .then((res) => {
         if (!res.success) {
           setAnafLookupState("error");
+          setAnafLookupError(res.error ?? null);
           return;
         }
         if (res.denumire && !numePotential) setNumePotential(res.denumire);
@@ -119,7 +122,10 @@ export function OpportunityForm({
         if (res.cifraAfaceri) setCifraAfaceriPreview(res.cifraAfaceri);
         setAnafLookupState("done");
       })
-      .catch(() => setAnafLookupState("error"));
+      .catch((e) => {
+        setAnafLookupState("error");
+        setAnafLookupError(e instanceof Error ? e.message : String(e));
+      });
   }
   const [nrUtilizatori, setNrUtilizatori] = useState(
     String(opportunity?.nr_utilizatori_synergo ?? "")
@@ -281,7 +287,7 @@ export function OpportunityForm({
               )}
               {anafLookupState === "error" && (
                 <p className="mt-1 text-[11px] text-red-400">
-                  Nu am gasit date pentru acest CUI.
+                  {anafLookupError ?? "Nu am gasit date pentru acest CUI."}
                 </p>
               )}
               {cifraAfaceriPreview !== null && (

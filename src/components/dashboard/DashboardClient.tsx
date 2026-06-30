@@ -160,15 +160,20 @@ export function DashboardClient({
               data={stageData}
               selected={filters.stages[0] ?? null}
               onSelect={(stage) =>
-                stage && setFilters((f) => ({ ...f, stages: toggleInArray(f.stages, stage) }))
+                setFilters((f) => ({
+                  ...f,
+                  stages: stage ? toggleInArray(f.stages, stage) : [],
+                }))
               }
             />
             <StatusChart
               data={statusData}
               selected={filters.statuses[0] ?? null}
               onSelect={(status) =>
-                status &&
-                setFilters((f) => ({ ...f, statuses: toggleInArray(f.statuses, status) }))
+                setFilters((f) => ({
+                  ...f,
+                  statuses: status ? toggleInArray(f.statuses, status) : [],
+                }))
               }
             />
           </div>
@@ -190,10 +195,9 @@ export function DashboardClient({
             data={responsabilData}
             selected={filters.responsabili[0] ?? null}
             onSelect={(responsabil) =>
-              responsabil &&
               setFilters((f) => ({
                 ...f,
-                responsabili: toggleInArray(f.responsabili, responsabil),
+                responsabili: responsabil ? toggleInArray(f.responsabili, responsabil) : [],
               }))
             }
           />

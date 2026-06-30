@@ -5,7 +5,8 @@ import Link from "next/link";
 import { AlertTriangle, AlertCircle, Flame } from "lucide-react";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
-import { computeStagnation, computeOpportunityScore, scoreLevel } from "@/lib/analytics";
+import { computeStagnation, computeOpportunityScore } from "@/lib/analytics";
+import { ScoreBadge } from "@/components/ScoreBadge";
 import type { Opportunity } from "@/types/opportunity";
 
 type SortKey =
@@ -132,7 +133,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
                   <RiskBadge o={o} />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5">
-                  <ScoreCell o={o} />
+                  <ScoreBadge o={o} />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
                   {o.substatus ?? "—"}
@@ -224,22 +225,6 @@ function Th({
 }
 
 /** Celula de scor oportunitate (B-12) cu tooltip de detalii. */
-function ScoreCell({ o }: { o: Opportunity }) {
-  const score = computeOpportunityScore(o);
-  const level = scoreLevel(score.total);
-  const tooltip = score.detalii.map((d) => `${d.criteriu}: ${d.puncte}/${d.maxim}`).join("\n");
-
-  return (
-    <span
-      className="rounded-full px-2 py-0.5 font-mono text-[11px] font-medium"
-      style={{ backgroundColor: `${level.color}20`, color: level.color }}
-      title={tooltip}
-    >
-      {score.total}
-    </span>
-  );
-}
-
 /** Badge de risc (B-09): fara next step, intarziat, sau stagnare - aceeasi logica ca pe KanbanCard. */
 function RiskBadge({ o }: { o: Opportunity }) {
   const todayStr = new Date().toISOString().slice(0, 10);

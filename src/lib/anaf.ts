@@ -48,16 +48,27 @@ function cleanCui(cui: string): string {
   return cui.replace(/^RO/i, "").replace(/\D/g, "");
 }
 
+export interface TermeneCallResult {
+  data: Record<string, unknown> | null;
+  error: string | null;
+}
+
 /**
  * Apeleaza Termene.ro v2 - POST cu Basic Auth, body JSON {cui, schemaKey}.
  * Credentialele vin din tabela api_credentials (editabile din /setari/integrari),
  * nu din variabile de mediu, ca sa poata fi schimbate fara redeploy.
+ *
+ * Returneaza eroarea detaliata (status + raspuns brut) in loc sa o piarda
+ * in console.error - userul nu are acces usor la Vercel Logs, asa ca
+ * diagnosticul trebuie sa ajunga direct pe ecran.
  */
-async function callTermene(cui: string): Promise<Record<string, unknown> | null> {
+async function callTermene(cui: string): Promise<TermeneCallResult> {
   const creds = await getTermeneCredentials();
   if (!creds.username || !creds.password || !creds.schemaKey) {
-    console.error("Termene.ro: credentiale neconfigurate (vezi /setari/integrari).");
-    return null;
+    return {
+      data: null,
+      error: "Credentiale neconfigurate. Completeaza-le in Setari -> Integrari.",
+    };
   }
 
   const encoded = Buffer.from(`${creds.username}:${creds.password}`).toString("base64");
@@ -73,16 +84,37 @@ async function callTermene(cui: string): Promise<Record<string, unknown> | null>
       cache: "no-store",
     });
 
+    const rawText = await res.text();
+
     if (!res.ok) {
-      console.error("Termene.ro API error:", res.status, await res.text());
-      return null;
+      return {
+        data: null,
+        error: `Termene.ro a raspuns cu eroare ${res.status}: ${rawText.slice(0, 300)}`,
+      };
     }
 
-    return await res.json();
+    let json: Record<string, unknown>;
+    try {
+      json = JSON.parse(rawText);
+    } catch {
+      return {
+        data: null,
+        error: `Raspuns neasteptat de la Termene.ro (nu e JSON valid): ${rawText.slice(0, 300)}`,
+      };
+    }
+
+    return { data: json, error: null };
   } catch (error) {
-    console.error("Termene.ro fetch error:", error);
-    return null;
+    return {
+      data: null,
+      error: `Eroare de retea la apelarea Termene.ro: ${error instanceof Error ? error.message : String(error)}`,
+    };
   }
+}
+
+export interface FinancialsResult {
+  data: AnafFinancialData | null;
+  error: string | null;
 }
 
 /**
@@ -91,14 +123,13 @@ async function callTermene(cui: string): Promise<Record<string, unknown> | null>
  * multe forme posibile (cele documentate oficial pentru v1, plus variante
  * plate), ca sa fie robusta indiferent de formatul exact intors de v2.
  */
-export async function fetchAnafFinancials(cuiRaw: string): Promise<AnafFinancialData | null> {
+export async function fetchAnafFinancials(cuiRaw: string): Promise<FinancialsResult> {
   const cui = cleanCui(cuiRaw);
-  if (!cui) return null;
+  if (!cui) return { data: null, error: "CUI invalid." };
 
-  const json = await callTermene(cui);
-  if (!json) return null;
+  const { data: json, error } = await callTermene(cui);
+  if (error || !json) return { data: null, error };
 
-  // Varianta 1 (documentata oficial pt v1): { "Date Generale": {...}, "Bilanturi": {...} }
   const dateGenerale = json["Date Generale"] as Record<string, unknown> | undefined;
   const bilanturi = json["Bilanturi"];
 
@@ -108,9 +139,7 @@ export async function fetchAnafFinancials(cuiRaw: string): Promise<AnafFinancial
       : bilanturi
         ? [bilanturi as Record<string, unknown>]
         : [];
-    const sorted = [...rows].sort(
-      (a, b) => Number(b.an ?? 0) - Number(a.an ?? 0)
-    );
+    const sorted = [...rows].sort((a, b) => Number(b.an ?? 0) - Number(a.an ?? 0));
     const latest = sorted[0];
 
     const cifraAfaceriRon =
@@ -118,37 +147,51 @@ export async function fetchAnafFinancials(cuiRaw: string): Promise<AnafFinancial
       (dateGenerale?.cifra_de_afaceri_neta as string | number | undefined);
     const numarAngajati = latest?.numar_mediu_angajati as string | number | undefined;
 
-    const rate = await getRonToEurRate();
+    if (cifraAfaceriRon === undefined) {
+      return {
+        data: null,
+        error: `Raspuns primit de la Termene.ro, dar fara cifra de afaceri recognoscibila. Raspuns brut: ${JSON.stringify(json).slice(0, 300)}`,
+      };
+    }
 
+    const rate = await getRonToEurRate();
     return {
-      cifraAfaceri: cifraAfaceriRon !== undefined ? Math.round(Number(cifraAfaceriRon) * rate) : null,
-      an: latest?.an ? Number(latest.an) : null,
-      numeFirma: (dateGenerale?.nume as string) ?? null,
-      numarAngajati: numarAngajati !== undefined ? Number(numarAngajati) : null,
+      data: {
+        cifraAfaceri: Math.round(Number(cifraAfaceriRon) * rate),
+        an: latest?.an ? Number(latest.an) : null,
+        numeFirma: (dateGenerale?.nume as string) ?? null,
+        numarAngajati: numarAngajati !== undefined ? Number(numarAngajati) : null,
+      },
+      error: null,
     };
   }
 
-  // Varianta 2: structura plata directa pe radacina raspunsului.
   const cifraAfaceriRon = json.cifra_de_afaceri_neta ?? json.cifraAfaceri ?? null;
   const numarAngajati = json.numar_mediu_angajati ?? json.numarAngajati ?? null;
   if (cifraAfaceriRon !== null) {
     const rate = await getRonToEurRate();
     return {
-      cifraAfaceri: Math.round(Number(cifraAfaceriRon) * rate),
-      an: json.an ? Number(json.an) : null,
-      numeFirma: (json.nume as string) ?? null,
-      numarAngajati: numarAngajati !== null ? Number(numarAngajati) : null,
+      data: {
+        cifraAfaceri: Math.round(Number(cifraAfaceriRon) * rate),
+        an: json.an ? Number(json.an) : null,
+        numeFirma: (json.nume as string) ?? null,
+        numarAngajati: numarAngajati !== null ? Number(numarAngajati) : null,
+      },
+      error: null,
     };
   }
 
-  return null;
+  return {
+    data: null,
+    error: `Raspuns primit de la Termene.ro, dar structura e necunoscuta. Raspuns brut: ${JSON.stringify(json).slice(0, 300)}`,
+  };
 }
 
 export async function fetchAnafCompanyInfo(cuiRaw: string): Promise<AnafCompanyInfo | null> {
   const cui = cleanCui(cuiRaw);
   if (!cui) return null;
 
-  const json = await callTermene(cui);
+  const { data: json } = await callTermene(cui);
   if (!json) return null;
 
   const dateGenerale = (json["Date Generale"] as Record<string, unknown> | undefined) ?? json;

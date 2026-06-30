@@ -6,7 +6,8 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, AlertTriangle, AlertCircle, Flame } from "lucide-react";
 import { STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
-import { computeStagnation, computeOpportunityScore, scoreLevel } from "@/lib/analytics";
+import { computeStagnation } from "@/lib/analytics";
+import { ScoreBadge } from "@/components/ScoreBadge";
 import type { Opportunity } from "@/types/opportunity";
 
 export function KanbanCard({
@@ -51,8 +52,6 @@ export function KanbanCard({
   const stagnare = computeStagnation(opportunity);
   const showStagnareBadge =
     !faraNextStep && !intarziat && stagnare.severitate !== "ok" && opportunity.status === "Activa";
-  const score = computeOpportunityScore(opportunity);
-  const scoreLvl = scoreLevel(score.total);
 
   const content = (
     <>
@@ -124,13 +123,7 @@ export function KanbanCard({
           {totalValue > 0 ? formatEur(totalValue) : "—"}
         </span>
         <div className="flex items-center gap-1.5">
-          <span
-            className="rounded px-1 py-0.5 font-mono text-[10px]"
-            style={{ backgroundColor: `${scoreLvl.color}20`, color: scoreLvl.color }}
-            title={`Scor oportunitate: ${score.total}/100 (${scoreLvl.label})`}
-          >
-            {score.total}
-          </span>
+          <ScoreBadge o={opportunity} />
           <span className="text-[11px] text-slate-500">
             {opportunity.profiles?.full_name?.split(" ")[0] ?? ""}
           </span>

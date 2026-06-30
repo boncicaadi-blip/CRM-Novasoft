@@ -19,6 +19,10 @@ export interface Opportunity {
   contact_functie: string | null;
   contact_telefon: string | null;
   contact_email: string | null;
+  contact2_nume: string | null;
+  contact2_functie: string | null;
+  contact2_telefon: string | null;
+  contact2_email: string | null;
 
   // Calificare tehnica
   solutia_existenta: string | null;

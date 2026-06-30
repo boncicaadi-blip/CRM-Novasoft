@@ -10,16 +10,18 @@ import { updateOpportunity } from "@/lib/data/opportunities";
  * oportunitatii ("Actualizeaza din ANAF").
  */
 export async function refreshAnafFinancialsAction(opportunityId: string, cui: string) {
-  const data = await fetchAnafFinancials(cui);
-  if (!data) {
+  const { data, error } = await fetchAnafFinancials(cui);
+  if (error || !data) {
     return {
       success: false,
-      message:
-        "Eroare la conectarea cu Termene.ro. Verifica daca ai completat credentialele in Setari -> Integrari (click pe avatarul tau din meniu).",
+      message: error ?? "Eroare necunoscuta la conectarea cu Termene.ro.",
     };
   }
   if (data.cifraAfaceri === null) {
-    return { success: false, message: `Nu am gasit date financiare pentru acest CUI${data.numeFirma ? ` (${data.numeFirma})` : ""}.` };
+    return {
+      success: false,
+      message: `Nu am gasit date financiare pentru acest CUI${data.numeFirma ? ` (${data.numeFirma})` : ""}.`,
+    };
   }
 
   await updateOpportunity(opportunityId, {
@@ -39,13 +41,15 @@ export async function refreshAnafFinancialsAction(opportunityId: string, cui: st
  * Nu scrie nimic, doar returneaza datele gasite.
  */
 export async function lookupAnafCompanyAction(cui: string) {
-  const [info, financials] = await Promise.all([
+  const [info, financialsResult] = await Promise.all([
     fetchAnafCompanyInfo(cui),
     fetchAnafFinancials(cui),
   ]);
 
+  const financials = financialsResult.data;
+
   if (!info && !financials) {
-    return { success: false as const };
+    return { success: false as const, error: financialsResult.error };
   }
 
   return {
