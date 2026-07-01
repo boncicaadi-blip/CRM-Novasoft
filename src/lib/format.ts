@@ -15,6 +15,19 @@ const compactFormatter = new Intl.NumberFormat("ro-RO", {
 
 const plainFormatter = new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 });
 
+const fullFormatterRon = new Intl.NumberFormat("ro-RO", {
+  style: "currency",
+  currency: "RON",
+  maximumFractionDigits: 0,
+});
+
+const compactFormatterRon = new Intl.NumberFormat("ro-RO", {
+  style: "currency",
+  currency: "RON",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
 /** Ex: 12.500 € */
 export function formatEur(value: number | null | undefined): string {
   if (!value) return "—";
@@ -31,4 +44,16 @@ export function formatEurCompact(value: number | null | undefined): string {
 export function formatNumber(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
   return plainFormatter.format(value);
+}
+
+/** Ex: 12.500 lei - folosit pentru modulul Creante (facturile sunt in RON, cu TVA) */
+export function formatRon(value: number | null | undefined): string {
+  if (!value) return "—";
+  return fullFormatterRon.format(value);
+}
+
+/** Ex: 12,5 mii lei — pentru spatii inguste */
+export function formatRonCompact(value: number | null | undefined): string {
+  if (!value) return "0 lei";
+  return compactFormatterRon.format(value);
 }

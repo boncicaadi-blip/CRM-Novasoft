@@ -39,3 +39,13 @@ export interface CreanteImportBatch {
   importat_de: string | null;
   importat_la: string;
 }
+
+export interface CreantaIncasare {
+  id: string;
+  creanta_id: string;
+  valoare: number;
+  data_incasare: string;
+  observatie: string | null;
+  creat_de: string | null;
+  creat_la: string;
+}

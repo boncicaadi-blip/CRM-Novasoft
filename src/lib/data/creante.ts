@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Creanta, CreanteImportBatch } from "@/types/creante";
+import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
 
 export async function getCreante(): Promise<Creanta[]> {
   const supabase = await createClient();
@@ -29,4 +29,24 @@ export async function getLastImportBatch(): Promise<CreanteImportBatch | null> {
     return null;
   }
   return data as CreanteImportBatch | null;
+}
+
+/** Toate incasarile, grupate pe creanta_id, cele mai recente primele. */
+export async function getCreanteIncasari(): Promise<Record<string, CreantaIncasare[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("creante_incasari")
+    .select("*")
+    .order("data_incasare", { ascending: false });
+
+  if (error) {
+    console.error("getCreanteIncasari error:", error.message);
+    return {};
+  }
+
+  const grouped: Record<string, CreantaIncasare[]> = {};
+  for (const row of (data as CreantaIncasare[]) ?? []) {
+    (grouped[row.creanta_id] ??= []).push(row);
+  }
+  return grouped;
 }

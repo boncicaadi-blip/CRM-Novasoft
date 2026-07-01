@@ -135,23 +135,44 @@ export async function importCreanteAction(
     const existingId = existingByNrFactura.get(nrFactura);
     if (existingId) {
       // Factura deja urmarita in aplicatie - actualizam doar campurile brute,
-      // niciodata valoare_incasata / comportament_plata / observatii etc.
+      // niciodata valoare_incasata / observatii / incasarile din jurnal.
       toUpdate.push({ nrFactura, payload: rawFields });
     } else {
-      // Factura noua - initializam valoarea incasata din exportul curent
-      // (ce a fost deja incasat pana la data exportului), de aici incolo
-      // gestionarea se face exclusiv din aplicatie.
+      // Factura noua - retinem separat cat era deja incasat la data
+      // exportului (devine o intrare in jurnalul de incasari dupa insert,
+      // nu se scrie direct pe coloana - aceea e gestionata de trigger).
       toInsert.push({
         nr_factura: nrFactura,
         ...rawFields,
-        valoare_incasata: Math.max(0, totalFactura - restIncasare),
+        _seedIncasat: Math.max(0, totalFactura - restIncasare),
       });
     }
   }
 
   if (toInsert.length > 0) {
-    const { error } = await supabase.from("creante").insert(toInsert);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const rowsToInsert = toInsert.map(({ _seedIncasat, ...rest }) => rest);
+    const { data: inserted, error } = await supabase
+      .from("creante")
+      .insert(rowsToInsert)
+      .select("id, nr_factura");
     if (error) return { success: false, message: `Eroare la inserare: ${error.message}` };
+
+    const idByNrFactura = new Map((inserted ?? []).map((r) => [r.nr_factura, r.id]));
+    const seedIncasari = toInsert
+      .filter((r) => (r._seedIncasat as number) > 0)
+      .map((r) => ({
+        creanta_id: idByNrFactura.get(r.nr_factura as string),
+        valoare: r._seedIncasat,
+        data_incasare: (r.data_factura as string | null) ?? new Date().toISOString().slice(0, 10),
+        observatie: "Incasare initiala (din exportul de facturare)",
+      }))
+      .filter((r) => r.creanta_id);
+
+    if (seedIncasari.length > 0) {
+      const { error: seedError } = await supabase.from("creante_incasari").insert(seedIncasari);
+      if (seedError) console.error("Eroare la seed incasari:", seedError.message);
+    }
   }
 
   if (toUpdate.length > 0) {
@@ -201,38 +222,36 @@ export async function updateCreantaTrackingAction(
 
 export async function marcheazaIncasatAction(
   id: string,
-  params: { valoare: number; dataIncasare: string }
+  params: { valoare: number; dataIncasare: string; observatie?: string }
 ): Promise<{ success: boolean; message?: string }> {
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, userId, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot marca incasari." };
 
   if (params.valoare <= 0) {
     return { success: false, message: "Valoarea incasata trebuie sa fie pozitiva." };
   }
 
-  const { data: creanta, error: fetchError } = await supabase
-    .from("creante")
-    .select("valoare_incasata, total_factura")
-    .eq("id", id)
-    .single();
+  const { error } = await supabase.from("creante_incasari").insert({
+    creanta_id: id,
+    valoare: params.valoare,
+    data_incasare: params.dataIncasare,
+    observatie: params.observatie || null,
+    creat_de: userId,
+  });
 
-  if (fetchError || !creanta) {
-    return { success: false, message: "Factura nu a putut fi gasita." };
-  }
+  if (error) return { success: false, message: error.message };
 
-  const noualValoareIncasata = Math.min(
-    creanta.total_factura,
-    creanta.valoare_incasata + params.valoare
-  );
+  revalidatePath("/creante");
+  return { success: true };
+}
 
-  const { error } = await supabase
-    .from("creante")
-    .update({
-      valoare_incasata: noualValoareIncasata,
-      data_incasare: params.dataIncasare,
-    })
-    .eq("id", id);
+export async function undoIncasareAction(
+  incasareId: string
+): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot anula incasari." };
 
+  const { error } = await supabase.from("creante_incasari").delete().eq("id", incasareId);
   if (error) return { success: false, message: error.message };
 
   revalidatePath("/creante");

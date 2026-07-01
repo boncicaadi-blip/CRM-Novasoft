@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCreante, getLastImportBatch } from "@/lib/data/creante";
+import { getCreante, getLastImportBatch, getCreanteIncasari } from "@/lib/data/creante";
 import { BackButton } from "@/components/BackButton";
 import { CreanteClient } from "@/components/creante/CreanteClient";
 
@@ -17,12 +17,16 @@ export default async function CreantePage() {
 
   if (myProfile?.role !== "admin") redirect("/dashboard");
 
-  const [creante, lastBatch] = await Promise.all([getCreante(), getLastImportBatch()]);
+  const [creante, lastBatch, incasari] = await Promise.all([
+    getCreante(),
+    getLastImportBatch(),
+    getCreanteIncasari(),
+  ]);
 
   return (
     <div className="px-3 py-4 sm:px-6">
       <BackButton />
-      <CreanteClient creante={creante} lastBatch={lastBatch} />
+      <CreanteClient creante={creante} lastBatch={lastBatch} incasari={incasari} />
     </div>
   );
 }

@@ -5,18 +5,20 @@ import { Wallet, AlertTriangle, TrendingUp, Clock } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { CreanteImportForm } from "./CreanteImportForm";
 import { CreantaDetailModal } from "./CreantaDetailModal";
-import { formatEurCompact, formatEur } from "@/lib/format";
+import { formatRonCompact, formatRon } from "@/lib/format";
 import { computeCreanteSummary, getCreantaStatus, getZileDepasire } from "@/lib/creante-analytics";
-import type { Creanta, CreanteImportBatch } from "@/types/creante";
+import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
 
 type StatusFilter = "toate" | "restanta" | "la_zi" | "incasata";
 
 export function CreanteClient({
   creante,
   lastBatch,
+  incasari,
 }: {
   creante: Creanta[];
   lastBatch: CreanteImportBatch | null;
+  incasari: Record<string, CreantaIncasare[]>;
 }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("restanta");
   const [search, setSearch] = useState("");
@@ -27,7 +29,15 @@ export function CreanteClient({
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return creante.filter((c) => {
-      if (q && !c.nume_firma.toLowerCase().includes(q) && !c.nr_factura.includes(q)) return false;
+      if (
+        q &&
+        !c.nume_firma.toLowerCase().includes(q) &&
+        !c.nr_factura.includes(q) &&
+        !(c.produs ?? "").toLowerCase().includes(q) &&
+        !(c.serviciu_facturat ?? "").toLowerCase().includes(q)
+      ) {
+        return false;
+      }
       if (statusFilter === "toate") return true;
       return getCreantaStatus(c) === statusFilter;
     });
@@ -50,7 +60,7 @@ export function CreanteClient({
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
           label="Sold total restant"
-          value={formatEurCompact(summary.totalSold)}
+          value={formatRonCompact(summary.totalSold)}
           icon={<Wallet size={16} />}
           accent="#F59E0B"
         />
@@ -62,13 +72,13 @@ export function CreanteClient({
         />
         <KpiCard
           label="Peste 60 zile"
-          value={formatEurCompact(summary.sold61_90 + summary.sold90Plus)}
+          value={formatRonCompact(summary.sold61_90 + summary.sold90Plus)}
           icon={<Clock size={16} />}
           accent="#EF4444"
         />
         <KpiCard
           label="Total incasat"
-          value={formatEurCompact(summary.totalIncasat)}
+          value={formatRonCompact(summary.totalIncasat)}
           icon={<TrendingUp size={16} />}
           accent="#22C55E"
         />
@@ -78,8 +88,8 @@ export function CreanteClient({
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cauta firma sau nr. factura..."
-          className="w-56 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          placeholder="Cauta firma, produs, serviciu sau nr. factura..."
+          className="w-64 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
         />
         {(["restanta", "la_zi", "incasata", "toate"] as StatusFilter[]).map((s) => (
           <button
@@ -107,11 +117,12 @@ export function CreanteClient({
           <thead>
             <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] uppercase text-slate-500">
               <th className="px-3 py-2">Firma</th>
+              <th className="px-3 py-2">Produs</th>
+              <th className="px-3 py-2">Serviciu</th>
               <th className="px-3 py-2">Factura</th>
               <th className="px-3 py-2">Scadenta</th>
               <th className="px-3 py-2 text-right">Sold</th>
               <th className="px-3 py-2">Status</th>
-              <th className="px-3 py-2">Comportament</th>
             </tr>
           </thead>
           <tbody>
@@ -125,6 +136,8 @@ export function CreanteClient({
                   className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.03]"
                 >
                   <td className="px-3 py-2 text-white">{c.nume_firma}</td>
+                  <td className="px-3 py-2 text-slate-400">{c.produs ?? "—"}</td>
+                  <td className="px-3 py-2 text-slate-400">{c.serviciu_facturat ?? "—"}</td>
                   <td className="px-3 py-2 text-slate-400">{c.nr_factura}</td>
                   <td className="px-3 py-2 text-slate-400">
                     {c.data_scadenta
@@ -132,7 +145,7 @@ export function CreanteClient({
                       : "—"}
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-white">
-                    {formatEur(c.sold)}
+                    {formatRon(c.sold)}
                   </td>
                   <td className="px-3 py-2">
                     {status === "incasata" ? (
@@ -143,13 +156,12 @@ export function CreanteClient({
                       <span className="text-slate-400">La zi</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">{c.comportament_plata ?? "—"}</td>
                 </tr>
               );
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={7} className="px-3 py-8 text-center text-sm text-slate-500">
                   Nicio factura gasita.
                 </td>
               </tr>
@@ -158,7 +170,13 @@ export function CreanteClient({
         </table>
       </div>
 
-      {selected && <CreantaDetailModal creanta={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <CreantaDetailModal
+          creanta={selected}
+          incasari={incasari[selected.id] ?? []}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   );
 }
