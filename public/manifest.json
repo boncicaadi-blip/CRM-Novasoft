@@ -1,7 +1,7 @@
 {
-  "name": "Novasoft CRM — Pipeline",
-  "short_name": "Novasoft CRM",
-  "description": "Tracking pipeline comercial Novasoft",
+  "name": "NovaSales CRM",
+  "short_name": "NovaSales",
+  "description": "CRM comercial Novasoft",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0B0D1A",

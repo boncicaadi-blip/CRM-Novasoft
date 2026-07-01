@@ -66,13 +66,13 @@ export function Sidebar({
       <header className="flex items-center justify-between border-b border-white/10 bg-[#111535] px-4 py-3 md:hidden">
         <div className="flex items-center gap-2">
           <Image
-            src="/icon-novasoft-indigo.png"
-            alt="Novasoft"
+            src="/icon-192.png"
+            alt="NovaSales"
             width={28}
             height={28}
             className="rounded-lg"
           />
-          <p className="font-heading text-sm text-white">Novasoft CRM</p>
+          <p className="font-heading text-sm text-white">NovaSales</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -101,16 +101,19 @@ export function Sidebar({
 
       {/* Sidebar desktop (md+) */}
       <aside className="hidden h-screen w-60 flex-col border-r border-white/10 bg-[#111535] px-3 py-4 md:flex">
-        <div className="mb-6 px-2">
+        <div className="mb-6 flex items-center gap-2 px-2">
           <Image
-            src="/logo-novasoft.png"
-            alt="Novasoft"
-            width={150}
+            src="/icon-192.png"
+            alt="NovaSales"
+            width={32}
             height={32}
-            className="h-7 w-auto"
+            className="rounded-lg"
             priority
           />
-          <p className="mt-1 text-[11px] leading-tight text-slate-500">CRM Pipeline</p>
+          <div>
+            <p className="font-heading text-sm leading-tight text-white">NovaSales</p>
+            <p className="text-[11px] leading-tight text-slate-500">Novasoft CRM</p>
+          </div>
         </div>
 
         <Link

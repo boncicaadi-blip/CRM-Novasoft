@@ -5,8 +5,8 @@ export function PendingApprovalScreen() {
   return (
     <div className="flex h-screen flex-col items-center justify-center bg-[#0B0D1A] px-4 text-center">
       <Image
-        src="/icon-novasoft-color.png"
-        alt="Novasoft"
+        src="/icon-192.png"
+        alt="NovaSales"
         width={56}
         height={56}
         className="mb-6 rounded-2xl"

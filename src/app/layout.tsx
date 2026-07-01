@@ -16,8 +16,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Novasoft CRM — Pipeline",
-  description: "Tracking pipeline comercial Novasoft",
+  title: "NovaSales | Novasoft CRM",
+  description: "CRM comercial Novasoft",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
-    title: "Novasoft CRM",
+    title: "NovaSales",
     statusBarStyle: "black-translucent",
   },
 };

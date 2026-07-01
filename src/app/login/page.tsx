@@ -50,14 +50,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Image
-            src="/logo-novasoft.png"
-            alt="Novasoft"
-            width={220}
-            height={48}
-            className="mx-auto mb-3 h-10 w-auto"
+            src="/icon-192.png"
+            alt="NovaSales"
+            width={64}
+            height={64}
+            className="mx-auto mb-3 h-16 w-16 rounded-2xl"
             priority
           />
-          <p className="text-sm text-slate-400">CRM Pipeline</p>
+          <h1 className="font-heading text-xl text-white">NovaSales</h1>
+          <p className="text-sm text-slate-400">Novasoft CRM</p>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
