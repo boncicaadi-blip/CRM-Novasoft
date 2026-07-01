@@ -15,6 +15,7 @@ import { ActiuneCard } from "@/components/overview/ActiuneCard";
 import { PricingCard } from "@/components/overview/PricingCard";
 import { SursaCard } from "@/components/overview/SursaCard";
 import { TimelineCard } from "@/components/overview/TimelineCard";
+import { AiSummaryCard } from "@/components/overview/AiSummaryCard";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import type { Opportunity } from "@/types/opportunity";
 
@@ -125,6 +126,7 @@ export default async function OpportunityOverviewPage({
         <PricingCard o={o} tipuriProiect={valori(nomenclatoare["tip_proiect"])} />
         <SursaCard o={o} canaleIntrare={valori(nomenclatoare["canal_intrare"])} />
         <TimelineCard opportunityId={o.id} entries={timeline} />
+        <AiSummaryCard opportunityId={o.id} />
       </div>
 
       <p className="mt-4 text-[11px] text-slate-600">
