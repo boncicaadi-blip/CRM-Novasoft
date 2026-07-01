@@ -17,19 +17,24 @@ import {
   User,
   Users,
   Plug,
+  FileBarChart,
+  Target,
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/actiuni", label: "Actiuni", icon: ListChecks },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/rapoarte", label: "Raport", icon: FileBarChart },
   { href: "/pipeline", label: "Pipeline", icon: GitBranch },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/dashboard/harta", label: "Harta", icon: Map },
   { href: "/setari/nomenclatoare", label: "Setari", icon: Settings },
 ];
 
-/** Pe mobil aratam doar 5 din cele 6, ca sa nu fie prea inghesuit - Setari ramane accesibil din meniul de Profil pe desktop, sau direct la /setari/nomenclatoare pe mobil prin url. */
-const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((i) => i.href !== "/setari/nomenclatoare");
+/** Pe mobil aratam doar 5 din cele 7, ca sa nu fie prea inghesuit - Setari si Raport raman accesibile din meniul de Profil pe desktop, sau direct din url pe mobil. */
+const MOBILE_NAV_ITEMS = NAV_ITEMS.filter(
+  (i) => i.href !== "/setari/nomenclatoare" && i.href !== "/rapoarte"
+);
 
 /** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta. */
 function isNavItemActive(pathname: string, href: string): boolean {
@@ -167,6 +172,14 @@ export function Sidebar({
                   >
                     <Plug size={15} />
                     Integrari
+                  </Link>
+                  <Link
+                    href="/setari/comercial"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <Target size={15} />
+                    Comercial
                   </Link>
                 </>
               )}

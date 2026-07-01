@@ -134,6 +134,60 @@ export function computeKpis(opportunities: Opportunity[]) {
   };
 }
 
+export interface PipelineReportKpis {
+  pipelineActivSaas: number;
+  pipelineActivOnprem: number;
+  pipelineActivImplementare: number;
+  pipelineTotalActiv: number;
+  forecastTotalSaas: number;
+  forecastTotalOnpremise: number;
+  forecastTotal: number;
+  oportunitatiActive: number;
+  winRate: number;
+}
+
+/**
+ * KPI-uri pentru Raportul Comercial (stil Power BI): valori brute de
+ * pipeline (neponderate cu probability) separate pe SaaS/OnPrem/Implementare,
+ * plus forecast ponderat si win rate. Exclude Lead Pool, la fel ca in
+ * computeKpis (B-10).
+ */
+export function computePipelineReportKpis(opportunities: Opportunity[]): PipelineReportKpis {
+  const pipelineReal = opportunities.filter((o) => o.stage !== "Lead Pool");
+  const active = pipelineReal.filter((o) => o.status === "Activa");
+  const won = pipelineReal.filter((o) => o.status === "Castigata");
+  const lost = pipelineReal.filter((o) => o.status === "Pierduta");
+
+  const pipelineActivSaas = active
+    .filter((o) => o.pricing_mode === "saas")
+    .reduce((s, o) => s + (o.arr_synergo ?? 0), 0);
+  const pipelineActivOnprem = active
+    .filter((o) => o.pricing_mode === "onpremise")
+    .reduce((s, o) => s + (o.licenta_synergo_onpremise ?? 0), 0);
+  const pipelineActivImplementare = active.reduce(
+    (s, o) => s + (o.valoare_implementare_synergo ?? 0),
+    0
+  );
+  const forecastTotalSaas = active.reduce((s, o) => s + (o.forecast_total_saas ?? 0), 0);
+  const forecastTotalOnpremise = active.reduce(
+    (s, o) => s + (o.forecast_total_onpremise ?? 0),
+    0
+  );
+  const closedCount = won.length + lost.length;
+
+  return {
+    pipelineActivSaas,
+    pipelineActivOnprem,
+    pipelineActivImplementare,
+    pipelineTotalActiv: pipelineActivSaas + pipelineActivOnprem + pipelineActivImplementare,
+    forecastTotalSaas,
+    forecastTotalOnpremise,
+    forecastTotal: forecastTotalSaas + forecastTotalOnpremise,
+    oportunitatiActive: active.length,
+    winRate: closedCount > 0 ? won.length / closedCount : 0,
+  };
+}
+
 export function groupByStage(opportunities: Opportunity[], stageOrder?: string[]) {
   const map = new Map<string, { stage: string; count: number; value: number }>();
   for (const o of opportunities) {
