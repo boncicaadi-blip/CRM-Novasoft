@@ -6,22 +6,58 @@ import { X } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { normalizeJudetName } from "@/lib/geo";
 import { STAGE_COLORS } from "@/lib/constants";
+import { groupByJudetFull } from "@/lib/analytics";
+import { PipelineFilters } from "@/components/pipeline/PipelineFilters";
 import { RomaniaMap } from "./RomaniaMap";
-import type { JudetMapDatum } from "@/lib/analytics";
 import type { Opportunity } from "@/types/opportunity";
 import type { FeatureCollection, Geometry } from "geojson";
 
 export function MapDashboardClient({
   geoData,
-  data,
   opportunities,
 }: {
   geoData: FeatureCollection<Geometry, { name: string }>;
-  data: JudetMapDatum[];
   opportunities: Opportunity[];
 }) {
   const [metric, setMetric] = useState<"count" | "arr">("count");
   const [selectedJudete, setSelectedJudete] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [stageFilter, setStageFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+
+  const stagesInData = useMemo(
+    () => Array.from(new Set(opportunities.map((o) => o.stage))),
+    [opportunities]
+  );
+  const statuses = useMemo(
+    () => Array.from(new Set(opportunities.map((o) => o.status))),
+    [opportunities]
+  );
+
+  const filteredOpportunities = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let rows = opportunities;
+    if (q) {
+      rows = rows.filter(
+        (o) =>
+          o.nume_potential.toLowerCase().includes(q) ||
+          o.nume_grup.toLowerCase().includes(q) ||
+          (o.judet ?? "").toLowerCase().includes(q) ||
+          (o.cod_fiscal ?? "").toLowerCase().includes(q)
+      );
+    }
+    if (stageFilter.length > 0) {
+      rows = rows.filter((o) => stageFilter.includes(o.stage));
+    }
+    if (statusFilter.length > 0) {
+      rows = rows.filter((o) => statusFilter.includes(o.status));
+    }
+    return rows;
+  }, [opportunities, search, stageFilter, statusFilter]);
+
+  // Recalculam distributia pe judete din oportunitatile filtrate, ca harta
+  // si topul de judete sa reflecte exact filtrele active (Stage/Status/cautare).
+  const data = useMemo(() => groupByJudetFull(filteredOpportunities), [filteredOpportunities]);
 
   const sorted = [...data].sort((a, b) =>
     metric === "count" ? b.count - a.count : b.arr - a.arr
@@ -34,10 +70,10 @@ export function MapDashboardClient({
 
   const opportunitiesInSelection = useMemo(() => {
     if (selectedJudete.length === 0) return [];
-    return opportunities.filter(
+    return filteredOpportunities.filter(
       (o) => o.judet && selectedNormalized.has(normalizeJudetName(o.judet))
     );
-  }, [opportunities, selectedNormalized, selectedJudete]);
+  }, [filteredOpportunities, selectedNormalized, selectedJudete]);
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -64,6 +100,19 @@ export function MapDashboardClient({
             ARR
           </button>
         </div>
+      </div>
+
+      <div className="mb-4">
+        <PipelineFilters
+          search={search}
+          onSearchChange={setSearch}
+          stageFilter={stageFilter}
+          onStageFilterChange={setStageFilter}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          stages={stagesInData}
+          statuses={statuses}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">

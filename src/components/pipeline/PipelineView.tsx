@@ -31,6 +31,15 @@ export function PipelineView({
     [opportunities]
   );
 
+  // Coloanele Kanban afisate: ordinea completa din nomenclatoare (sau fallback
+  // la stage-urile din date), restransa la stage-urile bifate in filtru -
+  // daca niciun filtru nu e activ, se arata toate coloanele ca inainte.
+  const visibleStages = useMemo(() => {
+    const order = stageOrder && stageOrder.length > 0 ? stageOrder : stagesInData;
+    if (stageFilter.length === 0) return order;
+    return order.filter((s) => stageFilter.includes(s));
+  }, [stageOrder, stagesInData, stageFilter]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let rows = opportunities;
@@ -78,7 +87,7 @@ export function PipelineView({
       <div className="flex-1 overflow-hidden">
         {view === "kanban" ? (
           <div className="h-full overflow-x-auto">
-            <KanbanBoard opportunities={filtered} stages={stageOrder} stageColors={stageColors} />
+            <KanbanBoard opportunities={filtered} stages={visibleStages} stageColors={stageColors} />
           </div>
         ) : (
           <div className="h-full overflow-y-auto">

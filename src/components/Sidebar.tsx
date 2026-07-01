@@ -191,7 +191,7 @@ export function Sidebar({
             </button>
           </div>
           {deployVersion && (
-            <p className="mt-1 px-2 text-[10px] text-slate-600">v{deployVersion}</p>
+            <p className="mt-1 px-2 text-[10px] text-slate-600">Versiunea {deployVersion}</p>
           )}
         </div>
       </aside>

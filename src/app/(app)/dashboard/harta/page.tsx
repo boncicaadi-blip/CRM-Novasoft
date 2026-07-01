@@ -1,7 +1,6 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import { getOpportunities } from "@/lib/data/opportunities";
-import { groupByJudetFull } from "@/lib/analytics";
 import { MapDashboardClient } from "@/components/dashboard/map/MapDashboardClient";
 import type { FeatureCollection, Geometry } from "geojson";
 
@@ -12,7 +11,6 @@ export default async function MapDashboardPage() {
   ]);
 
   const geoData: FeatureCollection<Geometry, { name: string }> = JSON.parse(geoJsonRaw);
-  const data = groupByJudetFull(opportunities);
 
-  return <MapDashboardClient geoData={geoData} data={data} opportunities={opportunities} />;
+  return <MapDashboardClient geoData={geoData} opportunities={opportunities} />;
 }

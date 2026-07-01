@@ -5,6 +5,9 @@ import { Sidebar } from "@/components/Sidebar";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DailySummaryPopup } from "@/components/DailySummaryPopup";
 import { PendingApprovalScreen } from "@/components/PendingApprovalScreen";
+import packageJson from "../../../package.json";
+
+const appVersion = packageJson.version;
 
 export default async function AppLayout({
   children,
@@ -37,8 +40,10 @@ export default async function AppLayout({
   // Vercel expune automat SHA-ul commit-ului curent la build (fara
   // configurare suplimentara) - afisam ultimele 7 caractere, identic cu ce
   // se vede in lista de Deployments din Vercel, ca sa stii usor pe ce
-  // versiune lucrezi.
-  const deployVersion = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null;
+  // versiune lucrezi. Combinat cu numarul de versiune din package.json,
+  // pe care il actualizezi manual cand vrei sa marchezi un release.
+  const commitSha = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null;
+  const deployVersion = commitSha ? `${appVersion} · ${commitSha}` : appVersion;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden md:flex-row">

@@ -221,7 +221,8 @@ export type TimelineEntryType =
   | "schimbare_status"
   | "actiune_finalizata"
   | "actiune_setata"
-  | "creare";
+  | "creare"
+  | "ai_rezumat";
 
 export interface TimelineEntry {
   id: string;

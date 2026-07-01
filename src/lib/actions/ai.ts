@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { askClaude, AiConfigError, AiRequestError } from "@/lib/ai/client";
 import {
@@ -42,6 +43,31 @@ export async function generateOpportunitySummaryAction(
     });
 
     const parsed = parseOpportunitySummaryResponse(raw);
+
+    const continut = [
+      parsed.rezumat,
+      parsed.blocaje ? `Blocaje: ${parsed.blocaje}` : null,
+      `Next best action: ${parsed.next_best_action} — ${parsed.motivatie}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    const { data: userData } = await supabase.auth.getUser();
+    const { error: insertError } = await supabase.from("opportunity_timeline").insert({
+      opportunity_id: opportunityId,
+      tip: "ai_rezumat",
+      continut,
+      creat_de: userData?.user?.id ?? null,
+    });
+
+    if (insertError) {
+      // Nu blocam afisarea rezumatului daca salvarea in timeline esueaza -
+      // utilizatorul tot primeste raspunsul, doar nu ramane inregistrat.
+      console.error("Eroare la salvarea rezumatului AI in timeline:", insertError.message);
+    } else {
+      revalidatePath(`/oportunitati/${opportunityId}`);
+    }
+
     return { success: true, data: parsed };
   } catch (err) {
     if (err instanceof AiConfigError) {

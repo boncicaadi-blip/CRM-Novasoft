@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   CalendarClock,
   Sparkles,
+  Bot,
 } from "lucide-react";
 import { computeStageDurations } from "@/lib/analytics";
 import { STAGE_COLORS } from "@/lib/constants";
@@ -32,6 +33,7 @@ const TYPE_CONFIG: Record<
   actiune_finalizata: { icon: CheckCircle2, color: "#22C55E", label: "Actiune finalizata" },
   actiune_setata: { icon: CalendarClock, color: "#A78BFA", label: "Actiune programata" },
   creare: { icon: Sparkles, color: "#E8007A", label: "Intrare in sistem" },
+  ai_rezumat: { icon: Bot, color: "#C084FC", label: "Rezumat AI" },
 };
 
 export function IstoricClient({
@@ -126,7 +128,9 @@ export function IstoricClient({
                       )}
                     </div>
                     {entry.continut && (
-                      <p className="mt-0.5 text-sm text-slate-300">{entry.continut}</p>
+                      <p className="mt-0.5 whitespace-pre-line text-sm text-slate-300">
+                        {entry.continut}
+                      </p>
                     )}
                   </div>
                 </div>
