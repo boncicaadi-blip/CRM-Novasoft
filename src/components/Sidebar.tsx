@@ -19,6 +19,7 @@ import {
   Plug,
   FileBarChart,
   Target,
+  Wallet,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -181,6 +182,14 @@ export function Sidebar({
                   >
                     <Target size={15} />
                     Comercial
+                  </Link>
+                  <Link
+                    href="/creante"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <Wallet size={15} />
+                    Creante
                   </Link>
                 </>
               )}
