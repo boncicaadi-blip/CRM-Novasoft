@@ -31,10 +31,8 @@ const NAV_ITEMS = [
   { href: "/setari/nomenclatoare", label: "Setari", icon: Settings },
 ];
 
-/** Pe mobil aratam doar 5 din cele 7, ca sa nu fie prea inghesuit - Setari si Raport raman accesibile din meniul de Profil pe desktop, sau direct din url pe mobil. */
-const MOBILE_NAV_ITEMS = NAV_ITEMS.filter(
-  (i) => i.href !== "/setari/nomenclatoare" && i.href !== "/rapoarte"
-);
+/** Pe mobil aratam 6 din cele 7 - doar Setari ramane accesibil din meniul de Profil pe desktop, sau direct din url pe mobil. Raport a fost inclus dupa ce s-a observat ca pe iPhone in portret (sub breakpoint-ul md) disparea din navigare. */
+const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((i) => i.href !== "/setari/nomenclatoare");
 
 /** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta. */
 function isNavItemActive(pathname: string, href: string): boolean {
