@@ -68,7 +68,11 @@ interface RawRow {
 
 export async function importCreanteAction(
   formData: FormData
-): Promise<{ success: boolean; message?: string; data?: { noi: number; actualizate: number } }> {
+): Promise<{
+  success: boolean;
+  message?: string;
+  data?: { noi: number; actualizate: number; duplicateSarite: string[] };
+}> {
   const { supabase, userId, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot importa creante." };
 
@@ -106,11 +110,26 @@ export async function importCreanteAction(
 
   const toInsert: Record<string, unknown>[] = [];
   const toUpdate: { nrFactura: string; payload: Record<string, unknown> }[] = [];
+  const duplicateInFile = new Map<string, number>();
 
+  // Deduplicam dupa nr_factura in interiorul fisierului - dacă exportul din
+  // aplicatia de facturare contine doua randuri cu acelasi numar (se
+  // intampla, ex. eroare de numerotare), pastram ultimul rand intalnit si
+  // raportam cate au fost sarite, in loc sa lasam importul sa pice pe
+  // constraint-ul unic din baza de date.
+  const rowsByNrFactura = new Map<string, RawRow>();
   for (const row of rows) {
     const nrFactura = toIntString(row["Nr. factura"]);
+    if (!nrFactura) continue;
+    if (rowsByNrFactura.has(nrFactura)) {
+      duplicateInFile.set(nrFactura, (duplicateInFile.get(nrFactura) ?? 1) + 1);
+    }
+    rowsByNrFactura.set(nrFactura, row);
+  }
+
+  for (const [nrFactura, row] of rowsByNrFactura) {
     const numeFirma = typeof row.Client === "string" ? row.Client.trim() : null;
-    if (!nrFactura || !numeFirma) continue;
+    if (!numeFirma) continue;
 
     const totalFactura = toNumber(row["Total Fact"]) ?? 0;
     const restIncasare = toNumber(row["Rest Incasare Fact"]) ?? 0;
@@ -195,7 +214,14 @@ export async function importCreanteAction(
   });
 
   revalidatePath("/creante");
-  return { success: true, data: { noi: toInsert.length, actualizate: toUpdate.length } };
+  return {
+    success: true,
+    data: {
+      noi: toInsert.length,
+      actualizate: toUpdate.length,
+      duplicateSarite: Array.from(duplicateInFile.keys()),
+    },
+  };
 }
 
 export async function updateCreantaTrackingAction(

@@ -22,9 +22,13 @@ export function CreanteImportForm() {
     startTransition(async () => {
       const result = await importCreanteAction(formData);
       if (result.success && result.data) {
+        const dupText =
+          result.data.duplicateSarite.length > 0
+            ? ` Atentie: ${result.data.duplicateSarite.length} numere de factura apar de mai multe ori in fisier (ex: ${result.data.duplicateSarite.slice(0, 3).join(", ")}) - a fost pastrat doar ultimul rand pentru fiecare. Verifica in aplicatia de facturare.`
+            : "";
         setMessage({
-          type: "success",
-          text: `${result.data.noi} facturi noi, ${result.data.actualizate} actualizate.`,
+          type: dupText ? "error" : "success",
+          text: `${result.data.noi} facturi noi, ${result.data.actualizate} actualizate.${dupText}`,
         });
       } else {
         setMessage({ type: "error", text: result.message ?? "Eroare la import." });
