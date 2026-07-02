@@ -12,6 +12,8 @@ import {
   Download,
   ArrowUp,
   ArrowDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { CreanteImportForm } from "./CreanteImportForm";
@@ -122,6 +124,8 @@ export function CreanteClient({
     Object.fromEntries(DEFAULT_COLUMNS.map((c) => [c.key, c.width]))
   );
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+  const [pageSize, setPageSize] = useState<number | "toate">(50);
+  const [page, setPage] = useState(1);
 
   const inPeriodList = useMemo(
     () => creante.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo })),
@@ -154,6 +158,13 @@ export function CreanteClient({
     }
     return rows;
   }, [inPeriodList, statusFilter, search, sortKey, sortDir]);
+
+  const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pagedRows = useMemo(() => {
+    if (pageSize === "toate") return filtered;
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   function toggleCheck(id: string) {
     setCheckedIds((prev) => {
@@ -292,7 +303,10 @@ export function CreanteClient({
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select
           value={period}
-          onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+          onChange={(e) => {
+            setPeriod(e.target.value as PeriodFilter);
+            setPage(1);
+          }}
           className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
         >
           {PERIOD_OPTIONS.map((p) => (
@@ -306,28 +320,40 @@ export function CreanteClient({
             <input
               type="date"
               value={customFrom}
-              onChange={(e) => setCustomFrom(e.target.value)}
+              onChange={(e) => {
+                setCustomFrom(e.target.value);
+                setPage(1);
+              }}
               className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
             />
             <span className="text-xs text-slate-500">-</span>
             <input
               type="date"
               value={customTo}
-              onChange={(e) => setCustomTo(e.target.value)}
+              onChange={(e) => {
+                setCustomTo(e.target.value);
+                setPage(1);
+              }}
               className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
             />
           </>
         )}
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           placeholder="Cauta firma, serviciu sau nr. factura..."
           className="w-56 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
         />
         {(["restanta", "la_zi", "incasata", "toate"] as StatusFilter[]).map((s) => (
           <button
             key={s}
-            onClick={() => setStatusFilter(s)}
+            onClick={() => {
+              setStatusFilter(s);
+              setPage(1);
+            }}
             className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
               statusFilter === s
                 ? "bg-[#E8007A] text-[#0B0D1A]"
@@ -409,7 +435,7 @@ export function CreanteClient({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => {
+            {pagedRows.map((c) => {
               const zile = getZileDepasire(c);
               return (
                 <tr
@@ -514,6 +540,54 @@ export function CreanteClient({
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <div className="flex items-center gap-1.5">
+          <span>Randuri pe pagina:</span>
+          {[25, 50, 100, "toate" as const].map((size) => (
+            <button
+              key={size}
+              onClick={() => {
+                setPageSize(size);
+                setPage(1);
+              }}
+              className={`rounded-md px-2 py-1 font-medium transition ${
+                pageSize === size
+                  ? "bg-[#E8007A] text-[#0B0D1A]"
+                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+              }`}
+            >
+              {size === "toate" ? "Toate" : size}
+            </button>
+          ))}
+        </div>
+        {pageSize !== "toate" && (
+          <div className="flex items-center gap-2">
+            <span>
+              {filtered.length === 0
+                ? "0 rezultate"
+                : `${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, filtered.length)} din ${filtered.length}`}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span>
+              Pagina {page} din {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
       {selected && (
