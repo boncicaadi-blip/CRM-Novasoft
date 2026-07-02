@@ -21,12 +21,13 @@ export function getZileDepasire(c: Creanta): number | null {
 
 export type AgingBucket = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
 
-/** In ce "bucket" de vechime cade o factura - aceeasi logica folosita si la
- * calculul sumelor din AgingBar, ca cele doua sa ramana mereu consistente. */
+/** In ce "bucket" de vechime cade o factura - doar facturile chiar
+ * restante (scadenta depasita) intra intr-un bucket de aging. O factura
+ * "la zi" (nu e inca scadenta) nu are varsta de intarziere, deci nu apare
+ * in niciun bucket. */
 export function matchesAgingBucket(c: Creanta, bucket: AgingBucket): boolean {
   if (c.sold <= 0) return false;
-  const status = getCreantaStatus(c);
-  if (status !== "restanta") return bucket === "sold0_30";
+  if (getCreantaStatus(c) !== "restanta") return false;
   const zile = getZileDepasire(c) ?? 0;
   if (bucket === "sold0_30") return zile <= 30;
   if (bucket === "sold31_60") return zile > 30 && zile <= 60;
@@ -35,7 +36,11 @@ export function matchesAgingBucket(c: Creanta, bucket: AgingBucket): boolean {
 }
 
 export interface CreanteSummary {
-  totalSold: number;
+  /** Tot ce nu e incasat, indiferent daca e deja scadent sau nu. */
+  totalSoldNeincasat: number;
+  /** Doar ce e cu adevarat restant (scadenta depasita) - pentru cardul
+   * "Sold total restant" si pentru aging. */
+  totalSoldRestant: number;
   totalFacturat: number;
   totalIncasat: number;
   nrFacturiRestante: number;
@@ -50,7 +55,8 @@ export interface CreanteSummary {
 }
 
 export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
-  let totalSold = 0;
+  let totalSoldNeincasat = 0;
+  let totalSoldRestant = 0;
   let totalFacturat = 0;
   let totalIncasat = 0;
   let nrFacturiRestante = 0;
@@ -71,11 +77,12 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
     }
     if (c.sold <= 0) continue;
 
-    totalSold += c.sold;
+    totalSoldNeincasat += c.sold;
     const status = getCreantaStatus(c);
-    const zile = getZileDepasire(c) ?? 0;
 
     if (status === "restanta") {
+      const zile = getZileDepasire(c) ?? 0;
+      totalSoldRestant += c.sold;
       nrFacturiRestante += 1;
       if (zile <= 30) sold0_30 += c.sold;
       else if (zile <= 60) sold31_60 += c.sold;
@@ -83,12 +90,12 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
       else sold90Plus += c.sold;
     } else {
       nrFacturiLaZi += 1;
-      sold0_30 += c.sold;
     }
   }
 
   return {
-    totalSold,
+    totalSoldNeincasat,
+    totalSoldRestant,
     totalFacturat,
     totalIncasat,
     nrFacturiRestante,

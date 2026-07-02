@@ -21,10 +21,11 @@ export function getZileDepasireObligatie(o: Obligatie): number | null {
 
 export type AgingBucketObligatie = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
 
+/** Doar facturile chiar restante (scadenta depasita) intra intr-un bucket
+ * de aging - o factura "la zi" nu are varsta de intarziere. */
 export function matchesAgingBucketObligatie(o: Obligatie, bucket: AgingBucketObligatie): boolean {
   if (o.sold <= 0) return false;
-  const status = getObligatieStatus(o);
-  if (status !== "restanta") return bucket === "sold0_30";
+  if (getObligatieStatus(o) !== "restanta") return false;
   const zile = getZileDepasireObligatie(o) ?? 0;
   if (bucket === "sold0_30") return zile <= 30;
   if (bucket === "sold31_60") return zile > 30 && zile <= 60;
@@ -33,7 +34,10 @@ export function matchesAgingBucketObligatie(o: Obligatie, bucket: AgingBucketObl
 }
 
 export interface ObligatiiSummary {
-  totalSold: number;
+  /** Tot ce nu e platit, indiferent daca e deja scadent sau nu. */
+  totalSoldNeplatit: number;
+  /** Doar ce e cu adevarat restant (scadenta depasita). */
+  totalSoldRestant: number;
   totalFacturat: number;
   totalPlatit: number;
   nrFacturiRestante: number;
@@ -47,7 +51,8 @@ export interface ObligatiiSummary {
 }
 
 export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummary {
-  let totalSold = 0;
+  let totalSoldNeplatit = 0;
+  let totalSoldRestant = 0;
   let totalFacturat = 0;
   let totalPlatit = 0;
   let nrFacturiRestante = 0;
@@ -68,11 +73,12 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
     }
     if (o.sold <= 0) continue;
 
-    totalSold += o.sold;
+    totalSoldNeplatit += o.sold;
     const status = getObligatieStatus(o);
-    const zile = getZileDepasireObligatie(o) ?? 0;
 
     if (status === "restanta") {
+      const zile = getZileDepasireObligatie(o) ?? 0;
+      totalSoldRestant += o.sold;
       nrFacturiRestante += 1;
       if (zile <= 30) sold0_30 += o.sold;
       else if (zile <= 60) sold31_60 += o.sold;
@@ -80,12 +86,12 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
       else sold90Plus += o.sold;
     } else {
       nrFacturiLaZi += 1;
-      sold0_30 += o.sold;
     }
   }
 
   return {
-    totalSold,
+    totalSoldNeplatit,
+    totalSoldRestant,
     totalFacturat,
     totalPlatit,
     nrFacturiRestante,

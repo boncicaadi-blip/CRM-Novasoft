@@ -300,7 +300,7 @@ export function CreanteClient({
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
           label="Sold total restant"
-          value={formatRonCompact(summary.totalSold)}
+          value={formatRonCompact(summary.totalSoldRestant)}
           icon={<Wallet size={16} />}
           accent="#F59E0B"
         />
