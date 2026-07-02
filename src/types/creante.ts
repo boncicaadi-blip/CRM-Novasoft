@@ -1,4 +1,5 @@
 export type ComportamentPlata = "Bun platnic" | "Platnic mediu" | "Rau platnic";
+export type TipVanzare = "Recurente" | "Nerecurente";
 
 export interface Creanta {
   id: string;
@@ -11,6 +12,7 @@ export interface Creanta {
   data_contract: string | null;
   produs: string | null;
   serviciu_facturat: string | null;
+  tip_vanzare: TipVanzare | null;
   termen_incasare_zile: number | null;
   valoare_lunara_fara_tva: number | null;
   total_fara_tva: number | null;
@@ -19,12 +21,11 @@ export interface Creanta {
   valoare_incasata: number;
   data_incasare: string | null;
   sold: number;
+  propus_spre_incasare: boolean;
   comportament_plata: ComportamentPlata | null;
   grad_dificultate_incasare: string | null;
   data_tinta_incasare: string | null;
   observatii: string | null;
-  datorie_operationala: boolean;
-  departament_datorie_operationala: string | null;
   procent_penalitate_intarziere: number | null;
   valoare_penalitati_intarziere: number | null;
   creat_la: string;

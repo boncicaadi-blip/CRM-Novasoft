@@ -29,6 +29,9 @@ export interface CreanteSummary {
   sold31_60: number;
   sold61_90: number;
   sold90Plus: number;
+  /** Suma soldurilor facturilor bifate "Propus spre incasare" - targetul curent. */
+  targetPropus: number;
+  nrFacturiPropuse: number;
 }
 
 export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
@@ -41,10 +44,16 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
   let sold31_60 = 0;
   let sold61_90 = 0;
   let sold90Plus = 0;
+  let targetPropus = 0;
+  let nrFacturiPropuse = 0;
 
   for (const c of creante) {
     totalFacturat += c.total_factura;
     totalIncasat += c.valoare_incasata;
+    if (c.propus_spre_incasare && c.sold > 0) {
+      targetPropus += c.sold;
+      nrFacturiPropuse += 1;
+    }
     if (c.sold <= 0) continue;
 
     totalSold += c.sold;
@@ -73,5 +82,35 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
     sold31_60,
     sold61_90,
     sold90Plus,
+    targetPropus,
+    nrFacturiPropuse,
   };
+}
+
+export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate";
+
+/**
+ * Filtrare pe perioada: o factura e vizibila daca are sold restant
+ * (indiferent de vechime - trebuie urmarita oricum), SAU daca data facturii
+ * cade in perioada selectata.
+ */
+export function inPeriod(c: Creanta, period: PeriodFilter): boolean {
+  if (c.sold > 0) return true;
+  if (period === "toate") return true;
+  if (!c.data_factura) return false;
+
+  const d = new Date(c.data_factura);
+  const now = new Date();
+
+  if (period === "luna_curenta") {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+  if (period === "anul_curent") {
+    return d.getFullYear() === now.getFullYear();
+  }
+  if (period === "ultimele_3_luni") {
+    const threshold = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    return d >= threshold;
+  }
+  return true;
 }

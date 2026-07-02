@@ -2,14 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { X, CheckCircle2, Undo2 } from "lucide-react";
-import {
-  updateCreantaTrackingAction,
-  marcheazaIncasatAction,
-  undoIncasareAction,
-} from "@/lib/actions/creante";
+import { updateCreantaTrackingAction, marcheazaIncasatAction, undoIncasareAction } from "@/lib/actions/creante";
 import { formatRon } from "@/lib/format";
 import { getZileDepasire, getCreantaStatus } from "@/lib/creante-analytics";
-import type { Creanta, CreantaIncasare } from "@/types/creante";
+import type { Creanta, CreantaIncasare, TipVanzare } from "@/types/creante";
+
+const TIP_VANZARE_OPTIONS: TipVanzare[] = ["Recurente", "Nerecurente"];
 
 export function CreantaDetailModal({
   creanta,
@@ -21,11 +19,12 @@ export function CreantaDetailModal({
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [tipVanzare, setTipVanzare] = useState<TipVanzare | "">(creanta.tip_vanzare ?? "");
   const [gradDificultate, setGradDificultate] = useState(creanta.grad_dificultate_incasare ?? "");
-  const [dataTinta, setDataTinta] = useState(creanta.data_tinta_incasare ?? "");
   const [observatii, setObservatii] = useState(creanta.observatii ?? "");
-  const [datorieOp, setDatorieOp] = useState(creanta.datorie_operationala);
-  const [departament, setDepartament] = useState(creanta.departament_datorie_operationala ?? "");
+  const [procentPenalitate, setProcentPenalitate] = useState(
+    creanta.procent_penalitate_intarziere !== null ? String(creanta.procent_penalitate_intarziere) : ""
+  );
 
   const [valoareIncasare, setValoareIncasare] = useState(String(creanta.sold));
   const [dataIncasare, setDataIncasare] = useState(new Date().toISOString().slice(0, 10));
@@ -41,11 +40,10 @@ export function CreantaDetailModal({
     setMessage(null);
     startTransition(async () => {
       const result = await updateCreantaTrackingAction(creanta.id, {
+        tip_vanzare: tipVanzare === "" ? null : tipVanzare,
         grad_dificultate_incasare: gradDificultate || null,
-        data_tinta_incasare: dataTinta || null,
         observatii: observatii || null,
-        datorie_operationala: datorieOp,
-        departament_datorie_operationala: datorieOp ? departament || null : null,
+        procent_penalitate_intarziere: procentPenalitate ? Number(procentPenalitate) : null,
       });
       setMessage(
         result.success
@@ -93,9 +91,7 @@ export function CreantaDetailModal({
           <div>
             <p className="text-xs text-slate-500">Factura {creanta.nr_factura}</p>
             <h2 className="text-lg font-heading text-white">{creanta.nume_firma}</h2>
-            <p className="text-xs text-slate-500">
-              {creanta.produs ?? "—"} · {creanta.serviciu_facturat ?? "—"}
-            </p>
+            <p className="text-xs text-slate-500">{creanta.serviciu_facturat ?? "—"}</p>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-white">
             <X size={18} />
@@ -202,6 +198,22 @@ export function CreantaDetailModal({
 
         <div className="space-y-3">
           <div>
+            <label className="mb-1 block text-[11px] text-slate-500">Tip vanzare</label>
+            <select
+              value={tipVanzare}
+              onChange={(e) => setTipVanzare(e.target.value as TipVanzare | "")}
+              className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+            >
+              <option value="">—</option>
+              {TIP_VANZARE_OPTIONS.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="mb-1 block text-[11px] text-slate-500">Grad dificultate incasare</label>
             <input
               value={gradDificultate}
@@ -212,12 +224,13 @@ export function CreantaDetailModal({
 
           <div>
             <label className="mb-1 block text-[11px] text-slate-500">
-              Data tinta de incasare
+              Procent penalitate intarziere (%)
             </label>
             <input
-              type="date"
-              value={dataTinta}
-              onChange={(e) => setDataTinta(e.target.value)}
+              type="number"
+              step="0.01"
+              value={procentPenalitate}
+              onChange={(e) => setProcentPenalitate(e.target.value)}
               className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
             />
           </div>
@@ -231,30 +244,6 @@ export function CreantaDetailModal({
               className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
             />
           </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="datorie-op"
-              checked={datorieOp}
-              onChange={(e) => setDatorieOp(e.target.checked)}
-              className="h-4 w-4 rounded border-white/20 bg-white/[0.04]"
-            />
-            <label htmlFor="datorie-op" className="text-sm text-slate-300">
-              Datorie operationala
-            </label>
-          </div>
-
-          {datorieOp && (
-            <div>
-              <label className="mb-1 block text-[11px] text-slate-500">Departament</label>
-              <input
-                value={departament}
-                onChange={(e) => setDepartament(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
-              />
-            </div>
-          )}
         </div>
 
         {message && (

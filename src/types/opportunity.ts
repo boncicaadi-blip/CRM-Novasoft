@@ -222,7 +222,8 @@ export type TimelineEntryType =
   | "actiune_finalizata"
   | "actiune_setata"
   | "creare"
-  | "ai_rezumat";
+  | "ai_rezumat"
+  | "actiune_reprogramata";
 
 export interface TimelineEntry {
   id: string;

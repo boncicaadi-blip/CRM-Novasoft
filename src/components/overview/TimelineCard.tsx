@@ -14,6 +14,7 @@ import {
   CalendarClock,
   Sparkles,
   Bot,
+  CalendarSync,
 } from "lucide-react";
 import { addTimelineEntryAction } from "@/lib/actions/timeline";
 import { AiSummaryCard } from "@/components/overview/AiSummaryCard";
@@ -45,6 +46,7 @@ const TYPE_CONFIG: Record<
   actiune_setata: { icon: CalendarClock, color: "#A78BFA", label: "Actiune programata" },
   creare: { icon: Sparkles, color: "#E8007A", label: "Intrare in sistem" },
   ai_rezumat: { icon: Bot, color: "#C084FC", label: "Rezumat AI" },
+  actiune_reprogramata: { icon: CalendarSync, color: "#FBBF24", label: "Actiune reprogramata" },
 };
 
 export function TimelineCard({

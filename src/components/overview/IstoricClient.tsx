@@ -13,6 +13,7 @@ import {
   CalendarClock,
   Sparkles,
   Bot,
+  CalendarSync,
 } from "lucide-react";
 import { computeStageDurations } from "@/lib/analytics";
 import { STAGE_COLORS } from "@/lib/constants";
@@ -34,6 +35,7 @@ const TYPE_CONFIG: Record<
   actiune_setata: { icon: CalendarClock, color: "#A78BFA", label: "Actiune programata" },
   creare: { icon: Sparkles, color: "#E8007A", label: "Intrare in sistem" },
   ai_rezumat: { icon: Bot, color: "#C084FC", label: "Rezumat AI" },
+  actiune_reprogramata: { icon: CalendarSync, color: "#FBBF24", label: "Actiune reprogramata" },
 };
 
 export function IstoricClient({

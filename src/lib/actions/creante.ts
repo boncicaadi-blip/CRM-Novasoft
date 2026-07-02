@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/server";
-import type { ComportamentPlata } from "@/types/creante";
+import type { ComportamentPlata, TipVanzare } from "@/types/creante";
 
 function toNumber(v: unknown): number | null {
   if (v === null || v === undefined || v === "") return null;
@@ -49,7 +49,18 @@ async function requireAdmin() {
   return { supabase, userId: userData.user.id, isAdmin: profile?.role === "admin" };
 }
 
-interface RawRow {
+// ----------------------------------------------------------------------------
+// Import: doua formate suportate, detectate automat dupa antetul coloanelor.
+//
+// 1. FORMAT BRUT - exportul lunar din aplicatia de facturare (fara Sold,
+//    fara Tip Vanzare, fara incasari - doar facturile emise). Acesta va fi
+//    formatul folosit la fiecare import viitor.
+// 2. FORMAT UNIFICAT - folosit o singura data, pentru backfill-ul istoric
+//    (2025 - prezent), contine deja Sold Actual / Data incasare / Tip
+//    Vanzare / Comportament de plata, calculate manual in Excel.
+// ----------------------------------------------------------------------------
+
+interface RawRowBrut {
   "Nr. factura"?: unknown;
   Client?: unknown;
   "Data Factura"?: unknown;
@@ -66,6 +77,25 @@ interface RawRow {
   "Serviciu Facturare"?: unknown;
 }
 
+interface RawRowUnificat {
+  "Nume firma"?: unknown;
+  "Serviciu facturat"?: unknown;
+  "Tip Vanzare"?: unknown;
+  "Nr factura"?: unknown;
+  "Data factura"?: unknown;
+  "Data scadenta"?: unknown;
+  "Total factura"?: unknown;
+  "Sold Actual"?: unknown;
+  "Data incasare"?: unknown;
+  "Comportament de plata"?: unknown;
+  Observatii?: unknown;
+  "Grad dificultate incasare"?: unknown;
+  "Propus spre incasare"?: unknown;
+}
+
+const COMPORTAMENT_VALUES: ComportamentPlata[] = ["Bun platnic", "Platnic mediu", "Rau platnic"];
+const TIP_VANZARE_VALUES: TipVanzare[] = ["Recurente", "Nerecurente"];
+
 export async function importCreanteAction(
   formData: FormData
 ): Promise<{
@@ -81,12 +111,15 @@ export async function importCreanteAction(
     return { success: false, message: "Niciun fisier incarcat." };
   }
 
-  let rows: RawRow[];
+  let rows: Record<string, unknown>[];
   try {
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    rows = XLSX.utils.sheet_to_json<RawRow>(sheet, { defval: null });
+    const preferredSheet = workbook.SheetNames.find(
+      (n) => n.trim().toLowerCase() === "creante_unificat"
+    );
+    const sheet = workbook.Sheets[preferredSheet ?? workbook.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: null });
   } catch (err) {
     console.error("importCreanteAction parse error:", err);
     return { success: false, message: "Fisierul nu a putut fi citit. Verifica formatul." };
@@ -95,6 +128,8 @@ export async function importCreanteAction(
   if (rows.length === 0) {
     return { success: false, message: "Fisierul nu contine randuri de date." };
   }
+
+  const isUnificat = "Nume firma" in rows[0];
 
   const [{ data: existingRows }, { data: opportunities }] = await Promise.all([
     supabase.from("creante").select("id, nr_factura"),
@@ -111,15 +146,13 @@ export async function importCreanteAction(
   const toInsert: Record<string, unknown>[] = [];
   const toUpdate: { nrFactura: string; payload: Record<string, unknown> }[] = [];
   const duplicateInFile = new Map<string, number>();
+  const seedIncasari: { nrFactura: string; valoare: number; data: string; observatie: string }[] =
+    [];
 
-  // Deduplicam dupa nr_factura in interiorul fisierului - dacă exportul din
-  // aplicatia de facturare contine doua randuri cu acelasi numar (se
-  // intampla, ex. eroare de numerotare), pastram ultimul rand intalnit si
-  // raportam cate au fost sarite, in loc sa lasam importul sa pice pe
-  // constraint-ul unic din baza de date.
-  const rowsByNrFactura = new Map<string, RawRow>();
+  const rowsByNrFactura = new Map<string, Record<string, unknown>>();
+  const nrFacturaField = isUnificat ? "Nr factura" : "Nr. factura";
   for (const row of rows) {
-    const nrFactura = toIntString(row["Nr. factura"]);
+    const nrFactura = toIntString(row[nrFacturaField]);
     if (!nrFactura) continue;
     if (rowsByNrFactura.has(nrFactura)) {
       duplicateInFile.set(nrFactura, (duplicateInFile.get(nrFactura) ?? 1) + 1);
@@ -128,68 +161,122 @@ export async function importCreanteAction(
   }
 
   for (const [nrFactura, row] of rowsByNrFactura) {
-    const numeFirma = typeof row.Client === "string" ? row.Client.trim() : null;
-    if (!numeFirma) continue;
-
-    const totalFactura = toNumber(row["Total Fact"]) ?? 0;
-    const restIncasare = toNumber(row["Rest Incasare Fact"]) ?? 0;
-    const opportunityId = opportunityByName.get(normalizeName(numeFirma)) ?? null;
-
-    const rawFields: Record<string, unknown> = {
-      nume_firma: numeFirma,
-      opportunity_id: opportunityId,
-      data_factura: toDateStr(row["Data Factura"]),
-      data_scadenta: toDateStr(row["Scadenta"]),
-      nr_contract: toIntString(row["Nr Contract"]),
-      data_contract: toDateStr(row["Data Contract"]),
-      produs: typeof row.Produs === "string" ? row.Produs : null,
-      serviciu_facturat: typeof row["Serviciu Facturare"] === "string" ? row["Serviciu Facturare"] : null,
-      termen_incasare_zile: toNumber(row["Termen Incasare"]),
-      valoare_lunara_fara_tva: toNumber(row["Total Fara TVAEUR"]),
-      total_fara_tva: toNumber(row["Total Val Fact"]),
-      total_tva: toNumber(row["Total Val TVA Fact"]),
-      total_factura: totalFactura,
-    };
-
     const existingId = existingByNrFactura.get(nrFactura);
-    if (existingId) {
-      // Factura deja urmarita in aplicatie - actualizam doar campurile brute,
-      // niciodata valoare_incasata / observatii / incasarile din jurnal.
-      toUpdate.push({ nrFactura, payload: rawFields });
+
+    if (isUnificat) {
+      const r = row as RawRowUnificat;
+      const numeFirma = typeof r["Nume firma"] === "string" ? r["Nume firma"].trim() : null;
+      if (!numeFirma) continue;
+
+      const totalFactura = toNumber(r["Total factura"]) ?? 0;
+      const soldActual = toNumber(r["Sold Actual"]) ?? 0;
+      const valoareIncasataEfectiva = Math.max(0, totalFactura - soldActual);
+      const opportunityId = opportunityByName.get(normalizeName(numeFirma)) ?? null;
+
+      const comportamentRaw =
+        typeof r["Comportament de plata"] === "string" ? r["Comportament de plata"] : null;
+      const comportament = COMPORTAMENT_VALUES.includes(comportamentRaw as ComportamentPlata)
+        ? (comportamentRaw as ComportamentPlata)
+        : null;
+
+      const tipVanzareRaw = typeof r["Tip Vanzare"] === "string" ? r["Tip Vanzare"] : null;
+      const tipVanzare = TIP_VANZARE_VALUES.includes(tipVanzareRaw as TipVanzare)
+        ? (tipVanzareRaw as TipVanzare)
+        : null;
+
+      const rawFields: Record<string, unknown> = {
+        nume_firma: numeFirma,
+        opportunity_id: opportunityId,
+        data_factura: toDateStr(r["Data factura"]),
+        data_scadenta: toDateStr(r["Data scadenta"]),
+        serviciu_facturat: typeof r["Serviciu facturat"] === "string" ? r["Serviciu facturat"] : null,
+        tip_vanzare: tipVanzare,
+        total_factura: totalFactura,
+        comportament_plata: comportament,
+        observatii: typeof r.Observatii === "string" ? r.Observatii : null,
+        grad_dificultate_incasare:
+          typeof r["Grad dificultate incasare"] === "string" ? r["Grad dificultate incasare"] : null,
+        propus_spre_incasare: Boolean(toNumber(r["Propus spre incasare"])),
+      };
+
+      if (existingId) {
+        toUpdate.push({ nrFactura, payload: rawFields });
+      } else {
+        toInsert.push({ nr_factura: nrFactura, ...rawFields });
+        if (valoareIncasataEfectiva > 0) {
+          seedIncasari.push({
+            nrFactura,
+            valoare: valoareIncasataEfectiva,
+            data:
+              toDateStr(r["Data incasare"]) ??
+              toDateStr(r["Data factura"]) ??
+              new Date().toISOString().slice(0, 10),
+            observatie: "Incasare istorica (import backfill)",
+          });
+        }
+      }
     } else {
-      // Factura noua - retinem separat cat era deja incasat la data
-      // exportului (devine o intrare in jurnalul de incasari dupa insert,
-      // nu se scrie direct pe coloana - aceea e gestionata de trigger).
-      toInsert.push({
-        nr_factura: nrFactura,
-        ...rawFields,
-        _seedIncasat: Math.max(0, totalFactura - restIncasare),
-      });
+      const r = row as RawRowBrut;
+      const numeFirma = typeof r.Client === "string" ? r.Client.trim() : null;
+      if (!numeFirma) continue;
+
+      const totalFactura = toNumber(r["Total Fact"]) ?? 0;
+      const restIncasare = toNumber(r["Rest Incasare Fact"]) ?? 0;
+      const opportunityId = opportunityByName.get(normalizeName(numeFirma)) ?? null;
+
+      const rawFields: Record<string, unknown> = {
+        nume_firma: numeFirma,
+        opportunity_id: opportunityId,
+        data_factura: toDateStr(r["Data Factura"]),
+        data_scadenta: toDateStr(r["Scadenta"]),
+        nr_contract: toIntString(r["Nr Contract"]),
+        data_contract: toDateStr(r["Data Contract"]),
+        produs: typeof r.Produs === "string" ? r.Produs : null,
+        serviciu_facturat:
+          typeof r["Serviciu Facturare"] === "string" ? r["Serviciu Facturare"] : null,
+        termen_incasare_zile: toNumber(r["Termen Incasare"]),
+        valoare_lunara_fara_tva: toNumber(r["Total Fara TVAEUR"]),
+        total_fara_tva: toNumber(r["Total Val Fact"]),
+        total_tva: toNumber(r["Total Val TVA Fact"]),
+        total_factura: totalFactura,
+      };
+
+      if (existingId) {
+        toUpdate.push({ nrFactura, payload: rawFields });
+      } else {
+        toInsert.push({ nr_factura: nrFactura, ...rawFields });
+        const seed = Math.max(0, totalFactura - restIncasare);
+        if (seed > 0) {
+          seedIncasari.push({
+            nrFactura,
+            valoare: seed,
+            data: rawFields.data_factura as string ?? new Date().toISOString().slice(0, 10),
+            observatie: "Incasare initiala (din exportul de facturare)",
+          });
+        }
+      }
     }
   }
 
   if (toInsert.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const rowsToInsert = toInsert.map(({ _seedIncasat, ...rest }) => rest);
     const { data: inserted, error } = await supabase
       .from("creante")
-      .insert(rowsToInsert)
+      .insert(toInsert)
       .select("id, nr_factura");
     if (error) return { success: false, message: `Eroare la inserare: ${error.message}` };
 
     const idByNrFactura = new Map((inserted ?? []).map((r) => [r.nr_factura, r.id]));
-    const seedIncasari = toInsert
-      .filter((r) => (r._seedIncasat as number) > 0)
-      .map((r) => ({
-        creanta_id: idByNrFactura.get(r.nr_factura as string),
-        valoare: r._seedIncasat,
-        data_incasare: (r.data_factura as string | null) ?? new Date().toISOString().slice(0, 10),
-        observatie: "Incasare initiala (din exportul de facturare)",
+    const seedRows = seedIncasari
+      .map((s) => ({
+        creanta_id: idByNrFactura.get(s.nrFactura),
+        valoare: s.valoare,
+        data_incasare: s.data,
+        observatie: s.observatie,
       }))
       .filter((r) => r.creanta_id);
 
-    if (seedIncasari.length > 0) {
-      const { error: seedError } = await supabase.from("creante_incasari").insert(seedIncasari);
+    if (seedRows.length > 0) {
+      const { error: seedError } = await supabase.from("creante_incasari").insert(seedRows);
       if (seedError) console.error("Eroare la seed incasari:", seedError.message);
     }
   }
@@ -227,12 +314,9 @@ export async function importCreanteAction(
 export async function updateCreantaTrackingAction(
   id: string,
   fields: {
-    comportament_plata?: ComportamentPlata | null;
+    tip_vanzare?: TipVanzare | null;
     grad_dificultate_incasare?: string | null;
-    data_tinta_incasare?: string | null;
     observatii?: string | null;
-    datorie_operationala?: boolean;
-    departament_datorie_operationala?: string | null;
     procent_penalitate_intarziere?: number | null;
   }
 ): Promise<{ success: boolean; message?: string }> {
@@ -240,6 +324,24 @@ export async function updateCreantaTrackingAction(
   if (!isAdmin) return { success: false, message: "Doar administratorii pot edita creante." };
 
   const { error } = await supabase.from("creante").update(fields).eq("id", id);
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/creante");
+  return { success: true };
+}
+
+/** Bifa rapida "Propus spre incasare", direct din lista, fara sa deschizi modalul. */
+export async function toggleProposSpreIncasareAction(
+  id: string,
+  value: boolean
+): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot edita creante." };
+
+  const { error } = await supabase
+    .from("creante")
+    .update({ propus_spre_incasare: value })
+    .eq("id", id);
   if (error) return { success: false, message: error.message };
 
   revalidatePath("/creante");
@@ -278,6 +380,21 @@ export async function undoIncasareAction(
   if (!isAdmin) return { success: false, message: "Doar administratorii pot anula incasari." };
 
   const { error } = await supabase.from("creante_incasari").delete().eq("id", incasareId);
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/creante");
+  return { success: true };
+}
+
+/** Sterge in masa facturi din Creante - pentru corectarea unor importuri gresite. */
+export async function deleteCreanteAction(
+  ids: string[]
+): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot sterge creante." };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { error } = await supabase.from("creante").delete().in("id", ids);
   if (error) return { success: false, message: error.message };
 
   revalidatePath("/creante");
