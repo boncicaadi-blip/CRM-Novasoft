@@ -20,11 +20,7 @@ export function CreantaDetailModal({
 }) {
   const [isPending, startTransition] = useTransition();
   const [tipVanzare, setTipVanzare] = useState<TipVanzare | "">(creanta.tip_vanzare ?? "");
-  const [gradDificultate, setGradDificultate] = useState(creanta.grad_dificultate_incasare ?? "");
   const [observatii, setObservatii] = useState(creanta.observatii ?? "");
-  const [procentPenalitate, setProcentPenalitate] = useState(
-    creanta.procent_penalitate_intarziere !== null ? String(creanta.procent_penalitate_intarziere) : ""
-  );
 
   const [valoareIncasare, setValoareIncasare] = useState(String(creanta.sold));
   const [dataIncasare, setDataIncasare] = useState(new Date().toISOString().slice(0, 10));
@@ -41,9 +37,7 @@ export function CreantaDetailModal({
     startTransition(async () => {
       const result = await updateCreantaTrackingAction(creanta.id, {
         tip_vanzare: tipVanzare === "" ? null : tipVanzare,
-        grad_dificultate_incasare: gradDificultate || null,
         observatii: observatii || null,
-        procent_penalitate_intarziere: procentPenalitate ? Number(procentPenalitate) : null,
       });
       setMessage(
         result.success
@@ -211,28 +205,6 @@ export function CreantaDetailModal({
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[11px] text-slate-500">Grad dificultate incasare</label>
-            <input
-              value={gradDificultate}
-              onChange={(e) => setGradDificultate(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[11px] text-slate-500">
-              Procent penalitate intarziere (%)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={procentPenalitate}
-              onChange={(e) => setProcentPenalitate(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
-            />
           </div>
 
           <div>

@@ -334,9 +334,7 @@ export async function updateCreantaTrackingAction(
   id: string,
   fields: {
     tip_vanzare?: TipVanzare | null;
-    grad_dificultate_incasare?: string | null;
     observatii?: string | null;
-    procent_penalitate_intarziere?: number | null;
   }
 ): Promise<{ success: boolean; message?: string }> {
   const { supabase, isAdmin } = await requireAdmin();

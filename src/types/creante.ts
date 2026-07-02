@@ -23,11 +23,8 @@ export interface Creanta {
   sold: number;
   propus_spre_incasare: boolean;
   comportament_plata: ComportamentPlata | null;
-  grad_dificultate_incasare: string | null;
   data_tinta_incasare: string | null;
   observatii: string | null;
-  procent_penalitate_intarziere: number | null;
-  valoare_penalitati_intarziere: number | null;
   creat_la: string;
   actualizat_la: string;
 }
