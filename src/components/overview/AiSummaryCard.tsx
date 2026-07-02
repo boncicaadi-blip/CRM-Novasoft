@@ -23,7 +23,7 @@ export function AiSummaryCard({ opportunityId }: { opportunityId: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-2">
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">
           <Sparkles size={13} className="text-[#E8007A]" />

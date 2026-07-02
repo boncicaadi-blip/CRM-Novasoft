@@ -14,7 +14,6 @@ const FIELDS = [
   "stage_id",
   "status_id",
   "substatus",
-  "motivatia_substatusului",
   "probability",
   "motiv_pierdere_id",
   "motiv_amanare_id",
@@ -232,12 +231,6 @@ export function PipelineStatusCard({
               ))}
             </datalist>
           </LabeledInput>
-          <LabeledInput label="Motivatia substatusului">
-            <TextInput
-              name="motivatia_substatusului"
-              defaultValue={o.motivatia_substatusului ?? ""}
-            />
-          </LabeledInput>
           <LabeledInput label="Probability (0-1)">
             <TextInput
               type="number"
@@ -317,7 +310,6 @@ export function PipelineStatusCard({
             </>
           )}
           <InfoRow label="Substatus" value={o.substatus} />
-          <InfoRow label="Motivatia substatusului" value={o.motivatia_substatusului} />
           <InfoRow label="Probability" value={`${Math.round((o.probability ?? 0) * 100)}%`} />
         </div>
       )}

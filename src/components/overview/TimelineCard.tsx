@@ -71,7 +71,7 @@ export function TimelineCard({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-2">
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Timeline</p>
 
       <form onSubmit={handleSubmit} className="mb-4 space-y-2">
