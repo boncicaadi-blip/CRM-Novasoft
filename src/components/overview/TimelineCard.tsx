@@ -16,6 +16,7 @@ import {
   Bot,
 } from "lucide-react";
 import { addTimelineEntryAction } from "@/lib/actions/timeline";
+import { AiSummaryCard } from "@/components/overview/AiSummaryCard";
 import type { TimelineEntry, TimelineEntryType } from "@/types/opportunity";
 
 const MANUAL_TYPES: { value: TimelineEntryType; label: string }[] = [
@@ -71,8 +72,11 @@ export function TimelineCard({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Timeline</p>
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-2">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Timeline</p>
+        <AiSummaryCard opportunityId={opportunityId} />
+      </div>
 
       <form onSubmit={handleSubmit} className="mb-4 space-y-2">
         <div className="flex gap-2">

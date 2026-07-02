@@ -15,7 +15,6 @@ import { ActiuneCard } from "@/components/overview/ActiuneCard";
 import { PricingCard } from "@/components/overview/PricingCard";
 import { SursaCard } from "@/components/overview/SursaCard";
 import { TimelineCard } from "@/components/overview/TimelineCard";
-import { AiSummaryCard } from "@/components/overview/AiSummaryCard";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import type { Opportunity } from "@/types/opportunity";
 
@@ -125,13 +124,6 @@ export default async function OpportunityOverviewPage({
         />
         <PricingCard o={o} tipuriProiect={valori(nomenclatoare["tip_proiect"])} />
         <SursaCard o={o} canaleIntrare={valori(nomenclatoare["canal_intrare"])} />
-      </div>
-
-      {/* Rezumat AI si Timeline, unul langa altul - randate separat de grid-ul
-          de mai sus (unde erau carduri de 2 coloane intr-o grila de 3, ceea
-          ce lasa mereu un gol nearanjat pe randul urmator). */}
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <AiSummaryCard opportunityId={o.id} />
         <TimelineCard opportunityId={o.id} entries={timeline} />
       </div>
 
