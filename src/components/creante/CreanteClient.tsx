@@ -1,10 +1,13 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Wallet, AlertTriangle, Target, TrendingUp, Trash2 } from "lucide-react";
+import Link from "next/link";
+import * as XLSX from "xlsx";
+import { Wallet, AlertTriangle, Target, TrendingUp, Trash2, Download } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { CreanteImportForm } from "./CreanteImportForm";
 import { CreantaDetailModal } from "./CreantaDetailModal";
+import { AgingBar } from "./AgingBar";
 import { formatRonCompact, formatRon } from "@/lib/format";
 import {
   computeCreanteSummary,
@@ -95,6 +98,26 @@ export function CreanteClient({
     });
   }
 
+  function handleExport() {
+    const rows = filtered.map((c) => ({
+      Firma: c.nume_firma,
+      Serviciu: c.serviciu_facturat ?? "",
+      "Tip vanzare": c.tip_vanzare ?? "",
+      "Nr factura": c.nr_factura,
+      "Data factura": c.data_factura ?? "",
+      "Data scadenta": c.data_scadenta ?? "",
+      "Total factura": c.total_factura,
+      Sold: c.sold,
+      "Data incasare": c.data_incasare ?? "",
+      "Nr zile depasire": getZileDepasire(c) ?? "",
+      "Propus spre incasare": c.propus_spre_incasare ? "DA" : "NU",
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Creante");
+    XLSX.writeFile(wb, `creante_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }
+
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -136,6 +159,8 @@ export function CreanteClient({
         />
       </div>
 
+      <AgingBar summary={summary} />
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select
           value={period}
@@ -173,6 +198,13 @@ export function CreanteClient({
                   : "Toate"}
           </button>
         ))}
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+        >
+          <Download size={13} />
+          Export Excel
+        </button>
         {checkedIds.size > 0 && (
           <button
             onClick={handleDeleteSelected}
@@ -226,11 +258,13 @@ export function CreanteClient({
                       className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
                     />
                   </td>
-                  <td
-                    className="cursor-pointer px-3 py-2 text-white"
-                    onClick={() => setSelected(c)}
-                  >
-                    {c.nume_firma}
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <Link
+                      href={`/creante/client/${encodeURIComponent(c.nume_firma)}`}
+                      className="text-white hover:text-[#E8007A] hover:underline"
+                    >
+                      {c.nume_firma}
+                    </Link>
                   </td>
                   <td
                     className="cursor-pointer px-3 py-2 text-slate-400"

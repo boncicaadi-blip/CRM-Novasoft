@@ -15,6 +15,21 @@ export async function getCreante(): Promise<Creanta[]> {
   return data as Creanta[];
 }
 
+export async function getCreanteByFirma(nume: string): Promise<Creanta[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("creante")
+    .select("*")
+    .eq("nume_firma", nume)
+    .order("data_factura", { ascending: false });
+
+  if (error) {
+    console.error("getCreanteByFirma error:", error.message);
+    return [];
+  }
+  return data as Creanta[];
+}
+
 export async function getLastImportBatch(): Promise<CreanteImportBatch | null> {
   const supabase = await createClient();
   const { data, error } = await supabase

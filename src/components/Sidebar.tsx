@@ -44,7 +44,7 @@ interface NavGroup {
 const NAV_GROUPS: NavGroup[] = [
   {
     id: "pipeline",
-    label: "Pipeline",
+    label: "CRM",
     icon: GitBranch,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
