@@ -87,14 +87,18 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
   };
 }
 
-export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate";
+export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
 /**
  * Filtrare pe perioada: o factura e vizibila daca are sold restant
- * (indiferent de vechime - trebuie urmarita oricum), SAU daca data facturii
- * cade in perioada selectata.
+ * (indiferent de vechime - trebuie urmarita oricum), SAU daca data
+ * facturii cade in perioada selectata.
  */
-export function inPeriod(c: Creanta, period: PeriodFilter): boolean {
+export function inPeriod(
+  c: Creanta,
+  period: PeriodFilter,
+  customRange?: { from: string; to: string }
+): boolean {
   if (c.sold > 0) return true;
   if (period === "toate") return true;
   if (!c.data_factura) return false;
@@ -102,6 +106,11 @@ export function inPeriod(c: Creanta, period: PeriodFilter): boolean {
   const d = new Date(c.data_factura);
   const now = new Date();
 
+  if (period === "custom") {
+    if (customRange?.from && d < new Date(customRange.from)) return false;
+    if (customRange?.to && d > new Date(customRange.to)) return false;
+    return true;
+  }
   if (period === "luna_curenta") {
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   }

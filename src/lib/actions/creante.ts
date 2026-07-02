@@ -169,7 +169,12 @@ export async function importCreanteAction(
       if (!numeFirma) continue;
 
       const totalFactura = toNumber(r["Total factura"]) ?? 0;
-      const soldActual = toNumber(r["Sold Actual"]) ?? 0;
+      const soldActualRaw = toNumber(r["Sold Actual"]) ?? totalFactura;
+      // Clamp defensiv: indiferent ce contine sursa, soldul nu poate fi
+      // negativ si nu poate depasi totalul facturii - altfel valoarea
+      // incasata calculata (total - sold) poate iesi absurda (ex: dubla
+      // fata de total, daca sursa are conventie de semn diferita).
+      const soldActual = Math.min(Math.max(soldActualRaw, 0), totalFactura);
       const valoareIncasataEfectiva = Math.max(0, totalFactura - soldActual);
       const opportunityId = opportunityByName.get(normalizeName(numeFirma)) ?? null;
 
@@ -221,7 +226,16 @@ export async function importCreanteAction(
       if (!numeFirma) continue;
 
       const totalFactura = toNumber(r["Total Fact"]) ?? 0;
-      const restIncasare = toNumber(r["Rest Incasare Fact"]) ?? 0;
+      const restIncasareRaw = toNumber(r["Rest Incasare Fact"]);
+      // Default sigur: daca lipseste coloana, presupunem NEIN CASAT (nu
+      // incasat integral) - o subestimare e mult mai sigura decat o
+      // supraestimare a banilor deja incasati. Clamp intre 0 si total,
+      // ca sa nu putem obtine niciodata un sold negativ, indiferent de
+      // conventia de semn din sursa (s-a vazut real cu facturi vechi).
+      const restIncasare = Math.min(
+        Math.max(restIncasareRaw ?? totalFactura, 0),
+        totalFactura
+      );
       const opportunityId = opportunityByName.get(normalizeName(numeFirma)) ?? null;
 
       const rawFields: Record<string, unknown> = {
@@ -250,8 +264,13 @@ export async function importCreanteAction(
           seedIncasari.push({
             nrFactura,
             valoare: seed,
-            data: rawFields.data_factura as string ?? new Date().toISOString().slice(0, 10),
-            observatie: "Incasare initiala (din exportul de facturare)",
+            // Formatul brut nu are o data reala de incasare - nu o mai
+            // aproximam cu data facturii (inducea in eroare, parea ca
+            // s-a incasat exact in ziua emiterii). Folosim data importului
+            // si spunem clar in observatie ca e o valoare mostenita, fara
+            // data exacta cunoscuta.
+            data: new Date().toISOString().slice(0, 10),
+            observatie: "Incasare istorica mostenita din export (data exacta necunoscuta)",
           });
         }
       }
