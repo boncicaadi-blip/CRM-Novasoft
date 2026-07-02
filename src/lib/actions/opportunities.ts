@@ -297,10 +297,15 @@ export async function finalizeActionAction(
   });
 
   if (nextStep) {
+    // Golim explicit observatii_actiune - altfel rezultatul actiunii tocmai
+    // finalizate (scris mai sus, pe acelasi rand) ramane agatat si pe
+    // actiunea noua programata, aparand gresit atat pe cardul Actiune
+    // Curenta cat si in textul din Timeline al noii actiuni programate.
     await updateOpportunity(opportunityId, {
       actiune: nextStep.actiune,
       data_actiune: nextStep.dataActiune,
       status_actiune: "Planificata",
+      observatii_actiune: null,
     });
   } else {
     // Fara next step programat: golim TOATE campurile actiunii curente
