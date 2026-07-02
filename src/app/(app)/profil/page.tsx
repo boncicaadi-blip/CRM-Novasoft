@@ -17,8 +17,10 @@ export default async function ProfilPage() {
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <BackButton />
-      <h1 className="mb-1 text-lg font-heading text-white">Profilul meu</h1>
+      <div className="mb-1 flex items-center gap-2">
+        <BackButton />
+        <h1 className="text-lg font-heading text-white">Profilul meu</h1>
+      </div>
       <p className="mb-5 text-sm text-slate-500">Datele tale de cont si securitate.</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

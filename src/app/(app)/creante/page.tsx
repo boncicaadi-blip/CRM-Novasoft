@@ -25,7 +25,7 @@ export default async function CreantePage() {
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <BackButton />
+      <div className="mb-2"><BackButton /></div>
       <CreanteClient creante={creante} lastBatch={lastBatch} incasari={incasari} />
     </div>
   );

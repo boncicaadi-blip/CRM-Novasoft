@@ -206,9 +206,11 @@ export function ObligatieDetailModal({
               onChange={(e) => setTipAchizitie(e.target.value as TipAchizitie | "")}
               className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
             >
-              <option value="">—</option>
+              <option value="" style={{ backgroundColor: "#111535" }}>
+                —
+              </option>
               {TIP_ACHIZITIE_OPTIONS.map((o) => (
-                <option key={o} value={o}>
+                <option key={o} value={o} style={{ backgroundColor: "#111535" }}>
                   {o}
                 </option>
               ))}

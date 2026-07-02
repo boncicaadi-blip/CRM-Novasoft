@@ -31,7 +31,7 @@ export default async function FisaFurnizorPage({
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <BackButton />
+      <div className="mb-2"><BackButton /></div>
       <FisaFurnizorClient
         numeFurnizor={numeFurnizor}
         obligatii={obligatii}

@@ -19,6 +19,21 @@ export function getZileDepasire(c: Creanta): number | null {
   return zile > 0 ? zile : null;
 }
 
+export type AgingBucket = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
+
+/** In ce "bucket" de vechime cade o factura - aceeasi logica folosita si la
+ * calculul sumelor din AgingBar, ca cele doua sa ramana mereu consistente. */
+export function matchesAgingBucket(c: Creanta, bucket: AgingBucket): boolean {
+  if (c.sold <= 0) return false;
+  const status = getCreantaStatus(c);
+  if (status !== "restanta") return bucket === "sold0_30";
+  const zile = getZileDepasire(c) ?? 0;
+  if (bucket === "sold0_30") return zile <= 30;
+  if (bucket === "sold31_60") return zile > 30 && zile <= 60;
+  if (bucket === "sold61_90") return zile > 60 && zile <= 90;
+  return zile > 90;
+}
+
 export interface CreanteSummary {
   totalSold: number;
   totalFacturat: number;

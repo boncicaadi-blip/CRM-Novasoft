@@ -25,7 +25,9 @@ import {
   getCreantaStatus,
   getZileDepasire,
   inPeriod,
+  matchesAgingBucket,
   type PeriodFilter,
+  type AgingBucket,
 } from "@/lib/creante-analytics";
 import { toggleProposSpreIncasareAction, deleteCreanteAction, deleteAllCreanteAction } from "@/lib/actions/creante";
 import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
@@ -126,10 +128,22 @@ export function CreanteClient({
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
   const [pageSize, setPageSize] = useState<number | "toate">(50);
   const [page, setPage] = useState(1);
+  const [proposOverrides, setProposOverrides] = useState<Record<string, boolean>>({});
+  const [agingFilter, setAgingFilter] = useState<AgingBucket | null>(null);
+
+  // Combinam datele venite de la server cu bifele "Propus" schimbate local,
+  // ca UI-ul sa raspunda instant la click, fara sa astepte round-trip-ul
+  // complet (revalidare + refetch) inainte sa arate schimbarea.
+  const creanteEffective = useMemo(() => {
+    if (Object.keys(proposOverrides).length === 0) return creante;
+    return creante.map((c) =>
+      c.id in proposOverrides ? { ...c, propus_spre_incasare: proposOverrides[c.id] } : c
+    );
+  }, [creante, proposOverrides]);
 
   const inPeriodList = useMemo(
-    () => creante.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo })),
-    [creante, period, customFrom, customTo]
+    () => creanteEffective.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo })),
+    [creanteEffective, period, customFrom, customTo]
   );
 
   const summary = useMemo(() => computeCreanteSummary(inPeriodList), [inPeriodList]);
@@ -145,6 +159,7 @@ export function CreanteClient({
       ) {
         return false;
       }
+      if (agingFilter && !matchesAgingBucket(c, agingFilter)) return false;
       if (statusFilter === "toate") return true;
       return getCreantaStatus(c) === statusFilter;
     });
@@ -157,7 +172,7 @@ export function CreanteClient({
       });
     }
     return rows;
-  }, [inPeriodList, statusFilter, search, sortKey, sortDir]);
+  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter]);
 
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedRows = useMemo(() => {
@@ -165,6 +180,11 @@ export function CreanteClient({
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
+
+  function handleAgingBucketClick(bucket: AgingBucket) {
+    setAgingFilter((prev) => (prev === bucket ? null : bucket));
+    setPage(1);
+  }
 
   function toggleCheck(id: string) {
     setCheckedIds((prev) => {
@@ -182,8 +202,14 @@ export function CreanteClient({
   }
 
   function handleToggleProposSpreIncasare(c: Creanta, value: boolean) {
+    // Optimist: schimbam local imediat, ca bifa sa raspunda instant.
+    setProposOverrides((prev) => ({ ...prev, [c.id]: value }));
     startTransition(async () => {
-      await toggleProposSpreIncasareAction(c.id, value);
+      const result = await toggleProposSpreIncasareAction(c.id, value);
+      if (!result.success) {
+        // Revenim la valoarea reala daca actiunea a esuat pe server.
+        setProposOverrides((prev) => ({ ...prev, [c.id]: c.propus_spre_incasare }));
+      }
     });
   }
 
@@ -298,7 +324,7 @@ export function CreanteClient({
         />
       </div>
 
-      <AgingBar summary={summary} />
+      <AgingBar summary={summary} activeBucket={agingFilter} onBucketClick={handleAgingBucketClick} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select

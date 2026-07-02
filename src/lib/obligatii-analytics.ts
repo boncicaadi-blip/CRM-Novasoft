@@ -19,6 +19,19 @@ export function getZileDepasireObligatie(o: Obligatie): number | null {
   return zile > 0 ? zile : null;
 }
 
+export type AgingBucketObligatie = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
+
+export function matchesAgingBucketObligatie(o: Obligatie, bucket: AgingBucketObligatie): boolean {
+  if (o.sold <= 0) return false;
+  const status = getObligatieStatus(o);
+  if (status !== "restanta") return bucket === "sold0_30";
+  const zile = getZileDepasireObligatie(o) ?? 0;
+  if (bucket === "sold0_30") return zile <= 30;
+  if (bucket === "sold31_60") return zile > 30 && zile <= 60;
+  if (bucket === "sold61_90") return zile > 60 && zile <= 90;
+  return zile > 90;
+}
+
 export interface ObligatiiSummary {
   totalSold: number;
   totalFacturat: number;

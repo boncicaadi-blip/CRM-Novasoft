@@ -25,7 +25,9 @@ import {
   getObligatieStatus,
   getZileDepasireObligatie,
   inPeriodObligatie,
+  matchesAgingBucketObligatie,
   type PeriodFilter,
+  type AgingBucketObligatie,
 } from "@/lib/obligatii-analytics";
 import {
   toggleProposSprePlataAction,
@@ -130,10 +132,20 @@ export function ObligatiiClient({
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
   const [pageSize, setPageSize] = useState<number | "toate">(50);
   const [page, setPage] = useState(1);
+  const [proposOverrides, setProposOverrides] = useState<Record<string, boolean>>({});
+  const [agingFilter, setAgingFilter] = useState<AgingBucketObligatie | null>(null);
+
+  const obligatiiEffective = useMemo(() => {
+    if (Object.keys(proposOverrides).length === 0) return obligatii;
+    return obligatii.map((o) =>
+      o.id in proposOverrides ? { ...o, propus_spre_plata: proposOverrides[o.id] } : o
+    );
+  }, [obligatii, proposOverrides]);
 
   const inPeriodList = useMemo(
-    () => obligatii.filter((o) => inPeriodObligatie(o, period, { from: customFrom, to: customTo })),
-    [obligatii, period, customFrom, customTo]
+    () =>
+      obligatiiEffective.filter((o) => inPeriodObligatie(o, period, { from: customFrom, to: customTo })),
+    [obligatiiEffective, period, customFrom, customTo]
   );
 
   const summary = useMemo(() => computeObligatiiSummary(inPeriodList), [inPeriodList]);
@@ -149,6 +161,7 @@ export function ObligatiiClient({
       ) {
         return false;
       }
+      if (agingFilter && !matchesAgingBucketObligatie(o, agingFilter)) return false;
       if (statusFilter === "toate") return true;
       return getObligatieStatus(o) === statusFilter;
     });
@@ -161,7 +174,7 @@ export function ObligatiiClient({
       });
     }
     return rows;
-  }, [inPeriodList, statusFilter, search, sortKey, sortDir]);
+  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter]);
 
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedRows = useMemo(() => {
@@ -169,6 +182,11 @@ export function ObligatiiClient({
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
+
+  function handleAgingBucketClick(bucket: AgingBucketObligatie) {
+    setAgingFilter((prev) => (prev === bucket ? null : bucket));
+    setPage(1);
+  }
 
   function toggleCheck(id: string) {
     setCheckedIds((prev) => {
@@ -186,8 +204,12 @@ export function ObligatiiClient({
   }
 
   function handleToggleProposSprePlata(o: Obligatie, value: boolean) {
+    setProposOverrides((prev) => ({ ...prev, [o.id]: value }));
     startTransition(async () => {
-      await toggleProposSprePlataAction(o.id, value);
+      const result = await toggleProposSprePlataAction(o.id, value);
+      if (!result.success) {
+        setProposOverrides((prev) => ({ ...prev, [o.id]: o.propus_spre_plata }));
+      }
     });
   }
 
@@ -302,7 +324,11 @@ export function ObligatiiClient({
         />
       </div>
 
-      <AgingBarObligatii summary={summary} />
+      <AgingBarObligatii
+        summary={summary}
+        activeBucket={agingFilter}
+        onBucketClick={handleAgingBucketClick}
+      />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select

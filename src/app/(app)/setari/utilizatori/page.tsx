@@ -25,8 +25,10 @@ export default async function UtilizatoriPage() {
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <BackButton />
-      <h1 className="mb-1 text-lg font-heading text-white">Utilizatori</h1>
+      <div className="mb-1 flex items-center gap-2">
+        <BackButton />
+        <h1 className="text-lg font-heading text-white">Utilizatori</h1>
+      </div>
       <p className="mb-5 text-sm text-slate-500">
         Toti utilizatorii cu acces la aplicatie. Click pe iconita de editare pentru a schimba
         numele sau rolul.

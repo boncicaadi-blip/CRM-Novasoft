@@ -25,7 +25,7 @@ export default async function ObligatiiPage() {
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <BackButton />
+      <div className="mb-2"><BackButton /></div>
       <ObligatiiClient obligatii={obligatii} lastBatch={lastBatch} plati={plati} />
     </div>
   );
