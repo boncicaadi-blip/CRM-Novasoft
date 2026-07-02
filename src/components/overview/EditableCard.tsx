@@ -11,6 +11,7 @@ export function EditableCard({
   fields,
   viewContent,
   editContent,
+  className = "",
 }: {
   title: string;
   opportunityId: string;
@@ -18,6 +19,7 @@ export function EditableCard({
   fields: string[];
   viewContent: ReactNode;
   editContent: ReactNode;
+  className?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -44,7 +46,7 @@ export function EditableCard({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className={`rounded-xl border border-white/10 bg-white/[0.02] p-4 ${className}`}>
       <div className="mb-2 flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{title}</p>
         {!editing && (

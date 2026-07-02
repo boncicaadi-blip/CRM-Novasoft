@@ -13,6 +13,7 @@ export function SursaCard({ o, canaleIntrare }: { o: Opportunity; canaleIntrare:
       title="Sursa & context"
       opportunityId={o.id}
       fields={FIELDS}
+      className="lg:col-span-1"
       viewContent={
         <>
           <InfoRow label="Canal intrare" value={o.canal_intrare} />

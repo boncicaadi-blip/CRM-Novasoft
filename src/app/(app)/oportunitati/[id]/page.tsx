@@ -123,6 +123,11 @@ export default async function OpportunityOverviewPage({
           statusActiune={valori(nomenclatoare["status_actiune"])}
         />
         <PricingCard o={o} tipuriProiect={valori(nomenclatoare["tip_proiect"])} />
+      </div>
+
+      {/* Sursa & Context (ingusta) + Timeline (lata) - rand separat, grid de
+          6 coloane in loc de 3, ca sa poata avea un raport 1:5 intre ele. */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-6">
         <SursaCard o={o} canaleIntrare={valori(nomenclatoare["canal_intrare"])} />
         <TimelineCard opportunityId={o.id} entries={timeline} />
       </div>

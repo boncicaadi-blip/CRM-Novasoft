@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import {
   StickyNote,
   Phone,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { addTimelineEntryAction } from "@/lib/actions/timeline";
 import { AiSummaryCard } from "@/components/overview/AiSummaryCard";
+import { MicButton } from "@/components/ui/MicButton";
 import type { TimelineEntry, TimelineEntryType } from "@/types/opportunity";
 
 const MANUAL_TYPES: { value: TimelineEntryType; label: string }[] = [
@@ -57,6 +58,7 @@ export function TimelineCard({
   const [tip, setTip] = useState<TimelineEntryType>("nota");
   const [continut, setContinut] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const notaInputRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +74,7 @@ export function TimelineCard({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-2">
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-5">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Timeline</p>
         <AiSummaryCard opportunityId={opportunityId} />
@@ -92,10 +94,15 @@ export function TimelineCard({
             ))}
           </select>
           <input
+            ref={notaInputRef}
             value={continut}
             onChange={(e) => setContinut(e.target.value)}
             placeholder="Ce s-a discutat / context..."
             className="flex-1 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          />
+          <MicButton
+            targetRef={notaInputRef}
+            className="shrink-0 border border-white/10 bg-white/[0.04]"
           />
           <button
             type="submit"

@@ -1,4 +1,7 @@
-import { ReactNode } from "react";
+"use client";
+
+import { ReactNode, useRef } from "react";
+import { MicButton } from "@/components/ui/MicButton";
 
 export function Field({
   label,
@@ -43,11 +46,18 @@ export function MoneyInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 }
 
 export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const ref = useRef<HTMLTextAreaElement>(null);
   return (
-    <textarea
-      {...props}
-      className={`${inputClass} min-h-[80px] resize-y ${props.className ?? ""}`}
-    />
+    <div className="relative">
+      <textarea
+        ref={ref}
+        {...props}
+        className={`${inputClass} min-h-[80px] resize-y pr-9 ${props.className ?? ""}`}
+      />
+      <div className="absolute right-1.5 top-1.5">
+        <MicButton targetRef={ref} />
+      </div>
+    </div>
   );
 }
 
