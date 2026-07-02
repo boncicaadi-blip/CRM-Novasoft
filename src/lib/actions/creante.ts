@@ -199,8 +199,6 @@ export async function importCreanteAction(
         total_factura: totalFactura,
         comportament_plata: comportament,
         observatii: typeof r.Observatii === "string" ? r.Observatii : null,
-        grad_dificultate_incasare:
-          typeof r["Grad dificultate incasare"] === "string" ? r["Grad dificultate incasare"] : null,
         propus_spre_incasare: Boolean(toNumber(r["Propus spre incasare"])),
       };
 
