@@ -20,25 +20,64 @@ import {
   FileBarChart,
   Target,
   Wallet,
+  TrendingUp,
+  ChevronDown,
+  X,
+  type LucideIcon,
 } from "lucide-react";
 
-const NAV_ITEMS = [
-  { href: "/actiuni", label: "Actiuni", icon: ListChecks },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/rapoarte", label: "Raport", icon: FileBarChart },
-  { href: "/pipeline", label: "Pipeline", icon: GitBranch },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/dashboard/harta", label: "Harta", icon: Map },
-  { href: "/setari/nomenclatoare", label: "Setari", icon: Settings },
-];
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
 
-/** Pe mobil aratam 6 din cele 7 - doar Setari ramane accesibil din meniul de Profil pe desktop, sau direct din url pe mobil. Raport a fost inclus dupa ce s-a observat ca pe iPhone in portret (sub breakpoint-ul md) disparea din navigare. */
-const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((i) => i.href !== "/setari/nomenclatoare");
+interface NavGroup {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  items: NavItem[];
+  /** Grupul intreg e vizibil doar pentru admin (ex: date financiare sensibile). */
+  adminOnly?: boolean;
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    id: "pipeline",
+    label: "Pipeline",
+    icon: GitBranch,
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/pipeline", label: "Pipeline", icon: GitBranch },
+      { href: "/actiuni", label: "Actiuni", icon: ListChecks },
+      { href: "/calendar", label: "Calendar", icon: CalendarDays },
+      { href: "/dashboard/harta", label: "Harta", icon: Map },
+      { href: "/rapoarte", label: "Raport Comercial", icon: FileBarChart },
+    ],
+  },
+  {
+    id: "creante",
+    label: "Creante & Obligatii",
+    icon: Wallet,
+    adminOnly: true,
+    items: [{ href: "/creante", label: "Creante", icon: Wallet }],
+  },
+  {
+    id: "venituri",
+    label: "Venituri & Cheltuieli",
+    icon: TrendingUp,
+    items: [{ href: "/venituri-cheltuieli", label: "Venituri & Cheltuieli", icon: TrendingUp }],
+  },
+];
 
 /** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta. */
 function isNavItemActive(pathname: string, href: string): boolean {
   if (href === "/dashboard") return pathname === "/dashboard";
   return pathname.startsWith(href);
+}
+
+function findActiveGroupId(pathname: string, groups: NavGroup[]): string | null {
+  return groups.find((g) => g.items.some((i) => isNavItemActive(pathname, i.href)))?.id ?? null;
 }
 
 export function Sidebar({
@@ -54,6 +93,14 @@ export function Sidebar({
   const router = useRouter();
   const supabase = createClient();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileSheetGroupId, setMobileSheetGroupId] = useState<string | null>(null);
+
+  const visibleGroups = NAV_GROUPS.filter((g) => !g.adminOnly || isAdmin);
+  const activeGroupId = findActiveGroupId(pathname, visibleGroups) ?? visibleGroups[0]?.id ?? null;
+  const [openGroupId, setOpenGroupId] = useState<string | null>(activeGroupId);
+  const effectiveOpenGroupId = openGroupId ?? activeGroupId;
+
+  const mobileSheetGroup = visibleGroups.find((g) => g.id === mobileSheetGroupId) ?? null;
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -100,7 +147,7 @@ export function Sidebar({
         </div>
       </header>
 
-      {/* Sidebar desktop (md+) */}
+      {/* Sidebar desktop (md+) - 3 grupe mari, fiecare expandabila */}
       <aside className="hidden h-screen w-60 flex-col border-r border-white/10 bg-[#111535] px-3 py-4 md:flex">
         <div className="mb-6 flex items-center gap-2 px-2">
           <Image
@@ -125,23 +172,51 @@ export function Sidebar({
           Oportunitate noua
         </Link>
 
-        <nav className="flex-1 space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive = isNavItemActive(pathname, item.href);
-            const Icon = item.icon;
+        <nav className="flex-1 space-y-1 overflow-y-auto">
+          {visibleGroups.map((group) => {
+            const GroupIcon = group.icon;
+            const isOpen = effectiveOpenGroupId === group.id;
+            const groupHasActive = group.id === activeGroupId;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
-                  isActive
-                    ? "bg-white/10 text-white font-medium"
-                    : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                }`}
-              >
-                <Icon size={17} />
-                {item.label}
-              </Link>
+              <div key={group.id}>
+                <button
+                  onClick={() => setOpenGroupId(group.id)}
+                  className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
+                    groupHasActive
+                      ? "text-white font-medium"
+                      : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                  }`}
+                >
+                  <GroupIcon size={17} />
+                  <span className="flex-1 text-left">{group.label}</span>
+                  <ChevronDown
+                    size={14}
+                    className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {isOpen && (
+                  <div className="ml-2 space-y-0.5 border-l border-white/10 pl-3">
+                    {group.items.map((item) => {
+                      const isActive = isNavItemActive(pathname, item.href);
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition ${
+                            isActive
+                              ? "bg-white/10 text-white font-medium"
+                              : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                          }`}
+                        >
+                          <Icon size={15} />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
@@ -184,12 +259,12 @@ export function Sidebar({
                     Comercial
                   </Link>
                   <Link
-                    href="/creante"
+                    href="/setari/nomenclatoare"
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
                   >
-                    <Wallet size={15} />
-                    Creante
+                    <Settings size={15} />
+                    Nomenclatoare
                   </Link>
                 </>
               )}
@@ -219,25 +294,72 @@ export function Sidebar({
         </div>
       </aside>
 
-      {/* Bottom nav mobil (sub md) */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-[#111535] md:hidden">
-        {MOBILE_NAV_ITEMS.map((item) => {
-          const isActive = isNavItemActive(pathname, item.href);
-          const Icon = item.icon;
+      {/* Bottom nav mobil (sub md) - 3 categorii mari; tap deschide submeniul categoriei */}
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-[#111535] pb-[env(safe-area-inset-bottom)] md:hidden">
+        {visibleGroups.map((group) => {
+          const GroupIcon = group.icon;
+          const isActive = group.id === activeGroupId;
           return (
-            <Link
-              key={item.href}
-              href={item.href}
+            <button
+              key={group.id}
+              onClick={() => setMobileSheetGroupId(group.id)}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] transition ${
                 isActive ? "text-[#E8007A]" : "text-slate-400"
               }`}
             >
-              <Icon size={19} />
-              {item.label}
-            </Link>
+              <GroupIcon size={20} />
+              {group.label.split(" ")[0]}
+            </button>
           );
         })}
       </nav>
+
+      {/* Sheet mobil cu paginile categoriei selectate */}
+      {mobileSheetGroup && (
+        <div
+          className="fixed inset-0 z-40 flex items-end bg-black/60 md:hidden"
+          onClick={() => setMobileSheetGroupId(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full rounded-t-2xl border-t border-white/10 bg-[#111535] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <p className="flex items-center gap-2 text-sm font-medium text-white">
+                <mobileSheetGroup.icon size={17} />
+                {mobileSheetGroup.label}
+              </p>
+              <button
+                onClick={() => setMobileSheetGroupId(null)}
+                className="rounded-md p-1 text-slate-500 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-1">
+              {mobileSheetGroup.items.map((item) => {
+                const isActive = isNavItemActive(pathname, item.href);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileSheetGroupId(null)}
+                    className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition ${
+                      isActive
+                        ? "bg-white/10 text-white font-medium"
+                        : "text-slate-300 hover:bg-white/5"
+                    }`}
+                  >
+                    <Icon size={17} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
