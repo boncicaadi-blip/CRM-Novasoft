@@ -419,3 +419,18 @@ export async function deleteCreanteAction(
   revalidatePath("/creante");
   return { success: true };
 }
+
+/** Sterge TOATE creantele - pentru re-import curat dupa o corectie majora. */
+export async function deleteAllCreanteAction(): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot sterge creante." };
+
+  const { error } = await supabase
+    .from("creante")
+    .delete()
+    .not("id", "is", null);
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/creante");
+  return { success: true };
+}

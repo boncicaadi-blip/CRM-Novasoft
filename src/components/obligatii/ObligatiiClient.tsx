@@ -7,39 +7,43 @@ import {
   Wallet,
   AlertTriangle,
   Target,
-  TrendingUp,
+  TrendingDown,
   Trash2,
   Download,
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { CreanteImportForm } from "./CreanteImportForm";
-import { CreantaDetailModal } from "./CreantaDetailModal";
-import { AgingBar } from "./AgingBar";
+import { ObligatiiImportForm } from "./ObligatiiImportForm";
+import { ObligatieDetailModal } from "./ObligatieDetailModal";
+import { AgingBarObligatii } from "./AgingBarObligatii";
 import { formatRonCompact, formatRon } from "@/lib/format";
 import {
-  computeCreanteSummary,
-  getCreantaStatus,
-  getZileDepasire,
-  inPeriod,
+  computeObligatiiSummary,
+  getObligatieStatus,
+  getZileDepasireObligatie,
+  inPeriodObligatie,
   type PeriodFilter,
-} from "@/lib/creante-analytics";
-import { toggleProposSpreIncasareAction, deleteCreanteAction, deleteAllCreanteAction } from "@/lib/actions/creante";
-import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
+} from "@/lib/obligatii-analytics";
+import {
+  toggleProposSprePlataAction,
+  deleteObligatiiAction,
+  deleteAllObligatiiAction,
+} from "@/lib/actions/obligatii";
+import type { Obligatie, ObligatiiImportBatch, ObligatiePlata } from "@/types/obligatii";
 
-type StatusFilter = "toate" | "restanta" | "la_zi" | "incasata";
+type StatusFilter = "toate" | "restanta" | "la_zi" | "platita";
 type SortKey =
-  | "firma"
+  | "furnizor"
   | "serviciu"
-  | "tip_vanzare"
+  | "tip_achizitie"
   | "nr_factura"
   | "data_factura"
   | "data_scadenta"
   | "total_factura"
   | "sold"
   | "zile_depasire"
-  | "data_incasare";
+  | "data_plata";
 type SortDir = "asc" | "desc";
 
 const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
@@ -59,61 +63,61 @@ interface ColumnDef {
 }
 
 const DEFAULT_COLUMNS: ColumnDef[] = [
-  { key: "firma", label: "Firma", width: 170, sortKey: "firma" },
+  { key: "furnizor", label: "Furnizor", width: 170, sortKey: "furnizor" },
   { key: "serviciu", label: "Serviciu", width: 140, sortKey: "serviciu" },
-  { key: "tip_vanzare", label: "Tip vanzare", width: 100, sortKey: "tip_vanzare" },
-  { key: "nr_factura", label: "Factura", width: 85, sortKey: "nr_factura" },
+  { key: "tip_achizitie", label: "Tip achizitie", width: 100, sortKey: "tip_achizitie" },
+  { key: "nr_factura", label: "Factura", width: 100, sortKey: "nr_factura" },
   { key: "data_factura", label: "Data factura", width: 95, sortKey: "data_factura" },
   { key: "data_scadenta", label: "Scadenta", width: 95, sortKey: "data_scadenta" },
   { key: "total_factura", label: "Total", width: 90, align: "right", sortKey: "total_factura" },
   { key: "sold", label: "Sold", width: 90, align: "right", sortKey: "sold" },
   { key: "zile_depasire", label: "Zile dep.", width: 75, align: "right", sortKey: "zile_depasire" },
-  { key: "data_incasare", label: "Data incasare", width: 100, sortKey: "data_incasare" },
+  { key: "data_plata", label: "Data plata", width: 95, sortKey: "data_plata" },
   { key: "propus", label: "Propus", width: 60, align: "center" },
 ];
 
-function sortValue(c: Creanta, key: SortKey): string | number {
+function sortValue(o: Obligatie, key: SortKey): string | number {
   switch (key) {
-    case "firma":
-      return c.nume_firma.toLowerCase();
+    case "furnizor":
+      return o.nume_furnizor.toLowerCase();
     case "serviciu":
-      return (c.serviciu_facturat ?? "").toLowerCase();
-    case "tip_vanzare":
-      return c.tip_vanzare ?? "";
+      return (o.serviciu_facturat ?? "").toLowerCase();
+    case "tip_achizitie":
+      return o.tip_achizitie ?? "";
     case "nr_factura":
-      return Number(c.nr_factura) || 0;
+      return o.nr_factura.toLowerCase();
     case "data_factura":
-      return c.data_factura ?? "";
+      return o.data_factura ?? "";
     case "data_scadenta":
-      return c.data_scadenta ?? "";
+      return o.data_scadenta ?? "";
     case "total_factura":
-      return c.total_factura;
+      return o.total_factura;
     case "sold":
-      return c.sold;
+      return o.sold;
     case "zile_depasire":
-      return getZileDepasire(c) ?? -1;
-    case "data_incasare":
-      return c.data_incasare ?? "";
+      return getZileDepasireObligatie(o) ?? -1;
+    case "data_plata":
+      return o.data_plata ?? "";
     default:
       return "";
   }
 }
 
-export function CreanteClient({
-  creante,
+export function ObligatiiClient({
+  obligatii,
   lastBatch,
-  incasari,
+  plati,
 }: {
-  creante: Creanta[];
-  lastBatch: CreanteImportBatch | null;
-  incasari: Record<string, CreantaIncasare[]>;
+  obligatii: Obligatie[];
+  lastBatch: ObligatiiImportBatch | null;
+  plati: Record<string, ObligatiePlata[]>;
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("restanta");
   const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<Creanta | null>(null);
+  const [selected, setSelected] = useState<Obligatie | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -124,25 +128,25 @@ export function CreanteClient({
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
 
   const inPeriodList = useMemo(
-    () => creante.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo })),
-    [creante, period, customFrom, customTo]
+    () => obligatii.filter((o) => inPeriodObligatie(o, period, { from: customFrom, to: customTo })),
+    [obligatii, period, customFrom, customTo]
   );
 
-  const summary = useMemo(() => computeCreanteSummary(inPeriodList), [inPeriodList]);
+  const summary = useMemo(() => computeObligatiiSummary(inPeriodList), [inPeriodList]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    let rows = inPeriodList.filter((c) => {
+    let rows = inPeriodList.filter((o) => {
       if (
         q &&
-        !c.nume_firma.toLowerCase().includes(q) &&
-        !c.nr_factura.includes(q) &&
-        !(c.serviciu_facturat ?? "").toLowerCase().includes(q)
+        !o.nume_furnizor.toLowerCase().includes(q) &&
+        !o.nr_factura.toLowerCase().includes(q) &&
+        !(o.serviciu_facturat ?? "").toLowerCase().includes(q)
       ) {
         return false;
       }
       if (statusFilter === "toate") return true;
-      return getCreantaStatus(c) === statusFilter;
+      return getObligatieStatus(o) === statusFilter;
     });
     if (sortKey) {
       rows = [...rows].sort((a, b) => {
@@ -166,13 +170,13 @@ export function CreanteClient({
 
   function toggleCheckAll() {
     setCheckedIds((prev) =>
-      prev.size === filtered.length ? new Set() : new Set(filtered.map((c) => c.id))
+      prev.size === filtered.length ? new Set() : new Set(filtered.map((o) => o.id))
     );
   }
 
-  function handleToggleProposSpreIncasare(c: Creanta, value: boolean) {
+  function handleToggleProposSprePlata(o: Obligatie, value: boolean) {
     startTransition(async () => {
-      await toggleProposSpreIncasareAction(c.id, value);
+      await toggleProposSprePlataAction(o.id, value);
     });
   }
 
@@ -181,40 +185,40 @@ export function CreanteClient({
     if (!confirm(`Sigur stergi ${checkedIds.size} facturi selectate? Actiunea nu poate fi anulata.`))
       return;
     startTransition(async () => {
-      const result = await deleteCreanteAction(Array.from(checkedIds));
+      const result = await deleteObligatiiAction(Array.from(checkedIds));
       if (result.success) setCheckedIds(new Set());
     });
   }
 
   function handleDeleteAll() {
     const confirmation = prompt(
-      `Scrie STERGE ca sa confirmi stergerea COMPLETA a tuturor celor ${creante.length} facturi din Creante. Actiunea nu poate fi anulata.`
+      `Scrie STERGE ca sa confirmi stergerea COMPLETA a tuturor celor ${obligatii.length} facturi din Obligatii. Actiunea nu poate fi anulata.`
     );
     if (confirmation !== "STERGE") return;
     startTransition(async () => {
-      const result = await deleteAllCreanteAction();
+      const result = await deleteAllObligatiiAction();
       if (result.success) setCheckedIds(new Set());
     });
   }
 
   function handleExport() {
-    const rows = filtered.map((c) => ({
-      Firma: c.nume_firma,
-      Serviciu: c.serviciu_facturat ?? "",
-      "Tip vanzare": c.tip_vanzare ?? "",
-      "Nr factura": c.nr_factura,
-      "Data factura": c.data_factura ?? "",
-      "Data scadenta": c.data_scadenta ?? "",
-      "Total factura": c.total_factura,
-      Sold: c.sold,
-      "Data incasare": c.data_incasare ?? "",
-      "Nr zile depasire": getZileDepasire(c) ?? "",
-      "Propus spre incasare": c.propus_spre_incasare ? "DA" : "NU",
+    const rows = filtered.map((o) => ({
+      Furnizor: o.nume_furnizor,
+      Serviciu: o.serviciu_facturat ?? "",
+      "Tip achizitie": o.tip_achizitie ?? "",
+      "Nr factura": o.nr_factura,
+      "Data factura": o.data_factura ?? "",
+      "Data scadenta": o.data_scadenta ?? "",
+      "Total factura": o.total_factura,
+      Sold: o.sold,
+      "Data plata": o.data_plata ?? "",
+      "Nr zile depasire": getZileDepasireObligatie(o) ?? "",
+      "Propus spre plata": o.propus_spre_plata ? "DA" : "NU",
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Creante");
-    XLSX.writeFile(wb, `creante_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Obligatii");
+    XLSX.writeFile(wb, `obligatii_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   function handleSort(key: SortKey) {
@@ -250,14 +254,14 @@ export function CreanteClient({
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Creante</h1>
+          <h1 className="text-lg font-heading text-white">Obligatii</h1>
           <p className="text-sm text-slate-500">
             {lastBatch
               ? `Ultimul import: ${new Date(lastBatch.importat_la).toLocaleDateString("ro-RO")} (${lastBatch.nr_facturi_noi} noi, ${lastBatch.nr_facturi_actualizate} actualizate)`
               : "Niciun import inca."}
           </p>
         </div>
-        <CreanteImportForm />
+        <ObligatiiImportForm />
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -280,14 +284,14 @@ export function CreanteClient({
           accent="#E8007A"
         />
         <KpiCard
-          label="Total incasat"
-          value={formatRonCompact(summary.totalIncasat)}
-          icon={<TrendingUp size={16} />}
+          label="Total platit"
+          value={formatRonCompact(summary.totalPlatit)}
+          icon={<TrendingDown size={16} />}
           accent="#22C55E"
         />
       </div>
 
-      <AgingBar summary={summary} />
+      <AgingBarObligatii summary={summary} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select
@@ -321,10 +325,10 @@ export function CreanteClient({
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cauta firma, serviciu sau nr. factura..."
+          placeholder="Cauta furnizor, serviciu sau nr. factura..."
           className="w-56 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
         />
-        {(["restanta", "la_zi", "incasata", "toate"] as StatusFilter[]).map((s) => (
+        {(["restanta", "la_zi", "platita", "toate"] as StatusFilter[]).map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
@@ -338,8 +342,8 @@ export function CreanteClient({
               ? "Restante"
               : s === "la_zi"
                 ? "La zi"
-                : s === "incasata"
-                  ? "Incasate"
+                : s === "platita"
+                  ? "Platite"
                   : "Toate"}
           </button>
         ))}
@@ -352,7 +356,7 @@ export function CreanteClient({
         </button>
         <button
           onClick={handleDeleteAll}
-          disabled={isPending || creante.length === 0}
+          disabled={isPending || obligatii.length === 0}
           className="flex items-center gap-1.5 rounded-md border border-red-500/20 px-2.5 py-1.5 text-xs font-medium text-red-400/80 transition hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
         >
           <Trash2 size={13} />
@@ -409,97 +413,92 @@ export function CreanteClient({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => {
-              const zile = getZileDepasire(c);
+            {filtered.map((o) => {
+              const zile = getZileDepasireObligatie(o);
               return (
-                <tr
-                  key={c.id}
-                  className="border-b border-white/5 transition hover:bg-white/[0.03]"
-                >
+                <tr key={o.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
                   <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
-                      checked={checkedIds.has(c.id)}
-                      onChange={() => toggleCheck(c.id)}
+                      checked={checkedIds.has(o.id)}
+                      onChange={() => toggleCheck(o.id)}
                       className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
                     />
                   </td>
                   <td className="truncate px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                     <Link
-                      href={`/creante/client/${encodeURIComponent(c.nume_firma)}`}
+                      href={`/obligatii/furnizor/${encodeURIComponent(o.nume_furnizor)}`}
                       className="text-white hover:text-[#E8007A] hover:underline"
                     >
-                      {c.nume_firma}
+                      {o.nume_furnizor}
                     </Link>
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
-                    {c.serviciu_facturat ?? "—"}
+                    {o.serviciu_facturat ?? "—"}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
-                    {c.tip_vanzare ?? "—"}
+                    {o.tip_achizitie ?? "—"}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
-                    {c.nr_factura}
+                    {o.nr_factura}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
-                    {c.data_factura ? new Date(c.data_factura).toLocaleDateString("ro-RO") : "—"}
+                    {o.data_factura ? new Date(o.data_factura).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
-                    {c.data_scadenta ? new Date(c.data_scadenta).toLocaleDateString("ro-RO") : "—"}
+                    {o.data_scadenta ? new Date(o.data_scadenta).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-slate-300"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
-                    {formatRon(c.total_factura)}
+                    {formatRon(o.total_factura)}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-white"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
-                    {formatRon(c.sold)}
+                    {formatRon(o.sold)}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-right text-slate-400"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
                     {zile ? (
-                      <span className={zile > 60 ? "text-red-400" : "text-amber-400"}>
-                        {zile}z
-                      </span>
+                      <span className={zile > 60 ? "text-red-400" : "text-amber-400"}>{zile}z</span>
                     ) : (
                       "—"
                     )}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
-                    onClick={() => setSelected(c)}
+                    onClick={() => setSelected(o)}
                   >
-                    {c.data_incasare ? new Date(c.data_incasare).toLocaleDateString("ro-RO") : "—"}
+                    {o.data_plata ? new Date(o.data_plata).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td className="px-2 py-1.5 text-center" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
-                      checked={c.propus_spre_incasare}
-                      onChange={(e) => handleToggleProposSpreIncasare(c, e.target.checked)}
-                      disabled={c.sold <= 0}
+                      checked={o.propus_spre_plata}
+                      onChange={(e) => handleToggleProposSprePlata(o, e.target.checked)}
+                      disabled={o.sold <= 0}
                       className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04] accent-[#E8007A] disabled:opacity-30"
-                      title={c.sold <= 0 ? "Factura deja incasata" : "Propus spre incasare"}
+                      title={o.sold <= 0 ? "Factura deja platita" : "Propus spre plata"}
                     />
                   </td>
                 </tr>
@@ -517,9 +516,9 @@ export function CreanteClient({
       </div>
 
       {selected && (
-        <CreantaDetailModal
-          creanta={selected}
-          incasari={incasari[selected.id] ?? []}
+        <ObligatieDetailModal
+          obligatie={selected}
+          plati={plati[selected.id] ?? []}
           onClose={() => setSelected(null)}
         />
       )}

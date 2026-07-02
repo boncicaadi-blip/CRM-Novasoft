@@ -60,7 +60,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Creante & Obligatii",
     icon: Wallet,
     adminOnly: true,
-    items: [{ href: "/creante", label: "Creante", icon: Wallet }],
+    items: [
+      { href: "/creante", label: "Creante", icon: Wallet },
+      { href: "/obligatii", label: "Obligatii", icon: Wallet },
+    ],
   },
   {
     id: "venituri",

@@ -1,0 +1,119 @@
+import type { Obligatie } from "@/types/obligatii";
+
+export type ObligatieStatus = "platita" | "restanta" | "la_zi";
+
+export function getObligatieStatus(o: Obligatie): ObligatieStatus {
+  if (o.sold <= 0) return "platita";
+  if (o.data_scadenta && new Date(o.data_scadenta) < new Date(new Date().toDateString())) {
+    return "restanta";
+  }
+  return "la_zi";
+}
+
+export function getZileDepasireObligatie(o: Obligatie): number | null {
+  if (o.sold <= 0 || !o.data_scadenta) return null;
+  const zile = Math.floor(
+    (new Date(new Date().toDateString()).getTime() - new Date(o.data_scadenta).getTime()) /
+      86_400_000
+  );
+  return zile > 0 ? zile : null;
+}
+
+export interface ObligatiiSummary {
+  totalSold: number;
+  totalFacturat: number;
+  totalPlatit: number;
+  nrFacturiRestante: number;
+  nrFacturiLaZi: number;
+  sold0_30: number;
+  sold31_60: number;
+  sold61_90: number;
+  sold90Plus: number;
+  targetPropus: number;
+  nrFacturiPropuse: number;
+}
+
+export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummary {
+  let totalSold = 0;
+  let totalFacturat = 0;
+  let totalPlatit = 0;
+  let nrFacturiRestante = 0;
+  let nrFacturiLaZi = 0;
+  let sold0_30 = 0;
+  let sold31_60 = 0;
+  let sold61_90 = 0;
+  let sold90Plus = 0;
+  let targetPropus = 0;
+  let nrFacturiPropuse = 0;
+
+  for (const o of obligatii) {
+    totalFacturat += o.total_factura;
+    totalPlatit += o.valoare_platita;
+    if (o.propus_spre_plata && o.sold > 0) {
+      targetPropus += o.sold;
+      nrFacturiPropuse += 1;
+    }
+    if (o.sold <= 0) continue;
+
+    totalSold += o.sold;
+    const status = getObligatieStatus(o);
+    const zile = getZileDepasireObligatie(o) ?? 0;
+
+    if (status === "restanta") {
+      nrFacturiRestante += 1;
+      if (zile <= 30) sold0_30 += o.sold;
+      else if (zile <= 60) sold31_60 += o.sold;
+      else if (zile <= 90) sold61_90 += o.sold;
+      else sold90Plus += o.sold;
+    } else {
+      nrFacturiLaZi += 1;
+      sold0_30 += o.sold;
+    }
+  }
+
+  return {
+    totalSold,
+    totalFacturat,
+    totalPlatit,
+    nrFacturiRestante,
+    nrFacturiLaZi,
+    sold0_30,
+    sold31_60,
+    sold61_90,
+    sold90Plus,
+    targetPropus,
+    nrFacturiPropuse,
+  };
+}
+
+export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
+
+export function inPeriodObligatie(
+  o: Obligatie,
+  period: PeriodFilter,
+  customRange?: { from: string; to: string }
+): boolean {
+  if (o.sold > 0) return true;
+  if (period === "toate") return true;
+  if (!o.data_factura) return false;
+
+  const d = new Date(o.data_factura);
+  const now = new Date();
+
+  if (period === "custom") {
+    if (customRange?.from && d < new Date(customRange.from)) return false;
+    if (customRange?.to && d > new Date(customRange.to)) return false;
+    return true;
+  }
+  if (period === "luna_curenta") {
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }
+  if (period === "anul_curent") {
+    return d.getFullYear() === now.getFullYear();
+  }
+  if (period === "ultimele_3_luni") {
+    const threshold = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    return d >= threshold;
+  }
+  return true;
+}
