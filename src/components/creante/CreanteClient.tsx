@@ -14,6 +14,8 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  X,
+  Users,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { CreanteImportForm } from "./CreanteImportForm";
@@ -24,8 +26,11 @@ import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import {
   computeCreanteSummary,
   computeTotalIncasatInPeriod,
+  dateMatchesPeriod,
   getCreantaStatus,
   getZileDepasire,
+  getValoarePropusa,
+  isPartialPropus,
   inPeriod,
   matchesAgingBucket,
   type PeriodFilter,
@@ -132,6 +137,11 @@ export function CreanteClient({
   const [page, setPage] = useState(1);
   const [proposOverrides, setProposOverrides] = useState<Record<string, boolean>>({});
   const [agingFilter, setAgingFilter] = useState<AgingBucket | null>(null);
+  const [expandedKpi, setExpandedKpi] = useState<
+    "soldRestant" | "targetPropus" | "totalIncasat" | null
+  >(null);
+  const [onlyPartial, setOnlyPartial] = useState(false);
+  const [viewMode, setViewMode] = useState<"facturi" | "client">("facturi");
 
   // Combinam datele venite de la server cu bifele "Propus" schimbate local,
   // ca UI-ul sa raspunda instant la click, fara sa astepte round-trip-ul
@@ -161,6 +171,22 @@ export function CreanteClient({
     [incasariFlat, period, customFrom, customTo]
   );
 
+  // Desfasuratoare pentru fiecare KPI clicabil.
+  const creantaById = useMemo(() => new Map(creanteEffective.map((c) => [c.id, c])), [creanteEffective]);
+  const breakdownSoldRestant = useMemo(
+    () => creanteEffective.filter((c) => getCreantaStatus(c) === "restanta"),
+    [creanteEffective]
+  );
+  const breakdownTargetPropus = useMemo(
+    () => creanteEffective.filter((c) => c.propus_spre_incasare && c.sold > 0),
+    [creanteEffective]
+  );
+  const breakdownTotalIncasat = useMemo(
+    () =>
+      incasariFlat.filter((i) => dateMatchesPeriod(i.data_incasare, period, { from: customFrom, to: customTo })),
+    [incasariFlat, period, customFrom, customTo]
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let rows = inPeriodList.filter((c) => {
@@ -173,6 +199,7 @@ export function CreanteClient({
         return false;
       }
       if (agingFilter && !matchesAgingBucket(c, agingFilter)) return false;
+      if (onlyPartial && !isPartialPropus(c)) return false;
       if (statusFilter === "toate") return true;
       return getCreantaStatus(c) === statusFilter;
     });
@@ -185,7 +212,44 @@ export function CreanteClient({
       });
     }
     return rows;
-  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter]);
+  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter, onlyPartial]);
+
+  // Grupare pe client - respecta toate filtrele active (perioada, status,
+  // cautare, aging, propuneri partiale), doar reorganizata pe firma.
+  const clientGroups = useMemo(() => {
+    const map = new Map<
+      string,
+      { numeFirma: string; nrFacturi: number; totalFacturat: number; sold: number; incasat: number }
+    >();
+    for (const c of filtered) {
+      const g = map.get(c.nume_firma) ?? {
+        numeFirma: c.nume_firma,
+        nrFacturi: 0,
+        totalFacturat: 0,
+        sold: 0,
+        incasat: 0,
+      };
+      g.nrFacturi += 1;
+      g.totalFacturat += c.total_factura;
+      g.sold += c.sold;
+      g.incasat += c.valoare_incasata;
+      map.set(c.nume_firma, g);
+    }
+    return Array.from(map.values()).sort((a, b) => b.sold - a.sold);
+  }, [filtered]);
+
+  // Totalul pentru EXACT ce e afisat acum, cu toate filtrele active
+  // (perioada, status, cautare, aging, propuse partial) - raspunde
+  // la cererea de "totaluri pe filtrul aplicat".
+  const filteredTotals = useMemo(() => {
+    let totalSold = 0;
+    let totalFacturat = 0;
+    for (const c of filtered) {
+      totalSold += c.sold;
+      totalFacturat += c.total_factura;
+    }
+    return { count: filtered.length, totalSold, totalFacturat };
+  }, [filtered]);
 
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedRows = useMemo(() => {
@@ -314,33 +378,133 @@ export function CreanteClient({
         <KpiInfoCard
           label="Sold total restant"
           value={formatRon(summary.totalSoldRestant)}
+          sublabel={`${summary.nrFacturiRestante} facturi — click pentru desfasurator`}
           icon={<Wallet size={16} />}
           accent="#F59E0B"
           definition={CREANTE_KPI_DEFINITIONS.soldRestant}
+          onClick={() => setExpandedKpi((k) => (k === "soldRestant" ? null : "soldRestant"))}
+          isActive={expandedKpi === "soldRestant"}
         />
         <KpiInfoCard
           label="Facturi restante"
           value={String(summary.nrFacturiRestante)}
+          sublabel="click pentru desfasurator"
           icon={<AlertTriangle size={16} />}
           accent="#EF4444"
           definition={CREANTE_KPI_DEFINITIONS.facturiRestante}
+          onClick={() => setExpandedKpi((k) => (k === "soldRestant" ? null : "soldRestant"))}
+          isActive={expandedKpi === "soldRestant"}
         />
         <KpiInfoCard
           label="Target propus (bifate)"
           value={formatRon(summary.targetPropus)}
-          sublabel={`${summary.nrFacturiPropuse} facturi`}
+          sublabel={`${summary.nrFacturiPropuse} facturi — click pentru desfasurator`}
           icon={<Target size={16} />}
           accent="#E8007A"
           definition={CREANTE_KPI_DEFINITIONS.targetPropus}
+          onClick={() => setExpandedKpi((k) => (k === "targetPropus" ? null : "targetPropus"))}
+          isActive={expandedKpi === "targetPropus"}
         />
         <KpiInfoCard
           label="Total incasat"
           value={formatRon(totalIncasatInPeriod)}
+          sublabel={`${breakdownTotalIncasat.length} incasari — click pentru desfasurator`}
           icon={<TrendingUp size={16} />}
           accent="#22C55E"
           definition={CREANTE_KPI_DEFINITIONS.totalIncasat}
+          onClick={() => setExpandedKpi((k) => (k === "totalIncasat" ? null : "totalIncasat"))}
+          isActive={expandedKpi === "totalIncasat"}
         />
       </div>
+
+      {expandedKpi && (
+        <div className="mb-5 rounded-xl border border-[#E8007A]/20 bg-white/[0.02] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#E8007A]">
+              {expandedKpi === "soldRestant" && "Desfasurator — facturi restante"}
+              {expandedKpi === "targetPropus" && "Desfasurator — facturi propuse spre incasare"}
+              {expandedKpi === "totalIncasat" && "Desfasurator — incasari in perioada selectata"}
+            </p>
+            <button
+              onClick={() => setExpandedKpi(null)}
+              className="rounded-md p-1 text-slate-500 hover:text-white"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {expandedKpi !== "totalIncasat" ? (
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase text-slate-500">
+                    <th className="px-2 py-1.5">Firma</th>
+                    <th className="px-2 py-1.5">Factura</th>
+                    <th className="px-2 py-1.5">Scadenta</th>
+                    <th className="px-2 py-1.5 text-right">
+                      {expandedKpi === "targetPropus" ? "Valoare propusa" : "Sold"}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(expandedKpi === "soldRestant" ? breakdownSoldRestant : breakdownTargetPropus).map(
+                    (c) => (
+                      <tr
+                        key={c.id}
+                        onClick={() => setSelected(c)}
+                        className="cursor-pointer border-t border-white/5 hover:bg-white/[0.03]"
+                      >
+                        <td className="px-2 py-1.5 text-white">{c.nume_firma}</td>
+                        <td className="px-2 py-1.5 text-slate-400">{c.nr_factura}</td>
+                        <td className="px-2 py-1.5 text-slate-400">
+                          {c.data_scadenta ? new Date(c.data_scadenta).toLocaleDateString("ro-RO") : "—"}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono text-white">
+                          {formatRon(expandedKpi === "targetPropus" ? getValoarePropusa(c) : c.sold)}
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase text-slate-500">
+                    <th className="px-2 py-1.5">Firma</th>
+                    <th className="px-2 py-1.5">Factura</th>
+                    <th className="px-2 py-1.5">Data incasarii</th>
+                    <th className="px-2 py-1.5 text-right">Valoare incasata</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {breakdownTotalIncasat.map((i) => {
+                    const c = creantaById.get(i.creanta_id);
+                    return (
+                      <tr
+                        key={i.id}
+                        onClick={() => c && setSelected(c)}
+                        className="cursor-pointer border-t border-white/5 hover:bg-white/[0.03]"
+                      >
+                        <td className="px-2 py-1.5 text-white">{c?.nume_firma ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-slate-400">{c?.nr_factura ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-slate-400">
+                          {new Date(i.data_incasare).toLocaleDateString("ro-RO")}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono text-white">
+                          {formatRon(i.valoare)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       <AgingBar summary={summary} activeBucket={agingFilter} onBucketClick={handleAgingBucketClick} />
 
@@ -414,6 +578,37 @@ export function CreanteClient({
           </button>
         ))}
         <button
+          onClick={() => setOnlyPartial((v) => !v)}
+          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+            onlyPartial
+              ? "bg-[#E8007A] text-[#0B0D1A]"
+              : "border border-white/10 text-slate-400 hover:bg-white/5"
+          }`}
+          title="Facturi propuse spre incasare pentru mai putin decat soldul integral"
+        >
+          <Target size={13} />
+          Propuse partial
+        </button>
+        <div className="flex items-center rounded-md border border-white/10 p-0.5">
+          <button
+            onClick={() => setViewMode("facturi")}
+            className={`rounded px-2 py-1 text-xs font-medium transition ${
+              viewMode === "facturi" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            Pe facturi
+          </button>
+          <button
+            onClick={() => setViewMode("client")}
+            className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition ${
+              viewMode === "client" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            <Users size={12} />
+            Pe client
+          </button>
+        </div>
+        <button
           onClick={handleExport}
           className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
         >
@@ -440,6 +635,20 @@ export function CreanteClient({
         )}
       </div>
 
+      <div className="mb-3 flex flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-slate-400">
+        <span>
+          Pentru filtrul curent:{" "}
+          <span className="font-mono font-medium text-white">{filteredTotals.count}</span> facturi
+        </span>
+        <span>
+          Total facturat: <span className="font-mono font-medium text-white">{formatRon(filteredTotals.totalFacturat)}</span>
+        </span>
+        <span>
+          Sold: <span className="font-mono font-medium text-white">{formatRon(filteredTotals.totalSold)}</span>
+        </span>
+      </div>
+
+      {viewMode === "facturi" && (
       <div className="overflow-x-auto rounded-xl border border-white/10">
         <table className="text-sm" style={{ tableLayout: "fixed", width: "max-content" }}>
           <colgroup>
@@ -563,14 +772,28 @@ export function CreanteClient({
                     {c.data_incasare ? new Date(c.data_incasare).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td className="px-2 py-1.5 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={c.propus_spre_incasare}
-                      onChange={(e) => handleToggleProposSpreIncasare(c, e.target.checked)}
-                      disabled={c.sold <= 0}
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04] accent-[#E8007A] disabled:opacity-30"
-                      title={c.sold <= 0 ? "Factura deja incasata" : "Propus spre incasare"}
-                    />
+                    <div className="relative inline-block">
+                      <input
+                        type="checkbox"
+                        checked={c.propus_spre_incasare}
+                        onChange={(e) => handleToggleProposSpreIncasare(c, e.target.checked)}
+                        disabled={c.sold <= 0}
+                        className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04] accent-[#E8007A] disabled:opacity-30"
+                        title={
+                          c.sold <= 0
+                            ? "Factura deja incasata"
+                            : isPartialPropus(c)
+                              ? `Propus partial: ${formatRon(getValoarePropusa(c))} din ${formatRon(c.sold)}`
+                              : "Propus spre incasare"
+                        }
+                      />
+                      {isPartialPropus(c) && (
+                        <span
+                          className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-400"
+                          title={`Propus partial: ${formatRon(getValoarePropusa(c))} din ${formatRon(c.sold)}`}
+                        />
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
@@ -585,7 +808,54 @@ export function CreanteClient({
           </tbody>
         </table>
       </div>
+      )}
 
+      {viewMode === "client" && (
+        <div className="overflow-x-auto rounded-xl border border-white/10">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+                <th className="px-3 py-2">Firma</th>
+                <th className="px-3 py-2 text-right">Nr facturi</th>
+                <th className="px-3 py-2 text-right">Total facturat</th>
+                <th className="px-3 py-2 text-right">Total incasat</th>
+                <th className="px-3 py-2 text-right">Sold restant</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clientGroups.map((g) => (
+                <tr key={g.numeFirma} className="border-b border-white/5 hover:bg-white/[0.03]">
+                  <td className="px-3 py-2">
+                    <Link
+                      href={`/creante/client/${encodeURIComponent(g.numeFirma)}`}
+                      className="text-white hover:text-[#E8007A] hover:underline"
+                    >
+                      {g.numeFirma}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-400">{g.nrFacturi}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-300">
+                    {formatRon(g.totalFacturat)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-green-400">
+                    {formatRon(g.incasat)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-white">{formatRon(g.sold)}</td>
+                </tr>
+              ))}
+              {clientGroups.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">
+                    Niciun client gasit.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {viewMode === "facturi" && (
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
@@ -633,6 +903,7 @@ export function CreanteClient({
           </div>
         )}
       </div>
+      )}
 
       {selected && (
         <CreantaDetailModal

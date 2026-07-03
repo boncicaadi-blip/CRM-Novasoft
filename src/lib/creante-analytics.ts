@@ -26,6 +26,13 @@ export function getValoarePropusa(c: Creanta): number {
   return c.valoare_propusa_spre_incasare ?? c.sold;
 }
 
+/** True daca factura e propusa spre incasare pentru MAI PUTIN decat soldul
+ * integral - util ca sa le poti gasi usor printre multe altele. */
+export function isPartialPropus(c: Creanta): boolean {
+  if (!c.propus_spre_incasare || c.sold <= 0) return false;
+  return c.valoare_propusa_spre_incasare !== null && c.valoare_propusa_spre_incasare < c.sold;
+}
+
 export type AgingBucket = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
 
 /** In ce "bucket" de vechime cade o factura - doar facturile chiar
@@ -140,7 +147,7 @@ export function computeTotalIncasatInPeriod(
 
 export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
-function dateMatchesPeriod(
+export function dateMatchesPeriod(
   dateStr: string | null,
   period: PeriodFilter,
   customRange?: { from: string; to: string }

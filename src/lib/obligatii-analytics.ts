@@ -24,6 +24,14 @@ export function getValoarePropusaObligatie(o: Obligatie): number {
   return o.valoare_propusa_spre_plata ?? o.sold;
 }
 
+/** True daca factura e propusa spre plata pentru mai putin decat soldul
+ * integral - util pentru identificarea rapida a propunerilor partiale. */
+export function isPartialPropusObligatie(o: Obligatie): boolean {
+  if (!o.propus_spre_plata || o.sold <= 0) return false;
+  const propusa = o.valoare_propusa_spre_plata ?? o.sold;
+  return propusa < o.sold;
+}
+
 export type AgingBucketObligatie = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
 
 export function matchesAgingBucketObligatie(o: Obligatie, bucket: AgingBucketObligatie): boolean {
@@ -117,7 +125,7 @@ export function computeTotalPlatitInPeriod(
 
 export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
-function dateMatchesPeriod(
+export function dateMatchesPeriod(
   dateStr: string | null,
   period: PeriodFilter,
   customRange?: { from: string; to: string }

@@ -13,6 +13,8 @@ export function KpiInfoCard({
   definition,
   trend,
   insufficientData,
+  onClick,
+  isActive,
 }: {
   label: string;
   value: string;
@@ -24,6 +26,9 @@ export function KpiInfoCard({
   trend?: "up" | "down" | "flat";
   /** Cand nu exista suficient istoric pentru un delta corect. */
   insufficientData?: boolean;
+  /** Daca e dat, cardul devine clicabil (ex: pentru un desfasurator dedesubt). */
+  onClick?: () => void;
+  isActive?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -39,7 +44,13 @@ export function KpiInfoCard({
   const trendColor = trend === "up" ? "#22C55E" : trend === "down" ? "#EF4444" : "#94A3B8";
 
   return (
-    <div ref={ref} className="relative rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div
+      ref={ref}
+      onClick={onClick}
+      className={`relative rounded-xl border p-4 transition ${
+        isActive ? "border-[#E8007A] bg-[#E8007A]/5" : "border-white/10 bg-white/[0.02]"
+      } ${onClick ? "cursor-pointer hover:border-white/20" : ""}`}
+    >
       <div className="mb-2 flex items-center justify-between">
         <p className="flex items-center gap-1 text-xs text-slate-500">{label}</p>
         <div className="flex items-center gap-1.5">
@@ -50,7 +61,10 @@ export function KpiInfoCard({
           )}
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen((v) => !v);
+            }}
             className="rounded-full p-0.5 text-slate-600 transition hover:bg-white/10 hover:text-slate-300"
             title="Ce inseamna acest KPI"
           >

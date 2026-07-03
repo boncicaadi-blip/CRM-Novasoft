@@ -14,6 +14,8 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  X,
+  Users,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { ObligatiiImportForm } from "./ObligatiiImportForm";
@@ -24,8 +26,11 @@ import { OBLIGATII_KPI_DEFINITIONS } from "@/lib/obligatii-kpi-definitions";
 import {
   computeObligatiiSummary,
   computeTotalPlatitInPeriod,
+  dateMatchesPeriod,
   getObligatieStatus,
   getZileDepasireObligatie,
+  getValoarePropusaObligatie,
+  isPartialPropusObligatie,
   inPeriodObligatie,
   matchesAgingBucketObligatie,
   type PeriodFilter,
@@ -136,6 +141,11 @@ export function ObligatiiClient({
   const [page, setPage] = useState(1);
   const [proposOverrides, setProposOverrides] = useState<Record<string, boolean>>({});
   const [agingFilter, setAgingFilter] = useState<AgingBucketObligatie | null>(null);
+  const [expandedKpi, setExpandedKpi] = useState<
+    "soldRestant" | "targetPropus" | "totalPlatit" | null
+  >(null);
+  const [onlyPartial, setOnlyPartial] = useState(false);
+  const [viewMode, setViewMode] = useState<"facturi" | "furnizor">("facturi");
 
   const obligatiiEffective = useMemo(() => {
     if (Object.keys(proposOverrides).length === 0) return obligatii;
@@ -150,11 +160,34 @@ export function ObligatiiClient({
     [obligatiiEffective, period, customFrom, customTo]
   );
 
+  // Sold restant, facturi restante si target sunt stari CURENTE, nu legate
+  // de perioada - se calculeaza pe toate facturile.
   const summary = useMemo(() => computeObligatiiSummary(obligatiiEffective), [obligatiiEffective]);
 
+  // Total platit E legat de perioada, dupa data platii (din jurnal), nu
+  // dupa data facturii.
   const platiFlat = useMemo(() => Object.values(plati).flat(), [plati]);
   const totalPlatitInPeriod = useMemo(
     () => computeTotalPlatitInPeriod(platiFlat, period, { from: customFrom, to: customTo }),
+    [platiFlat, period, customFrom, customTo]
+  );
+
+  // Desfasuratoare pentru fiecare KPI clicabil.
+  const obligatieById = useMemo(
+    () => new Map(obligatiiEffective.map((o) => [o.id, o])),
+    [obligatiiEffective]
+  );
+  const breakdownSoldRestant = useMemo(
+    () => obligatiiEffective.filter((o) => getObligatieStatus(o) === "restanta"),
+    [obligatiiEffective]
+  );
+  const breakdownTargetPropus = useMemo(
+    () => obligatiiEffective.filter((o) => o.propus_spre_plata && o.sold > 0),
+    [obligatiiEffective]
+  );
+  const breakdownTotalPlatit = useMemo(
+    () =>
+      platiFlat.filter((p) => dateMatchesPeriod(p.data_plata, period, { from: customFrom, to: customTo })),
     [platiFlat, period, customFrom, customTo]
   );
 
@@ -170,6 +203,7 @@ export function ObligatiiClient({
         return false;
       }
       if (agingFilter && !matchesAgingBucketObligatie(o, agingFilter)) return false;
+      if (onlyPartial && !isPartialPropusObligatie(o)) return false;
       if (statusFilter === "toate") return true;
       return getObligatieStatus(o) === statusFilter;
     });
@@ -182,7 +216,41 @@ export function ObligatiiClient({
       });
     }
     return rows;
-  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter]);
+  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter, onlyPartial]);
+
+  // Grupare pe furnizor - respecta toate filtrele active.
+  const furnizorGroups = useMemo(() => {
+    const map = new Map<
+      string,
+      { numeFurnizor: string; nrFacturi: number; totalFacturat: number; sold: number; platit: number }
+    >();
+    for (const o of filtered) {
+      const g = map.get(o.nume_furnizor) ?? {
+        numeFurnizor: o.nume_furnizor,
+        nrFacturi: 0,
+        totalFacturat: 0,
+        sold: 0,
+        platit: 0,
+      };
+      g.nrFacturi += 1;
+      g.totalFacturat += o.total_factura;
+      g.sold += o.sold;
+      g.platit += o.valoare_platita;
+      map.set(o.nume_furnizor, g);
+    }
+    return Array.from(map.values()).sort((a, b) => b.sold - a.sold);
+  }, [filtered]);
+
+  // Totalul pentru exact ce e afisat acum, cu toate filtrele active.
+  const filteredTotals = useMemo(() => {
+    let totalSold = 0;
+    let totalFacturat = 0;
+    for (const o of filtered) {
+      totalSold += o.sold;
+      totalFacturat += o.total_factura;
+    }
+    return { count: filtered.length, totalSold, totalFacturat };
+  }, [filtered]);
 
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedRows = useMemo(() => {
@@ -309,33 +377,133 @@ export function ObligatiiClient({
         <KpiInfoCard
           label="Sold total restant"
           value={formatRon(summary.totalSoldRestant)}
+          sublabel={`${summary.nrFacturiRestante} facturi — click pentru desfasurator`}
           icon={<Wallet size={16} />}
           accent="#F59E0B"
           definition={OBLIGATII_KPI_DEFINITIONS.soldRestant}
+          onClick={() => setExpandedKpi((k) => (k === "soldRestant" ? null : "soldRestant"))}
+          isActive={expandedKpi === "soldRestant"}
         />
         <KpiInfoCard
           label="Facturi restante"
           value={String(summary.nrFacturiRestante)}
+          sublabel="click pentru desfasurator"
           icon={<AlertTriangle size={16} />}
           accent="#EF4444"
           definition={OBLIGATII_KPI_DEFINITIONS.facturiRestante}
+          onClick={() => setExpandedKpi((k) => (k === "soldRestant" ? null : "soldRestant"))}
+          isActive={expandedKpi === "soldRestant"}
         />
         <KpiInfoCard
           label="Target propus (bifate)"
           value={formatRon(summary.targetPropus)}
-          sublabel={`${summary.nrFacturiPropuse} facturi`}
+          sublabel={`${summary.nrFacturiPropuse} facturi — click pentru desfasurator`}
           icon={<Target size={16} />}
           accent="#E8007A"
           definition={OBLIGATII_KPI_DEFINITIONS.targetPropus}
+          onClick={() => setExpandedKpi((k) => (k === "targetPropus" ? null : "targetPropus"))}
+          isActive={expandedKpi === "targetPropus"}
         />
         <KpiInfoCard
           label="Total platit"
           value={formatRon(totalPlatitInPeriod)}
+          sublabel={`${breakdownTotalPlatit.length} plati — click pentru desfasurator`}
           icon={<TrendingDown size={16} />}
           accent="#22C55E"
           definition={OBLIGATII_KPI_DEFINITIONS.totalPlatit}
+          onClick={() => setExpandedKpi((k) => (k === "totalPlatit" ? null : "totalPlatit"))}
+          isActive={expandedKpi === "totalPlatit"}
         />
       </div>
+
+      {expandedKpi && (
+        <div className="mb-5 rounded-xl border border-[#E8007A]/20 bg-white/[0.02] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-[#E8007A]">
+              {expandedKpi === "soldRestant" && "Desfasurator — facturi restante"}
+              {expandedKpi === "targetPropus" && "Desfasurator — facturi propuse spre plata"}
+              {expandedKpi === "totalPlatit" && "Desfasurator — plati in perioada selectata"}
+            </p>
+            <button
+              onClick={() => setExpandedKpi(null)}
+              className="rounded-md p-1 text-slate-500 hover:text-white"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {expandedKpi !== "totalPlatit" ? (
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase text-slate-500">
+                    <th className="px-2 py-1.5">Furnizor</th>
+                    <th className="px-2 py-1.5">Factura</th>
+                    <th className="px-2 py-1.5">Scadenta</th>
+                    <th className="px-2 py-1.5 text-right">
+                      {expandedKpi === "targetPropus" ? "Valoare propusa" : "Sold"}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(expandedKpi === "soldRestant" ? breakdownSoldRestant : breakdownTargetPropus).map(
+                    (o) => (
+                      <tr
+                        key={o.id}
+                        onClick={() => setSelected(o)}
+                        className="cursor-pointer border-t border-white/5 hover:bg-white/[0.03]"
+                      >
+                        <td className="px-2 py-1.5 text-white">{o.nume_furnizor}</td>
+                        <td className="px-2 py-1.5 text-slate-400">{o.nr_factura}</td>
+                        <td className="px-2 py-1.5 text-slate-400">
+                          {o.data_scadenta ? new Date(o.data_scadenta).toLocaleDateString("ro-RO") : "—"}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono text-white">
+                          {formatRon(expandedKpi === "targetPropus" ? getValoarePropusaObligatie(o) : o.sold)}
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="max-h-72 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase text-slate-500">
+                    <th className="px-2 py-1.5">Furnizor</th>
+                    <th className="px-2 py-1.5">Factura</th>
+                    <th className="px-2 py-1.5">Data platii</th>
+                    <th className="px-2 py-1.5 text-right">Valoare platita</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {breakdownTotalPlatit.map((p) => {
+                    const o = obligatieById.get(p.obligatie_id);
+                    return (
+                      <tr
+                        key={p.id}
+                        onClick={() => o && setSelected(o)}
+                        className="cursor-pointer border-t border-white/5 hover:bg-white/[0.03]"
+                      >
+                        <td className="px-2 py-1.5 text-white">{o?.nume_furnizor ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-slate-400">{o?.nr_factura ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-slate-400">
+                          {new Date(p.data_plata).toLocaleDateString("ro-RO")}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono text-white">
+                          {formatRon(p.valoare)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       <AgingBarObligatii
         summary={summary}
@@ -413,6 +581,37 @@ export function ObligatiiClient({
           </button>
         ))}
         <button
+          onClick={() => setOnlyPartial((v) => !v)}
+          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+            onlyPartial
+              ? "bg-[#E8007A] text-[#0B0D1A]"
+              : "border border-white/10 text-slate-400 hover:bg-white/5"
+          }`}
+          title="Facturi propuse spre plata pentru mai putin decat soldul integral"
+        >
+          <Target size={13} />
+          Propuse partial
+        </button>
+        <div className="flex items-center rounded-md border border-white/10 p-0.5">
+          <button
+            onClick={() => setViewMode("facturi")}
+            className={`rounded px-2 py-1 text-xs font-medium transition ${
+              viewMode === "facturi" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            Pe facturi
+          </button>
+          <button
+            onClick={() => setViewMode("furnizor")}
+            className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition ${
+              viewMode === "furnizor" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+            }`}
+          >
+            <Users size={12} />
+            Pe furnizor
+          </button>
+        </div>
+        <button
           onClick={handleExport}
           className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
         >
@@ -439,6 +638,21 @@ export function ObligatiiClient({
         )}
       </div>
 
+      <div className="mb-3 flex flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-slate-400">
+        <span>
+          Pentru filtrul curent:{" "}
+          <span className="font-mono font-medium text-white">{filteredTotals.count}</span> facturi
+        </span>
+        <span>
+          Total facturat:{" "}
+          <span className="font-mono font-medium text-white">{formatRon(filteredTotals.totalFacturat)}</span>
+        </span>
+        <span>
+          Sold: <span className="font-mono font-medium text-white">{formatRon(filteredTotals.totalSold)}</span>
+        </span>
+      </div>
+
+      {viewMode === "facturi" && (
       <div className="overflow-x-auto rounded-xl border border-white/10">
         <table className="text-sm" style={{ tableLayout: "fixed", width: "max-content" }}>
           <colgroup>
@@ -557,14 +771,28 @@ export function ObligatiiClient({
                     {o.data_plata ? new Date(o.data_plata).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td className="px-2 py-1.5 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={o.propus_spre_plata}
-                      onChange={(e) => handleToggleProposSprePlata(o, e.target.checked)}
-                      disabled={o.sold <= 0}
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04] accent-[#E8007A] disabled:opacity-30"
-                      title={o.sold <= 0 ? "Factura deja platita" : "Propus spre plata"}
-                    />
+                    <div className="relative inline-block">
+                      <input
+                        type="checkbox"
+                        checked={o.propus_spre_plata}
+                        onChange={(e) => handleToggleProposSprePlata(o, e.target.checked)}
+                        disabled={o.sold <= 0}
+                        className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04] accent-[#E8007A] disabled:opacity-30"
+                        title={
+                          o.sold <= 0
+                            ? "Factura deja platita"
+                            : isPartialPropusObligatie(o)
+                              ? `Propus partial: ${formatRon(getValoarePropusaObligatie(o))} din ${formatRon(o.sold)}`
+                              : "Propus spre plata"
+                        }
+                      />
+                      {isPartialPropusObligatie(o) && (
+                        <span
+                          className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-amber-400"
+                          title={`Propus partial: ${formatRon(getValoarePropusaObligatie(o))} din ${formatRon(o.sold)}`}
+                        />
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
@@ -579,7 +807,54 @@ export function ObligatiiClient({
           </tbody>
         </table>
       </div>
+      )}
 
+      {viewMode === "furnizor" && (
+        <div className="overflow-x-auto rounded-xl border border-white/10">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+                <th className="px-3 py-2">Furnizor</th>
+                <th className="px-3 py-2 text-right">Nr facturi</th>
+                <th className="px-3 py-2 text-right">Total facturat</th>
+                <th className="px-3 py-2 text-right">Total platit</th>
+                <th className="px-3 py-2 text-right">Sold restant</th>
+              </tr>
+            </thead>
+            <tbody>
+              {furnizorGroups.map((g) => (
+                <tr key={g.numeFurnizor} className="border-b border-white/5 hover:bg-white/[0.03]">
+                  <td className="px-3 py-2">
+                    <Link
+                      href={`/obligatii/furnizor/${encodeURIComponent(g.numeFurnizor)}`}
+                      className="text-white hover:text-[#E8007A] hover:underline"
+                    >
+                      {g.numeFurnizor}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2 text-right text-slate-400">{g.nrFacturi}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-300">
+                    {formatRon(g.totalFacturat)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-green-400">
+                    {formatRon(g.platit)}
+                  </td>
+                  <td className="px-3 py-2 text-right font-mono text-white">{formatRon(g.sold)}</td>
+                </tr>
+              ))}
+              {furnizorGroups.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">
+                    Niciun furnizor gasit.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {viewMode === "facturi" && (
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
@@ -627,6 +902,7 @@ export function ObligatiiClient({
           </div>
         )}
       </div>
+      )}
 
       {selected && (
         <ObligatieDetailModal
