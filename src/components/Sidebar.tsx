@@ -65,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
     moduleKey: "creante_obligatii",
     items: [
       { href: "/creante", label: "Creante", icon: Wallet },
+      { href: "/creante/dashboard", label: "Dashboard Creante", icon: FileBarChart },
       { href: "/obligatii", label: "Obligatii", icon: Wallet },
     ],
   },
@@ -79,7 +80,9 @@ const NAV_GROUPS: NavGroup[] = [
 
 /** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta. */
 function isNavItemActive(pathname: string, href: string): boolean {
-  if (href === "/dashboard") return pathname === "/dashboard";
+  if (href === "/dashboard" || href === "/creante" || href === "/obligatii") {
+    return pathname === href;
+  }
   return pathname.startsWith(href);
 }
 
