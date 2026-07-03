@@ -2,8 +2,11 @@ import { getOpportunities, getAllHistory } from "@/lib/data/opportunities";
 import { getAllNomenclatoare } from "@/lib/data/nomenclatoare";
 import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { STAGES } from "@/lib/constants";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function DashboardPage() {
+  await requireModuleAccess("crm");
+
   const [opportunities, history, allNomenclatoare] = await Promise.all([
     getOpportunities(),
     getAllHistory(),

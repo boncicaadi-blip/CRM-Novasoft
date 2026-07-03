@@ -1,5 +1,6 @@
 import { getOpportunities } from "@/lib/data/opportunities";
 import { ActiuniClient } from "@/components/actiuni/ActiuniClient";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import type { ActionWorkItemFilter } from "@/lib/analytics";
 
 const VALID_FILTERS: ActionWorkItemFilter[] = [
@@ -15,6 +16,8 @@ export default async function ActiuniPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
+  await requireModuleAccess("crm");
+
   const opportunities = await getOpportunities();
   const { filter } = await searchParams;
   const initialFilter = VALID_FILTERS.includes(filter as ActionWorkItemFilter)

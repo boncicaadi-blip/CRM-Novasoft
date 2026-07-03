@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getTodayISO } from "@/lib/date";
 import {
   createOpportunity,
   updateOpportunity,
@@ -292,7 +293,7 @@ export async function finalizeActionAction(
   // complet evenimentul de finalizare a actiunii vechi).
   await updateOpportunity(opportunityId, {
     status_actiune: "Finalizata",
-    data_finalizare_actiune: dataFinalizare || new Date().toISOString().slice(0, 10),
+    data_finalizare_actiune: dataFinalizare || getTodayISO(),
     observatii_actiune: rezultat,
   });
 

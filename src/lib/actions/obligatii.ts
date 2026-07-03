@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/server";
+import { getTodayISO } from "@/lib/date";
 import type { TipAchizitie } from "@/types/obligatii";
 
 function toNumber(v: unknown): number | null {
@@ -164,7 +165,7 @@ export async function importObligatiiAction(
         seedPlati.push({
           nrFactura,
           valoare: valoarePlatitaEfectiva,
-          data: toDateStr(r["Data platii"]) ?? new Date().toISOString().slice(0, 10),
+          data: toDateStr(r["Data platii"]) ?? getTodayISO(),
           observatie: "Plata istorica (import backfill)",
         });
       }

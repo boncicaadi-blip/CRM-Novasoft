@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { X, CheckCircle2, Undo2 } from "lucide-react";
 import { updateCreantaTrackingAction, marcheazaIncasatAction, undoIncasareAction } from "@/lib/actions/creante";
 import { formatRon } from "@/lib/format";
+import { getTodayISO } from "@/lib/date";
 import { getZileDepasire, getCreantaStatus } from "@/lib/creante-analytics";
 import type { Creanta, CreantaIncasare, TipVanzare } from "@/types/creante";
 
@@ -23,7 +24,7 @@ export function CreantaDetailModal({
   const [observatii, setObservatii] = useState(creanta.observatii ?? "");
 
   const [valoareIncasare, setValoareIncasare] = useState(String(creanta.sold));
-  const [dataIncasare, setDataIncasare] = useState(new Date().toISOString().slice(0, 10));
+  const [dataIncasare, setDataIncasare] = useState(getTodayISO());
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null

@@ -3,8 +3,11 @@ import path from "path";
 import { getOpportunities } from "@/lib/data/opportunities";
 import { MapDashboardClient } from "@/components/dashboard/map/MapDashboardClient";
 import type { FeatureCollection, Geometry } from "geojson";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function MapDashboardPage() {
+  await requireModuleAccess("crm");
+
   const [opportunities, geoJsonRaw] = await Promise.all([
     getOpportunities(),
     readFile(path.join(process.cwd(), "public", "romania-counties.geojson"), "utf-8"),

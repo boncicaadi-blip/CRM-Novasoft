@@ -170,6 +170,7 @@ export interface Profile {
   role: "admin" | "user";
   theme: "light" | "dark" | "system";
   approved: boolean;
+  module_access: string[];
   created_at: string;
 }
 

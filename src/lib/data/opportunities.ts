@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getTodayISO } from "@/lib/date";
 import type { Opportunity, OpportunityInsert, OpportunityUpdate, Profile } from "@/types/opportunity";
 
 export async function getOpportunities(): Promise<Opportunity[]> {
@@ -24,7 +25,7 @@ export async function getOpportunities(): Promise<Opportunity[]> {
  */
 export async function getTodayAndOverdueOpportunities(): Promise<Opportunity[]> {
   const supabase = await createClient();
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getTodayISO();
 
   const { data, error } = await supabase
     .from("opportunities")

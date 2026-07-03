@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { getTodayISO } from "@/lib/date";
 import { GripVertical, AlertTriangle, AlertCircle, Flame } from "lucide-react";
 import { STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
@@ -41,7 +42,7 @@ export function KanbanCard({
   // Risc: B-04/B-09 din roadmap - "fara next step" (Activa fara actiune/data),
   // "intarziat" (actiune planificata dar data e in trecut), sau "stagnare"
   // (7+/14+/21+ zile fara miscare, cf. 5.7 din roadmap).
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getTodayISO();
   const faraNextStep =
     opportunity.status === "Activa" && (!opportunity.actiune || !opportunity.data_actiune);
   const intarziat =

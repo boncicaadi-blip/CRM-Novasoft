@@ -1,21 +1,10 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getObligatii, getLastObligatiiImportBatch, getObligatiiPlati } from "@/lib/data/obligatii";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { BackButton } from "@/components/BackButton";
 import { ObligatiiClient } from "@/components/obligatii/ObligatiiClient";
 
 export default async function ObligatiiPage() {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data?.user) redirect("/login");
-
-  const { data: myProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", data.user.id)
-    .single();
-
-  if (myProfile?.role !== "admin") redirect("/dashboard");
+  await requireModuleAccess("creante_obligatii");
 
   const [obligatii, lastBatch, plati] = await Promise.all([
     getObligatii(),

@@ -3,20 +3,28 @@
 import { useState, useTransition } from "react";
 import { Pencil, Check, X, UserCheck } from "lucide-react";
 import { updateUserAction, approveUserAction } from "@/lib/actions/users";
+import { ALL_MODULES, MODULE_LABELS, type ModuleKey } from "@/lib/modules";
 import type { Profile } from "@/types/opportunity";
 
 export function UserRow({ user }: { user: Profile }) {
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(user.full_name);
   const [role, setRole] = useState<"admin" | "user">(user.role);
+  const [moduleAccess, setModuleAccess] = useState<string[]>(user.module_access ?? ["crm"]);
   const [isPending, startTransition] = useTransition();
   const [isApproving, startApproving] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  function toggleModule(m: ModuleKey) {
+    setModuleAccess((prev) =>
+      prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]
+    );
+  }
+
   function handleSave() {
     setError(null);
     startTransition(async () => {
-      const result = await updateUserAction(user.id, fullName, role);
+      const result = await updateUserAction(user.id, fullName, role, moduleAccess);
       if (result.success) {
         setEditing(false);
       } else {
@@ -34,6 +42,7 @@ export function UserRow({ user }: { user: Profile }) {
   function handleCancel() {
     setFullName(user.full_name);
     setRole(user.role);
+    setModuleAccess(user.module_access ?? ["crm"]);
     setError(null);
     setEditing(false);
   }
@@ -41,46 +50,68 @@ export function UserRow({ user }: { user: Profile }) {
   if (editing) {
     return (
       <tr className="border-b border-white/5 bg-white/[0.02]">
-        <td className="px-3 py-2.5">
-          <input
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
-          />
-        </td>
-        <td className="px-3 py-2.5 text-slate-400">{user.email}</td>
-        <td className="px-3 py-2.5">
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as "admin" | "user")}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="user" style={{ backgroundColor: "#111535" }}>
-              Utilizator
-            </option>
-            <option value="admin" style={{ backgroundColor: "#111535" }}>
-              Administrator
-            </option>
-          </select>
-        </td>
-        <td className="px-3 py-2.5"></td>
-        <td className="px-3 py-2.5">
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleSave}
-              disabled={isPending}
-              className="flex items-center gap-1 rounded-md bg-[#E8007A] px-2 py-1 text-xs font-medium text-[#0B0D1A] disabled:opacity-50"
+        <td className="px-3 py-2.5" colSpan={5}>
+          <div className="flex flex-wrap items-start gap-3">
+            <input
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-40 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
+            />
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as "admin" | "user")}
+              className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
             >
-              <Check size={12} />
-              {isPending ? "..." : "Salveaza"}
-            </button>
-            <button
-              onClick={handleCancel}
-              disabled={isPending}
-              className="rounded-md p-1 text-slate-400 hover:bg-white/5"
-            >
-              <X size={14} />
-            </button>
+              <option value="user" style={{ backgroundColor: "#111535" }}>
+                Utilizator
+              </option>
+              <option value="admin" style={{ backgroundColor: "#111535" }}>
+                Administrator
+              </option>
+            </select>
+
+            {role === "user" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[11px] text-slate-500">Module:</span>
+                {ALL_MODULES.map((m) => (
+                  <label
+                    key={m}
+                    className="flex items-center gap-1.5 rounded-md border border-white/10 px-2 py-1 text-xs text-slate-300"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={moduleAccess.includes(m)}
+                      onChange={() => toggleModule(m)}
+                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                    />
+                    {MODULE_LABELS[m]}
+                  </label>
+                ))}
+              </div>
+            )}
+            {role === "admin" && (
+              <span className="text-[11px] text-slate-500">
+                Adminii au acces automat la toate modulele.
+              </span>
+            )}
+
+            <div className="ml-auto flex items-center gap-1.5">
+              <button
+                onClick={handleSave}
+                disabled={isPending}
+                className="flex items-center gap-1 rounded-md bg-[#E8007A] px-2 py-1 text-xs font-medium text-[#0B0D1A] disabled:opacity-50"
+              >
+                <Check size={12} />
+                {isPending ? "..." : "Salveaza"}
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={isPending}
+                className="rounded-md p-1 text-slate-400 hover:bg-white/5"
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
           {error && <p className="mt-1 text-[11px] text-red-400">{error}</p>}
         </td>
@@ -100,6 +131,12 @@ export function UserRow({ user }: { user: Profile }) {
         >
           {user.role === "admin" ? "Administrator" : "Utilizator"}
         </span>
+        {user.role === "user" && (
+          <span className="ml-2 text-[11px] text-slate-500">
+            {(user.module_access ?? []).map((m) => MODULE_LABELS[m as ModuleKey] ?? m).join(", ") ||
+              "fara module"}
+          </span>
+        )}
       </td>
       <td className="px-3 py-2.5">
         {user.approved ? (

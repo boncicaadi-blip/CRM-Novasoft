@@ -2,8 +2,11 @@ import { getOpportunities } from "@/lib/data/opportunities";
 import { buildCalendarActions, calendarActionCounts } from "@/lib/analytics";
 import { CalendarKpis } from "@/components/calendar/CalendarKpis";
 import { ActionsCalendar } from "@/components/calendar/ActionsCalendar";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function CalendarPage() {
+  await requireModuleAccess("crm");
+
   const opportunities = await getOpportunities();
   const actions = buildCalendarActions(opportunities);
   const counts = calendarActionCounts(actions);

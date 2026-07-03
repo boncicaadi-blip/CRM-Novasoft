@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { getCreanteByFirma, getCreanteIncasari } from "@/lib/data/creante";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { BackButton } from "@/components/BackButton";
 import { FisaClientClient } from "@/components/creante/FisaClientClient";
 
@@ -12,17 +11,7 @@ export default async function FisaClientPage({
   const { nume } = await params;
   const numeFirma = decodeURIComponent(nume);
 
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data?.user) redirect("/login");
-
-  const { data: myProfile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", data.user.id)
-    .single();
-
-  if (myProfile?.role !== "admin") redirect("/dashboard");
+  await requireModuleAccess("creante_obligatii");
 
   const [creante, incasariByCreanta] = await Promise.all([
     getCreanteByFirma(numeFirma),

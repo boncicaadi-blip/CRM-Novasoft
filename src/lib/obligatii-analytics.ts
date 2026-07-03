@@ -1,10 +1,11 @@
 import type { Obligatie } from "@/types/obligatii";
+import { getTodayISO } from "@/lib/date";
 
 export type ObligatieStatus = "platita" | "restanta" | "la_zi";
 
 export function getObligatieStatus(o: Obligatie): ObligatieStatus {
   if (o.sold <= 0) return "platita";
-  if (o.data_scadenta && new Date(o.data_scadenta) < new Date(new Date().toDateString())) {
+  if (o.data_scadenta && o.data_scadenta < getTodayISO()) {
     return "restanta";
   }
   return "la_zi";
@@ -12,10 +13,9 @@ export function getObligatieStatus(o: Obligatie): ObligatieStatus {
 
 export function getZileDepasireObligatie(o: Obligatie): number | null {
   if (o.sold <= 0 || !o.data_scadenta) return null;
-  const zile = Math.floor(
-    (new Date(new Date().toDateString()).getTime() - new Date(o.data_scadenta).getTime()) /
-      86_400_000
-  );
+  const today = new Date(`${getTodayISO()}T00:00:00Z`);
+  const scadenta = new Date(`${o.data_scadenta.slice(0, 10)}T00:00:00Z`);
+  const zile = Math.floor((today.getTime() - scadenta.getTime()) / 86_400_000);
   return zile > 0 ? zile : null;
 }
 

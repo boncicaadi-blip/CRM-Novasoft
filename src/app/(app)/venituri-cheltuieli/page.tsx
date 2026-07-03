@@ -1,6 +1,9 @@
 import { TrendingUp } from "lucide-react";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
-export default function VenituriCheltuieliPage() {
+export default async function VenituriCheltuieliPage() {
+  await requireModuleAccess("venituri_cheltuieli");
+
   return (
     <div className="flex h-[70vh] flex-col items-center justify-center px-4 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-white/5">

@@ -5,6 +5,7 @@ import { Pencil, Check, X, CheckCircle2 } from "lucide-react";
 import { InfoRow, LabeledInput } from "@/components/overview/InfoCard";
 import { TextInput, TextArea, Select } from "@/components/form/fields";
 import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
+import { getTodayISO } from "@/lib/date";
 import {
   updateOpportunitySectionAction,
   finalizeActionAction,
@@ -196,7 +197,7 @@ function EditForm({
 function FinalizeForm({ o, onDone }: { o: Opportunity; onDone: () => void }) {
   const [isPending, startTransition] = useTransition();
   const [rezultat, setRezultat] = useState("");
-  const [dataFinalizare, setDataFinalizare] = useState(new Date().toISOString().slice(0, 10));
+  const [dataFinalizare, setDataFinalizare] = useState(getTodayISO());
   const [nextActiune, setNextActiune] = useState("");
   const [nextData, setNextData] = useState("");
   const [error, setError] = useState<string | null>(null);

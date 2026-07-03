@@ -2,8 +2,11 @@ import { getOpportunities } from "@/lib/data/opportunities";
 import { getAllNomenclatoare } from "@/lib/data/nomenclatoare";
 import { PipelineView } from "@/components/pipeline/PipelineView";
 import { STAGES } from "@/lib/constants";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function PipelinePage() {
+  await requireModuleAccess("crm");
+
   const [opportunities, allNomenclatoare] = await Promise.all([
     getOpportunities(),
     getAllNomenclatoare(),

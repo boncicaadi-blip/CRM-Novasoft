@@ -43,14 +43,15 @@ export async function approveUserAction(
 export async function updateUserAction(
   userId: string,
   fullName: string,
-  role: "admin" | "user"
+  role: "admin" | "user",
+  moduleAccess: string[]
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const supabase = await assertAdmin();
 
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: fullName, role })
+      .update({ full_name: fullName, role, module_access: moduleAccess })
       .eq("id", userId);
 
     if (error) return { success: false, message: error.message };

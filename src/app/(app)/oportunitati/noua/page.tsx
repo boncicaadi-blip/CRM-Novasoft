@@ -2,8 +2,11 @@ import { getProfiles } from "@/lib/data/opportunities";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { OpportunityForm } from "@/components/form/OpportunityForm";
 import { BackButton } from "@/components/BackButton";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function NewOpportunityPage() {
+  await requireModuleAccess("crm");
+
   const [profiles, nomenclatoare] = await Promise.all([getProfiles(), getNomenclatoare()]);
 
   return (

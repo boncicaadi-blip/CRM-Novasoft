@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/server";
+import { getTodayISO } from "@/lib/date";
 import type { ComportamentPlata, TipVanzare } from "@/types/creante";
 
 function toNumber(v: unknown): number | null {
@@ -213,7 +214,7 @@ export async function importCreanteAction(
             data:
               toDateStr(r["Data incasare"]) ??
               toDateStr(r["Data factura"]) ??
-              new Date().toISOString().slice(0, 10),
+              getTodayISO(),
             observatie: "Incasare istorica (import backfill)",
           });
         }
@@ -267,7 +268,7 @@ export async function importCreanteAction(
             // s-a incasat exact in ziua emiterii). Folosim data importului
             // si spunem clar in observatie ca e o valoare mostenita, fara
             // data exacta cunoscuta.
-            data: new Date().toISOString().slice(0, 10),
+            data: getTodayISO(),
             observatie: "Incasare istorica mostenita din export (data exacta necunoscuta)",
           });
         }

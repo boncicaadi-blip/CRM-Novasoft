@@ -1,4 +1,5 @@
 import type { Opportunity, OpportunityHistoryRow, TimelineEntry } from "@/types/opportunity";
+import { getTodayISO, toRomaniaISO } from "@/lib/date";
 
 export type PeriodPreset = "saptamana" | "luna" | "trimestru" | "an" | "custom" | null;
 
@@ -47,24 +48,24 @@ function startOfWeek(d: Date): Date {
 export function computePeriodRange(preset: PeriodPreset): { dateFrom: string; dateTo: string } | null {
   if (!preset || preset === "custom") return null;
   const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = getTodayISO();
 
   if (preset === "saptamana") {
     const start = startOfWeek(now);
-    return { dateFrom: start.toISOString().slice(0, 10), dateTo: todayStr };
+    return { dateFrom: toRomaniaISO(start), dateTo: todayStr };
   }
   if (preset === "luna") {
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    return { dateFrom: start.toISOString().slice(0, 10), dateTo: todayStr };
+    return { dateFrom: toRomaniaISO(start), dateTo: todayStr };
   }
   if (preset === "trimestru") {
     const startMonth = Math.floor(now.getMonth() / 3) * 3;
     const start = new Date(now.getFullYear(), startMonth, 1);
-    return { dateFrom: start.toISOString().slice(0, 10), dateTo: todayStr };
+    return { dateFrom: toRomaniaISO(start), dateTo: todayStr };
   }
   if (preset === "an") {
     const start = new Date(now.getFullYear(), 0, 1);
-    return { dateFrom: start.toISOString().slice(0, 10), dateTo: todayStr };
+    return { dateFrom: toRomaniaISO(start), dateTo: todayStr };
   }
   return null;
 }
@@ -537,12 +538,11 @@ export function buildActionWorkItems(
   opportunities: Opportunity[],
   filter: ActionWorkItemFilter
 ): ActionWorkItem[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = getTodayISO();
+  const today = new Date(`${todayStr}T00:00:00`);
   const in7Days = new Date(today);
   in7Days.setDate(in7Days.getDate() + 7);
-  const in7DaysStr = in7Days.toISOString().slice(0, 10);
+  const in7DaysStr = toRomaniaISO(in7Days);
 
   let rows: Opportunity[];
 
@@ -609,7 +609,7 @@ export interface CalendarAction {
  * Status-ul (restanta/viitoare/finalizata) e derivat, nu stocat separat.
  */
 export function buildCalendarActions(opportunities: Opportunity[]): CalendarAction[] {
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getTodayISO();
 
   return opportunities
     .filter((o) => !!o.data_actiune)
@@ -638,7 +638,7 @@ export function buildCalendarActions(opportunities: Opportunity[]): CalendarActi
 }
 
 export function calendarActionCounts(actions: CalendarAction[]) {
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getTodayISO();
   return {
     today: actions.filter((a) => a.date === todayStr).length,
     overdue: actions.filter((a) => a.status === "restanta").length,

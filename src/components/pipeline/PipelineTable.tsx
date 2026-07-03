@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { AlertTriangle, AlertCircle, Flame } from "lucide-react";
+import { getTodayISO } from "@/lib/date";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { computeStagnation, computeOpportunityScore } from "@/lib/analytics";
@@ -227,7 +228,7 @@ function Th({
 /** Celula de scor oportunitate (B-12) cu tooltip de detalii. */
 /** Badge de risc (B-09): fara next step, intarziat, sau stagnare - aceeasi logica ca pe KanbanCard. */
 function RiskBadge({ o }: { o: Opportunity }) {
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getTodayISO();
   const faraNextStep = o.status === "Activa" && (!o.actiune || !o.data_actiune);
   const intarziat =
     !faraNextStep &&

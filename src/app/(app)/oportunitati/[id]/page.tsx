@@ -4,6 +4,7 @@ import { ArrowLeft, History } from "lucide-react";
 import { getOpportunity, getProfiles } from "@/lib/data/opportunities";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { getTimeline } from "@/lib/data/timeline";
+import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
@@ -28,6 +29,7 @@ export default async function OpportunityOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireModuleAccess("crm");
   const [o, profiles, nomenclatoare] = await Promise.all([
     getOpportunity(id),
     getProfiles(),

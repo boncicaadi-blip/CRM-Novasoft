@@ -8,6 +8,7 @@ import {
   undoPlataAction,
 } from "@/lib/actions/obligatii";
 import { formatRon } from "@/lib/format";
+import { getTodayISO } from "@/lib/date";
 import { getZileDepasireObligatie, getObligatieStatus } from "@/lib/obligatii-analytics";
 import type { Obligatie, ObligatiePlata, TipAchizitie } from "@/types/obligatii";
 
@@ -30,7 +31,7 @@ export function ObligatieDetailModal({
   const [observatii, setObservatii] = useState(obligatie.observatii ?? "");
 
   const [valoarePlata, setValoarePlata] = useState(String(obligatie.sold));
-  const [dataPlata, setDataPlata] = useState(new Date().toISOString().slice(0, 10));
+  const [dataPlata, setDataPlata] = useState(getTodayISO());
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null

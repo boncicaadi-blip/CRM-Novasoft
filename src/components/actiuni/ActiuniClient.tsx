@@ -6,6 +6,7 @@ import { AlertCircle, Clock, CheckCircle2, AlertTriangle, ArrowRight } from "luc
 import { buildActionWorkItems, type ActionWorkItemFilter } from "@/lib/analytics";
 import { formatEur } from "@/lib/format";
 import { STAGE_COLORS } from "@/lib/constants";
+import { getTodayISO } from "@/lib/date";
 import {
   finalizeActionAction,
   postponeActionAction,
@@ -209,7 +210,7 @@ function ActionRow({
 function FinalizeForm({ opportunityId, onDone }: { opportunityId: string; onDone: () => void }) {
   const [isPending, startTransition] = useTransition();
   const [rezultat, setRezultat] = useState("");
-  const [dataFinalizare, setDataFinalizare] = useState(new Date().toISOString().slice(0, 10));
+  const [dataFinalizare, setDataFinalizare] = useState(getTodayISO());
   const [nextActiune, setNextActiune] = useState("");
   const [nextData, setNextData] = useState("");
 

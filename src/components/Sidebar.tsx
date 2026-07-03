@@ -25,6 +25,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import type { ModuleKey } from "@/lib/modules";
 
 interface NavItem {
   href: string;
@@ -37,8 +38,9 @@ interface NavGroup {
   label: string;
   icon: LucideIcon;
   items: NavItem[];
-  /** Grupul intreg e vizibil doar pentru admin (ex: date financiare sensibile). */
-  adminOnly?: boolean;
+  /** Modulul mare de care apartine grupul - controleaza vizibilitatea pe
+   * baza module_access al userului (adminii vad mereu tot). */
+  moduleKey: ModuleKey;
 }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -46,6 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: "pipeline",
     label: "CRM",
     icon: GitBranch,
+    moduleKey: "crm",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/pipeline", label: "Pipeline", icon: GitBranch },
@@ -59,7 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: "creante",
     label: "Creante & Obligatii",
     icon: Wallet,
-    adminOnly: true,
+    moduleKey: "creante_obligatii",
     items: [
       { href: "/creante", label: "Creante", icon: Wallet },
       { href: "/obligatii", label: "Obligatii", icon: Wallet },
@@ -69,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
     id: "venituri",
     label: "Venituri & Cheltuieli",
     icon: TrendingUp,
+    moduleKey: "venituri_cheltuieli",
     items: [{ href: "/venituri-cheltuieli", label: "Venituri & Cheltuieli", icon: TrendingUp }],
   },
 ];
@@ -86,10 +90,12 @@ function findActiveGroupId(pathname: string, groups: NavGroup[]): string | null 
 export function Sidebar({
   userName,
   isAdmin = false,
+  moduleAccess = ["crm"],
   deployVersion = null,
 }: {
   userName: string;
   isAdmin?: boolean;
+  moduleAccess?: string[];
   deployVersion?: string | null;
 }) {
   const pathname = usePathname();
@@ -98,7 +104,7 @@ export function Sidebar({
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSheetGroupId, setMobileSheetGroupId] = useState<string | null>(null);
 
-  const visibleGroups = NAV_GROUPS.filter((g) => !g.adminOnly || isAdmin);
+  const visibleGroups = NAV_GROUPS.filter((g) => isAdmin || moduleAccess.includes(g.moduleKey));
   const activeGroupId = findActiveGroupId(pathname, visibleGroups) ?? visibleGroups[0]?.id ?? null;
   const [openGroupId, setOpenGroupId] = useState<string | null>(activeGroupId);
   const effectiveOpenGroupId = openGroupId ?? activeGroupId;
