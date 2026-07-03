@@ -1,4 +1,4 @@
-import type { Creanta } from "@/types/creante";
+import type { Creanta, CreantaIncasare } from "@/types/creante";
 import { getTodayISO } from "@/lib/date";
 
 export type CreantaStatus = "incasata" | "restanta" | "la_zi";
@@ -17,6 +17,13 @@ export function getZileDepasire(c: Creanta): number | null {
   const scadenta = new Date(`${c.data_scadenta.slice(0, 10)}T00:00:00Z`);
   const zile = Math.floor((today.getTime() - scadenta.getTime()) / 86_400_000);
   return zile > 0 ? zile : null;
+}
+
+/** Valoarea propusa efectiva - cea editata manual, sau soldul intreg daca
+ * n-a fost inca editata (ex: factura tocmai bifata "Propus"). */
+export function getValoarePropusa(c: Creanta): number {
+  if (!c.propus_spre_incasare || c.sold <= 0) return 0;
+  return c.valoare_propusa_spre_incasare ?? c.sold;
 }
 
 export type AgingBucket = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
@@ -39,26 +46,33 @@ export interface CreanteSummary {
   /** Tot ce nu e incasat, indiferent daca e deja scadent sau nu. */
   totalSoldNeincasat: number;
   /** Doar ce e cu adevarat restant (scadenta depasita) - pentru cardul
-   * "Sold total restant" si pentru aging. */
+   * "Sold total restant" si pentru aging. Calculat mereu pe TOATE facturile,
+   * indiferent de filtrul de perioada - e o stare curenta, nu una istorica. */
   totalSoldRestant: number;
   totalFacturat: number;
-  totalIncasat: number;
   nrFacturiRestante: number;
   nrFacturiLaZi: number;
   sold0_30: number;
   sold31_60: number;
   sold61_90: number;
   sold90Plus: number;
-  /** Suma soldurilor facturilor bifate "Propus spre incasare" - targetul curent. */
+  /** Suma valorilor propuse (editabile per factura, nu neaparat soldul intreg). */
   targetPropus: number;
   nrFacturiPropuse: number;
 }
 
+/**
+ * Calculeaza sumarul de Creante - se aplica mereu pe TOATE facturile
+ * (neinfluentat de filtrul de perioada din UI), pentru ca sold-ul restant,
+ * facturile restante si targetul propus sunt stari curente ("cat am acum
+ * neincasat/restant/propus"), nu valori istorice legate de o perioada.
+ * Singurul lucru cu adevarat "legat de o perioada" e Total incasat, care se
+ * calculeaza separat, din jurnalul de incasari (vezi computeTotalIncasatInPeriod).
+ */
 export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
   let totalSoldNeincasat = 0;
   let totalSoldRestant = 0;
   let totalFacturat = 0;
-  let totalIncasat = 0;
   let nrFacturiRestante = 0;
   let nrFacturiLaZi = 0;
   let sold0_30 = 0;
@@ -70,9 +84,8 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
 
   for (const c of creante) {
     totalFacturat += c.total_factura;
-    totalIncasat += c.valoare_incasata;
     if (c.propus_spre_incasare && c.sold > 0) {
-      targetPropus += c.sold;
+      targetPropus += getValoarePropusa(c);
       nrFacturiPropuse += 1;
     }
     if (c.sold <= 0) continue;
@@ -97,7 +110,6 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
     totalSoldNeincasat,
     totalSoldRestant,
     totalFacturat,
-    totalIncasat,
     nrFacturiRestante,
     nrFacturiLaZi,
     sold0_30,
@@ -109,23 +121,34 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
   };
 }
 
+/**
+ * Total incasat INTR-O PERIOADA - spre deosebire de restul sumarului, asta
+ * chiar trebuie sa raspunda la filtrul de perioada, dar dupa DATA INCASARII
+ * (cand a intrat banul), nu dupa data facturii. Se calculeaza din jurnalul
+ * de incasari, nu din facturi - o factura din martie incasata in iunie
+ * conteaza la "iunie", nu la "martie".
+ */
+export function computeTotalIncasatInPeriod(
+  incasari: CreantaIncasare[],
+  period: PeriodFilter,
+  customRange?: { from: string; to: string }
+): number {
+  return incasari
+    .filter((i) => dateMatchesPeriod(i.data_incasare, period, customRange))
+    .reduce((sum, i) => sum + i.valoare, 0);
+}
+
 export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
-/**
- * Filtrare pe perioada: o factura e vizibila daca are sold restant
- * (indiferent de vechime - trebuie urmarita oricum), SAU daca data
- * facturii cade in perioada selectata.
- */
-export function inPeriod(
-  c: Creanta,
+function dateMatchesPeriod(
+  dateStr: string | null,
   period: PeriodFilter,
   customRange?: { from: string; to: string }
 ): boolean {
-  if (c.sold > 0) return true;
   if (period === "toate") return true;
-  if (!c.data_factura) return false;
+  if (!dateStr) return false;
 
-  const d = new Date(c.data_factura);
+  const d = new Date(dateStr);
   const now = new Date();
 
   if (period === "custom") {
@@ -144,4 +167,18 @@ export function inPeriod(
     return d >= threshold;
   }
   return true;
+}
+
+/**
+ * Filtrare pe perioada PENTRU LISTA DE FACTURI (nu pentru sumar): o factura
+ * e vizibila daca are sold restant (indiferent de vechime - trebuie
+ * urmarita oricum), SAU daca data facturii cade in perioada selectata.
+ */
+export function inPeriod(
+  c: Creanta,
+  period: PeriodFilter,
+  customRange?: { from: string; to: string }
+): boolean {
+  if (c.sold > 0) return true;
+  return dateMatchesPeriod(c.data_factura, period, customRange);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { X, CheckCircle2, Undo2 } from "lucide-react";
+import { X, CheckCircle2, Undo2, Target } from "lucide-react";
 import { updateCreantaTrackingAction, marcheazaIncasatAction, undoIncasareAction } from "@/lib/actions/creante";
 import { formatRon } from "@/lib/format";
 import { getTodayISO } from "@/lib/date";
@@ -22,6 +22,9 @@ export function CreantaDetailModal({
   const [isPending, startTransition] = useTransition();
   const [tipVanzare, setTipVanzare] = useState<TipVanzare | "">(creanta.tip_vanzare ?? "");
   const [observatii, setObservatii] = useState(creanta.observatii ?? "");
+  const [valoarePropusa, setValoarePropusa] = useState(
+    String(creanta.valoare_propusa_spre_incasare ?? creanta.sold)
+  );
 
   const [valoareIncasare, setValoareIncasare] = useState(String(creanta.sold));
   const [dataIncasare, setDataIncasare] = useState(getTodayISO());
@@ -39,6 +42,9 @@ export function CreantaDetailModal({
       const result = await updateCreantaTrackingAction(creanta.id, {
         tip_vanzare: tipVanzare === "" ? null : tipVanzare,
         observatii: observatii || null,
+        ...(creanta.propus_spre_incasare
+          ? { valoare_propusa_spre_incasare: Number(valoarePropusa) }
+          : {}),
       });
       setMessage(
         result.success
@@ -152,6 +158,36 @@ export function CreantaDetailModal({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {creanta.propus_spre_incasare && creanta.sold > 0 && (
+          <div className="mb-4 rounded-lg border border-[#E8007A]/20 bg-[#E8007A]/5 p-3">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-[#E8007A]">
+              <Target size={13} />
+              Valoare propusa spre incasare
+            </p>
+            <div className="flex flex-wrap items-end gap-2">
+              <div>
+                <label className="mb-1 block text-[11px] text-slate-500">
+                  Valoare (lei) — sold factura: {formatRon(creanta.sold)}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={creanta.sold}
+                  value={valoarePropusa}
+                  onChange={(e) => setValoarePropusa(e.target.value)}
+                  className="w-40 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Implicit se propune soldul integral. Poti reduce valoarea daca estimezi ca vei
+              incasa doar o parte in perioada curenta - restul rămâne pe factura, neschimbat.
+              Salveaza mai jos ca sa aplici modificarea.
+            </p>
           </div>
         )}
 

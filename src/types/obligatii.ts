@@ -15,6 +15,7 @@ export interface Obligatie {
   data_plata: string | null;
   sold: number;
   propus_spre_plata: boolean;
+  valoare_propusa_spre_plata: number | null;
   observatii: string | null;
   creat_la: string;
   actualizat_la: string;

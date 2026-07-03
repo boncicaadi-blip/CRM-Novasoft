@@ -15,13 +15,15 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { KpiCard } from "@/components/dashboard/KpiCard";
+import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { CreanteImportForm } from "./CreanteImportForm";
 import { CreantaDetailModal } from "./CreantaDetailModal";
 import { AgingBar } from "./AgingBar";
-import { formatRonCompact, formatRon } from "@/lib/format";
+import { formatRon } from "@/lib/format";
+import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import {
   computeCreanteSummary,
+  computeTotalIncasatInPeriod,
   getCreantaStatus,
   getZileDepasire,
   inPeriod,
@@ -146,7 +148,18 @@ export function CreanteClient({
     [creanteEffective, period, customFrom, customTo]
   );
 
-  const summary = useMemo(() => computeCreanteSummary(inPeriodList), [inPeriodList]);
+  // Sold restant, facturi restante si target sunt stari CURENTE, nu legate
+  // de perioada - se calculeaza pe toate facturile, indiferent de filtrul
+  // de mai jos (vezi definitia din card pentru detalii).
+  const summary = useMemo(() => computeCreanteSummary(creanteEffective), [creanteEffective]);
+
+  // Total incasat E legat de perioada, dar dupa data incasarii (din jurnal),
+  // nu dupa data facturii.
+  const incasariFlat = useMemo(() => Object.values(incasari).flat(), [incasari]);
+  const totalIncasatInPeriod = useMemo(
+    () => computeTotalIncasatInPeriod(incasariFlat, period, { from: customFrom, to: customTo }),
+    [incasariFlat, period, customFrom, customTo]
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -297,30 +310,35 @@ export function CreanteClient({
         <CreanteImportForm />
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiInfoCard
           label="Sold total restant"
-          value={formatRonCompact(summary.totalSoldRestant)}
+          value={formatRon(summary.totalSoldRestant)}
           icon={<Wallet size={16} />}
           accent="#F59E0B"
+          definition={CREANTE_KPI_DEFINITIONS.soldRestant}
         />
-        <KpiCard
+        <KpiInfoCard
           label="Facturi restante"
           value={String(summary.nrFacturiRestante)}
           icon={<AlertTriangle size={16} />}
           accent="#EF4444"
+          definition={CREANTE_KPI_DEFINITIONS.facturiRestante}
         />
-        <KpiCard
+        <KpiInfoCard
           label="Target propus (bifate)"
-          value={formatRonCompact(summary.targetPropus)}
+          value={formatRon(summary.targetPropus)}
+          sublabel={`${summary.nrFacturiPropuse} facturi`}
           icon={<Target size={16} />}
           accent="#E8007A"
+          definition={CREANTE_KPI_DEFINITIONS.targetPropus}
         />
-        <KpiCard
+        <KpiInfoCard
           label="Total incasat"
-          value={formatRonCompact(summary.totalIncasat)}
+          value={formatRon(totalIncasatInPeriod)}
           icon={<TrendingUp size={16} />}
           accent="#22C55E"
+          definition={CREANTE_KPI_DEFINITIONS.totalIncasat}
         />
       </div>
 

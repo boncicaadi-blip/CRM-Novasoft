@@ -15,13 +15,15 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { KpiCard } from "@/components/dashboard/KpiCard";
+import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { ObligatiiImportForm } from "./ObligatiiImportForm";
 import { ObligatieDetailModal } from "./ObligatieDetailModal";
 import { AgingBarObligatii } from "./AgingBarObligatii";
-import { formatRonCompact, formatRon } from "@/lib/format";
+import { formatRon } from "@/lib/format";
+import { OBLIGATII_KPI_DEFINITIONS } from "@/lib/obligatii-kpi-definitions";
 import {
   computeObligatiiSummary,
+  computeTotalPlatitInPeriod,
   getObligatieStatus,
   getZileDepasireObligatie,
   inPeriodObligatie,
@@ -148,7 +150,13 @@ export function ObligatiiClient({
     [obligatiiEffective, period, customFrom, customTo]
   );
 
-  const summary = useMemo(() => computeObligatiiSummary(inPeriodList), [inPeriodList]);
+  const summary = useMemo(() => computeObligatiiSummary(obligatiiEffective), [obligatiiEffective]);
+
+  const platiFlat = useMemo(() => Object.values(plati).flat(), [plati]);
+  const totalPlatitInPeriod = useMemo(
+    () => computeTotalPlatitInPeriod(platiFlat, period, { from: customFrom, to: customTo }),
+    [platiFlat, period, customFrom, customTo]
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -297,30 +305,35 @@ export function ObligatiiClient({
         <ObligatiiImportForm />
       </div>
 
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KpiCard
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiInfoCard
           label="Sold total restant"
-          value={formatRonCompact(summary.totalSoldRestant)}
+          value={formatRon(summary.totalSoldRestant)}
           icon={<Wallet size={16} />}
           accent="#F59E0B"
+          definition={OBLIGATII_KPI_DEFINITIONS.soldRestant}
         />
-        <KpiCard
+        <KpiInfoCard
           label="Facturi restante"
           value={String(summary.nrFacturiRestante)}
           icon={<AlertTriangle size={16} />}
           accent="#EF4444"
+          definition={OBLIGATII_KPI_DEFINITIONS.facturiRestante}
         />
-        <KpiCard
+        <KpiInfoCard
           label="Target propus (bifate)"
-          value={formatRonCompact(summary.targetPropus)}
+          value={formatRon(summary.targetPropus)}
+          sublabel={`${summary.nrFacturiPropuse} facturi`}
           icon={<Target size={16} />}
           accent="#E8007A"
+          definition={OBLIGATII_KPI_DEFINITIONS.targetPropus}
         />
-        <KpiCard
+        <KpiInfoCard
           label="Total platit"
-          value={formatRonCompact(summary.totalPlatit)}
+          value={formatRon(totalPlatitInPeriod)}
           icon={<TrendingDown size={16} />}
           accent="#22C55E"
+          definition={OBLIGATII_KPI_DEFINITIONS.totalPlatit}
         />
       </div>
 

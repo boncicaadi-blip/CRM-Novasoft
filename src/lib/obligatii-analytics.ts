@@ -1,4 +1,4 @@
-import type { Obligatie } from "@/types/obligatii";
+import type { Obligatie, ObligatiePlata } from "@/types/obligatii";
 import { getTodayISO } from "@/lib/date";
 
 export type ObligatieStatus = "platita" | "restanta" | "la_zi";
@@ -19,10 +19,13 @@ export function getZileDepasireObligatie(o: Obligatie): number | null {
   return zile > 0 ? zile : null;
 }
 
+export function getValoarePropusaObligatie(o: Obligatie): number {
+  if (!o.propus_spre_plata || o.sold <= 0) return 0;
+  return o.valoare_propusa_spre_plata ?? o.sold;
+}
+
 export type AgingBucketObligatie = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
 
-/** Doar facturile chiar restante (scadenta depasita) intra intr-un bucket
- * de aging - o factura "la zi" nu are varsta de intarziere. */
 export function matchesAgingBucketObligatie(o: Obligatie, bucket: AgingBucketObligatie): boolean {
   if (o.sold <= 0) return false;
   if (getObligatieStatus(o) !== "restanta") return false;
@@ -34,12 +37,9 @@ export function matchesAgingBucketObligatie(o: Obligatie, bucket: AgingBucketObl
 }
 
 export interface ObligatiiSummary {
-  /** Tot ce nu e platit, indiferent daca e deja scadent sau nu. */
   totalSoldNeplatit: number;
-  /** Doar ce e cu adevarat restant (scadenta depasita). */
   totalSoldRestant: number;
   totalFacturat: number;
-  totalPlatit: number;
   nrFacturiRestante: number;
   nrFacturiLaZi: number;
   sold0_30: number;
@@ -50,11 +50,13 @@ export interface ObligatiiSummary {
   nrFacturiPropuse: number;
 }
 
+/** La fel ca la Creante: sumarul reflecta mereu starea curenta pe TOATE
+ * facturile, nu e filtrat de perioada - doar Total platit e legat de perioada
+ * (vezi computeTotalPlatitInPeriod). */
 export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummary {
   let totalSoldNeplatit = 0;
   let totalSoldRestant = 0;
   let totalFacturat = 0;
-  let totalPlatit = 0;
   let nrFacturiRestante = 0;
   let nrFacturiLaZi = 0;
   let sold0_30 = 0;
@@ -66,9 +68,8 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
 
   for (const o of obligatii) {
     totalFacturat += o.total_factura;
-    totalPlatit += o.valoare_platita;
     if (o.propus_spre_plata && o.sold > 0) {
-      targetPropus += o.sold;
+      targetPropus += getValoarePropusaObligatie(o);
       nrFacturiPropuse += 1;
     }
     if (o.sold <= 0) continue;
@@ -93,7 +94,6 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
     totalSoldNeplatit,
     totalSoldRestant,
     totalFacturat,
-    totalPlatit,
     nrFacturiRestante,
     nrFacturiLaZi,
     sold0_30,
@@ -105,18 +105,27 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
   };
 }
 
+export function computeTotalPlatitInPeriod(
+  plati: ObligatiePlata[],
+  period: PeriodFilter,
+  customRange?: { from: string; to: string }
+): number {
+  return plati
+    .filter((p) => dateMatchesPeriod(p.data_plata, period, customRange))
+    .reduce((sum, p) => sum + p.valoare, 0);
+}
+
 export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
-export function inPeriodObligatie(
-  o: Obligatie,
+function dateMatchesPeriod(
+  dateStr: string | null,
   period: PeriodFilter,
   customRange?: { from: string; to: string }
 ): boolean {
-  if (o.sold > 0) return true;
   if (period === "toate") return true;
-  if (!o.data_factura) return false;
+  if (!dateStr) return false;
 
-  const d = new Date(o.data_factura);
+  const d = new Date(dateStr);
   const now = new Date();
 
   if (period === "custom") {
@@ -135,4 +144,13 @@ export function inPeriodObligatie(
     return d >= threshold;
   }
   return true;
+}
+
+export function inPeriodObligatie(
+  o: Obligatie,
+  period: PeriodFilter,
+  customRange?: { from: string; to: string }
+): boolean {
+  if (o.sold > 0) return true;
+  return dateMatchesPeriod(o.data_factura, period, customRange);
 }

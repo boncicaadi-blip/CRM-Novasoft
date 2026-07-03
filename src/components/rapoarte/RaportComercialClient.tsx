@@ -12,7 +12,7 @@ import {
   Trophy,
   ArrowLeftRight,
 } from "lucide-react";
-import { KpiInfoCard } from "./KpiInfoCard";
+import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { formatEurCompact } from "@/lib/format";
 import type { PipelineReportKpis } from "@/lib/analytics";

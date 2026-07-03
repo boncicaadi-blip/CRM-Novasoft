@@ -29,6 +29,8 @@ function normalizeObligatie(row: Record<string, unknown>): Obligatie {
     total_factura: Number(row.total_factura) || 0,
     valoare_platita: Number(row.valoare_platita) || 0,
     sold: Number(row.sold) || 0,
+    valoare_propusa_spre_plata:
+      row.valoare_propusa_spre_plata === null ? null : Number(row.valoare_propusa_spre_plata),
   } as Obligatie;
 }
 

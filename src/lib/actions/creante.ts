@@ -334,10 +334,24 @@ export async function updateCreantaTrackingAction(
   fields: {
     tip_vanzare?: TipVanzare | null;
     observatii?: string | null;
+    valoare_propusa_spre_incasare?: number | null;
   }
 ): Promise<{ success: boolean; message?: string }> {
   const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot edita creante." };
+
+  if (fields.valoare_propusa_spre_incasare !== undefined && fields.valoare_propusa_spre_incasare !== null) {
+    const { data: creanta } = await supabase.from("creante").select("sold").eq("id", id).single();
+    if (creanta && fields.valoare_propusa_spre_incasare > creanta.sold) {
+      return {
+        success: false,
+        message: `Valoarea propusa nu poate depasi soldul facturii (${creanta.sold} lei).`,
+      };
+    }
+    if (fields.valoare_propusa_spre_incasare <= 0) {
+      return { success: false, message: "Valoarea propusa trebuie sa fie pozitiva." };
+    }
+  }
 
   const { error } = await supabase.from("creante").update(fields).eq("id", id);
   if (error) return { success: false, message: error.message };
@@ -346,7 +360,9 @@ export async function updateCreantaTrackingAction(
   return { success: true };
 }
 
-/** Bifa rapida "Propus spre incasare", direct din lista, fara sa deschizi modalul. */
+/** Bifa rapida "Propus spre incasare", direct din lista, fara sa deschizi modalul.
+ * La bifare, valoarea propusa se initializeaza cu soldul integral - se poate
+ * edita apoi in jos, din fisa facturii. La debifare, se goleste. */
 export async function toggleProposSpreIncasareAction(
   id: string,
   value: boolean
@@ -354,9 +370,15 @@ export async function toggleProposSpreIncasareAction(
   const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot edita creante." };
 
+  let valoarePropusa: number | null = null;
+  if (value) {
+    const { data: creanta } = await supabase.from("creante").select("sold").eq("id", id).single();
+    valoarePropusa = creanta?.sold ?? null;
+  }
+
   const { error } = await supabase
     .from("creante")
-    .update({ propus_spre_incasare: value })
+    .update({ propus_spre_incasare: value, valoare_propusa_spre_incasare: valoarePropusa })
     .eq("id", id);
   if (error) return { success: false, message: error.message };
 

@@ -22,6 +22,7 @@ export interface Creanta {
   data_incasare: string | null;
   sold: number;
   propus_spre_incasare: boolean;
+  valoare_propusa_spre_incasare: number | null;
   comportament_plata: ComportamentPlata | null;
   data_tinta_incasare: string | null;
   observatii: string | null;

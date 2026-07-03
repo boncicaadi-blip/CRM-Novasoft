@@ -46,6 +46,8 @@ function normalizeCreanta(row: Record<string, unknown>): Creanta {
       row.valoare_lunara_fara_tva === null ? null : Number(row.valoare_lunara_fara_tva),
     total_fara_tva: row.total_fara_tva === null ? null : Number(row.total_fara_tva),
     total_tva: row.total_tva === null ? null : Number(row.total_tva),
+    valoare_propusa_spre_incasare:
+      row.valoare_propusa_spre_incasare === null ? null : Number(row.valoare_propusa_spre_incasare),
   } as Creanta;
 }
 

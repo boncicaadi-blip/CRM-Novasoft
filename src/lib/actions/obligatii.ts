@@ -231,10 +231,24 @@ export async function updateObligatieTrackingAction(
     tip_achizitie?: TipAchizitie | null;
     modalitate_plata?: string | null;
     observatii?: string | null;
+    valoare_propusa_spre_plata?: number | null;
   }
 ): Promise<{ success: boolean; message?: string }> {
   const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot edita obligatii." };
+
+  if (fields.valoare_propusa_spre_plata !== undefined && fields.valoare_propusa_spre_plata !== null) {
+    const { data: obligatie } = await supabase.from("obligatii").select("sold").eq("id", id).single();
+    if (obligatie && fields.valoare_propusa_spre_plata > obligatie.sold) {
+      return {
+        success: false,
+        message: `Valoarea propusa nu poate depasi soldul facturii (${obligatie.sold} lei).`,
+      };
+    }
+    if (fields.valoare_propusa_spre_plata <= 0) {
+      return { success: false, message: "Valoarea propusa trebuie sa fie pozitiva." };
+    }
+  }
 
   const { error } = await supabase.from("obligatii").update(fields).eq("id", id);
   if (error) return { success: false, message: error.message };
@@ -250,7 +264,16 @@ export async function toggleProposSprePlataAction(
   const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot edita obligatii." };
 
-  const { error } = await supabase.from("obligatii").update({ propus_spre_plata: value }).eq("id", id);
+  let valoarePropusa: number | null = null;
+  if (value) {
+    const { data: obligatie } = await supabase.from("obligatii").select("sold").eq("id", id).single();
+    valoarePropusa = obligatie?.sold ?? null;
+  }
+
+  const { error } = await supabase
+    .from("obligatii")
+    .update({ propus_spre_plata: value, valoare_propusa_spre_plata: valoarePropusa })
+    .eq("id", id);
   if (error) return { success: false, message: error.message };
 
   revalidatePath("/obligatii");
