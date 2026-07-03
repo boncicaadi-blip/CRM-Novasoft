@@ -11,15 +11,29 @@ import { CreanteAgingChart } from "./CreanteAgingChart";
 import { CreanteIncasariTimeSeriesChart } from "./CreanteIncasariTimeSeriesChart";
 import { CreanteTopClientiChart } from "./CreanteTopClientiChart";
 import { CreanteRiscZone } from "./CreanteRiscZone";
+import { CreanteGrtCard } from "./CreanteGrtCard";
+import { CreanteGrtChart } from "./CreanteGrtChart";
+import { CreanteDinamicaChart } from "./CreanteDinamicaChart";
 import { formatRon } from "@/lib/format";
 import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
-import { computeCreanteSummary, getCreantaStatus, matchesAgingBucket, type AgingBucket } from "@/lib/creante-analytics";
+import { getTodayISO } from "@/lib/date";
+import {
+  computeCreanteSummary,
+  computeTotalIncasatInPeriod,
+  getCreantaStatus,
+  matchesAgingBucket,
+  inPeriod,
+  type AgingBucket,
+  type PeriodFilter,
+} from "@/lib/creante-analytics";
 import {
   groupByStatusCreante,
   groupByAgingCreante,
   groupByTipVanzareCreante,
   topClientiRestanti,
   buildIncasariTimeSeries,
+  buildFacturatTimeSeries,
+  buildGrtSeries,
   topRiscCreante,
 } from "@/lib/creante-dashboard-analytics";
 import type { Creanta, CreantaIncasare } from "@/types/creante";
@@ -33,29 +47,44 @@ interface DashboardFilters {
 
 const EMPTY_FILTERS: DashboardFilters = { status: null, aging: null, tipVanzare: null, client: null };
 
+const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
+  { value: "luna_curenta", label: "Luna curenta" },
+  { value: "ultimele_3_luni", label: "Ultimele 3 luni" },
+  { value: "anul_curent", label: "Anul curent" },
+  { value: "toate", label: "Tot istoricul" },
+];
+
 export function CreanteDashboardClient({
   creante,
   incasari,
+  targets,
 }: {
   creante: Creanta[];
   incasari: Record<string, CreantaIncasare[]>;
+  targets: Record<string, number>;
 }) {
+  const [period, setPeriod] = useState<PeriodFilter>("toate");
   const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<Creanta | null>(null);
 
   const incasariFlat = useMemo(() => Object.values(incasari).flat(), [incasari]);
 
+  const inPeriodList = useMemo(
+    () => creante.filter((c) => inPeriod(c, period)),
+    [creante, period]
+  );
+
   // Filtrare incrucisata - fiecare grafic reflecta selectiile din celelalte,
   // exact ca la Dashboard-ul din CRM.
   const filtered = useMemo(() => {
-    return creante.filter((c) => {
+    return inPeriodList.filter((c) => {
       if (filters.status && getCreantaStatus(c) !== filters.status) return false;
       if (filters.tipVanzare && (c.tip_vanzare ?? "Necunoscut") !== filters.tipVanzare) return false;
       if (filters.client && c.nume_firma !== filters.client) return false;
       if (filters.aging && !matchesAgingBucket(c, filters.aging)) return false;
       return true;
     });
-  }, [creante, filters]);
+  }, [inPeriodList, filters]);
 
   const summary = useMemo(() => computeCreanteSummary(filtered), [filtered]);
   const statusData = useMemo(() => groupByStatusCreante(filtered), [filtered]);
@@ -63,12 +92,30 @@ export function CreanteDashboardClient({
   const tipVanzareData = useMemo(() => groupByTipVanzareCreante(filtered), [filtered]);
   const clientData = useMemo(() => topClientiRestanti(filtered, 8), [filtered]);
   const riscData = useMemo(() => topRiscCreante(filtered, 5), [filtered]);
-  const timeSeries = useMemo(() => buildIncasariTimeSeries(incasariFlat, 11), [incasariFlat]);
 
-  const totalIncasatAllTime = useMemo(
-    () => incasariFlat.reduce((s, i) => s + i.valoare, 0),
-    [incasariFlat]
+  const totalIncasatInPeriod = useMemo(
+    () => computeTotalIncasatInPeriod(incasariFlat, period),
+    [incasariFlat, period]
   );
+
+  // GRT si dinamica raman mereu pe ultimele 12 luni calendaristice, indiferent
+  // de filtrul de perioada de mai sus - sunt inerent lunare, n-are sens sa
+  // le "restrangi" la o singura luna.
+  const grtSeries = useMemo(() => buildGrtSeries(incasariFlat, targets, 11), [incasariFlat, targets]);
+  const incasariSeries = useMemo(() => buildIncasariTimeSeries(incasariFlat, 11), [incasariFlat]);
+  const facturatSeries = useMemo(() => buildFacturatTimeSeries(creante, 11), [creante]);
+  const dinamicaData = useMemo(
+    () =>
+      facturatSeries.map((f, i) => ({
+        month: f.month,
+        facturat: f.facturat,
+        incasat: incasariSeries[i]?.total ?? 0,
+      })),
+    [facturatSeries, incasariSeries]
+  );
+
+  const currentMonthKey = getTodayISO().slice(0, 7);
+  const currentMonthGrt = grtSeries.find((g) => g.monthKey === currentMonthKey);
 
   const hasFilter = filters.status || filters.aging || filters.tipVanzare || filters.client;
 
@@ -82,12 +129,25 @@ export function CreanteDashboardClient({
             {hasFilter ? " (filtrate)" : ""}
           </p>
         </div>
-        <Link
-          href="/creante"
-          className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
-        >
-          Vezi lista completa →
-        </Link>
+        <div className="flex items-center gap-2">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          >
+            {PERIOD_OPTIONS.map((p) => (
+              <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <Link
+            href="/creante"
+            className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+          >
+            Vezi lista completa →
+          </Link>
+        </div>
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -115,11 +175,20 @@ export function CreanteDashboardClient({
           definition={CREANTE_KPI_DEFINITIONS.targetPropus}
         />
         <KpiInfoCard
-          label="Total incasat (tot istoricul)"
-          value={formatRon(totalIncasatAllTime)}
+          label="Total incasat"
+          value={formatRon(totalIncasatInPeriod)}
+          sublabel="in perioada selectata sus"
           icon={<TrendingUp size={16} />}
           accent="#22C55E"
           definition={CREANTE_KPI_DEFINITIONS.totalIncasat}
+        />
+      </div>
+
+      <div className="mb-4">
+        <CreanteGrtCard
+          monthKey={currentMonthKey}
+          target={currentMonthGrt?.target ?? targets[currentMonthKey] ?? 0}
+          realizat={currentMonthGrt?.realizat ?? 0}
         />
       </div>
 
@@ -144,7 +213,11 @@ export function CreanteDashboardClient({
             onSelect={(bucket) => setFilters((f) => ({ ...f, aging: bucket === f.aging ? null : bucket }))}
           />
 
-          <CreanteIncasariTimeSeriesChart data={timeSeries} />
+          <CreanteGrtChart data={grtSeries} />
+
+          <CreanteDinamicaChart data={dinamicaData} />
+
+          <CreanteIncasariTimeSeriesChart data={incasariSeries} />
         </div>
 
         <div className="space-y-4">

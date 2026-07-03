@@ -105,3 +105,20 @@ export async function getCreanteIncasari(): Promise<Record<string, CreantaIncasa
   }
   return grouped;
 }
+
+/** Targetul lunar de incasare, ca map "YYYY-MM" -> valoare. */
+export async function getCreanteTargetsLunare(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("creante_targets_lunare").select("*");
+
+  if (error) {
+    console.error("getCreanteTargetsLunare error:", error.message);
+    return {};
+  }
+
+  const map: Record<string, number> = {};
+  for (const row of data ?? []) {
+    map[row.luna] = Number(row.target) || 0;
+  }
+  return map;
+}

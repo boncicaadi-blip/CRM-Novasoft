@@ -1,99 +1,99 @@
-import type { Creanta, CreantaIncasare } from "@/types/creante";
+import type { Obligatie, ObligatiePlata } from "@/types/obligatii";
 import {
-  getCreantaStatus,
-  getZileDepasire,
-  matchesAgingBucket,
-  type AgingBucket,
-  type CreantaStatus,
-} from "@/lib/creante-analytics";
+  getObligatieStatus,
+  getZileDepasireObligatie,
+  matchesAgingBucketObligatie,
+  type AgingBucketObligatie,
+  type ObligatieStatus,
+} from "@/lib/obligatii-analytics";
 
 export interface StatusDatum {
-  status: CreantaStatus;
+  status: ObligatieStatus;
   label: string;
   count: number;
   sold: number;
 }
 
-export function groupByStatusCreante(creante: Creanta[]): StatusDatum[] {
-  const buckets: Record<CreantaStatus, StatusDatum> = {
+export function groupByStatusObligatii(obligatii: Obligatie[]): StatusDatum[] {
+  const buckets: Record<ObligatieStatus, StatusDatum> = {
     restanta: { status: "restanta", label: "Restanta", count: 0, sold: 0 },
     la_zi: { status: "la_zi", label: "La zi", count: 0, sold: 0 },
-    incasata: { status: "incasata", label: "Incasata", count: 0, sold: 0 },
+    platita: { status: "platita", label: "Platita", count: 0, sold: 0 },
   };
-  for (const c of creante) {
-    const s = getCreantaStatus(c);
+  for (const o of obligatii) {
+    const s = getObligatieStatus(o);
     buckets[s].count += 1;
-    buckets[s].sold += c.sold;
+    buckets[s].sold += o.sold;
   }
   return Object.values(buckets).filter((b) => b.count > 0);
 }
 
 export interface AgingDatum {
-  bucket: AgingBucket;
+  bucket: AgingBucketObligatie;
   label: string;
   count: number;
   sold: number;
 }
 
-const AGING_LABELS: { key: AgingBucket; label: string }[] = [
+const AGING_LABELS: { key: AgingBucketObligatie; label: string }[] = [
   { key: "sold0_30", label: "0-30 zile" },
   { key: "sold31_60", label: "31-60 zile" },
   { key: "sold61_90", label: "61-90 zile" },
   { key: "sold90Plus", label: "90+ zile" },
 ];
 
-export function groupByAgingCreante(creante: Creanta[]): AgingDatum[] {
+export function groupByAgingObligatii(obligatii: Obligatie[]): AgingDatum[] {
   return AGING_LABELS.map(({ key, label }) => {
-    const rows = creante.filter((c) => matchesAgingBucket(c, key));
+    const rows = obligatii.filter((o) => matchesAgingBucketObligatie(o, key));
     return {
       bucket: key,
       label,
       count: rows.length,
-      sold: rows.reduce((s, c) => s + c.sold, 0),
+      sold: rows.reduce((s, o) => s + o.sold, 0),
     };
   });
 }
 
-export interface TipVanzareDatum {
+export interface TipAchizitieDatum {
   tip: string;
   count: number;
   sold: number;
 }
 
-export function groupByTipVanzareCreante(creante: Creanta[]): TipVanzareDatum[] {
-  const map = new Map<string, TipVanzareDatum>();
-  for (const c of creante) {
-    const tip = c.tip_vanzare ?? "Necunoscut";
+export function groupByTipAchizitieObligatii(obligatii: Obligatie[]): TipAchizitieDatum[] {
+  const map = new Map<string, TipAchizitieDatum>();
+  for (const o of obligatii) {
+    const tip = o.tip_achizitie ?? "Necunoscut";
     const d = map.get(tip) ?? { tip, count: 0, sold: 0 };
     d.count += 1;
-    d.sold += c.sold;
+    d.sold += o.sold;
     map.set(tip, d);
   }
   return Array.from(map.values());
 }
 
-export interface ClientDatum {
-  numeFirma: string;
+export interface FurnizorDatum {
+  numeFurnizor: string;
   count: number;
   sold: number;
 }
 
-/** Top N clienti dupa soldul restant (doar facturi chiar restante). */
-export function topClientiRestanti(creante: Creanta[], n = 8): ClientDatum[] {
-  const map = new Map<string, ClientDatum>();
-  for (const c of creante) {
-    if (getCreantaStatus(c) !== "restanta") continue;
-    const d = map.get(c.nume_firma) ?? { numeFirma: c.nume_firma, count: 0, sold: 0 };
+/** Top N furnizori dupa soldul restant (doar facturi chiar restante). */
+export function topFurnizoriRestanti(obligatii: Obligatie[], n = 8): FurnizorDatum[] {
+  const map = new Map<string, FurnizorDatum>();
+  for (const o of obligatii) {
+    if (getObligatieStatus(o) !== "restanta") continue;
+    const d = map.get(o.nume_furnizor) ?? { numeFurnizor: o.nume_furnizor, count: 0, sold: 0 };
     d.count += 1;
-    d.sold += c.sold;
-    map.set(c.nume_firma, d);
+    d.sold += o.sold;
+    map.set(o.nume_furnizor, d);
   }
   return Array.from(map.values())
     .sort((a, b) => b.sold - a.sold)
     .slice(0, n);
 }
 
-export interface IncasariMonthDatum {
+export interface PlatiMonthDatum {
   month: string;
   monthKey: string;
   total: number;
@@ -102,13 +102,13 @@ export interface IncasariMonthDatum {
   dateTo: string;
 }
 
-/** Evolutia incasarilor pe ultimele N luni, din jurnal (dupa data incasarii). */
-export function buildIncasariTimeSeries(
-  incasari: CreantaIncasare[],
+/** Evolutia platilor pe ultimele N luni, din jurnal (dupa data platii). */
+export function buildPlatiTimeSeries(
+  plati: ObligatiePlata[],
   monthsBack = 11
-): IncasariMonthDatum[] {
+): PlatiMonthDatum[] {
   const now = new Date();
-  const months: IncasariMonthDatum[] = [];
+  const months: PlatiMonthDatum[] = [];
   for (let i = monthsBack; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
@@ -119,11 +119,11 @@ export function buildIncasariTimeSeries(
     months.push({ month: label, monthKey, total: 0, count: 0, dateFrom, dateTo });
   }
 
-  for (const i of incasari) {
-    const dStr = i.data_incasare;
+  for (const p of plati) {
+    const dStr = p.data_plata;
     const match = months.find((m) => dStr >= m.dateFrom && dStr <= m.dateTo);
     if (match) {
-      match.total += i.valoare;
+      match.total += p.valoare;
       match.count += 1;
     }
   }
@@ -132,9 +132,9 @@ export function buildIncasariTimeSeries(
 }
 
 /** Facturat lunar (dupa data facturii) - pentru graficul de "dinamica
- * creantelor": cat intra nou in pipeline in fiecare luna. */
+ * obligatiilor": cat intra nou in fiecare luna. */
 export function buildFacturatTimeSeries(
-  creante: Creanta[],
+  obligatii: Obligatie[],
   monthsBack = 11
 ): { month: string; monthKey: string; facturat: number; count: number; dateFrom: string; dateTo: string }[] {
   const now = new Date();
@@ -156,12 +156,12 @@ export function buildFacturatTimeSeries(
     months.push({ month: label, monthKey, facturat: 0, count: 0, dateFrom, dateTo });
   }
 
-  for (const c of creante) {
-    const dStr = c.data_factura;
+  for (const o of obligatii) {
+    const dStr = o.data_factura;
     if (!dStr) continue;
     const match = months.find((m) => dStr >= m.dateFrom && dStr <= m.dateTo);
     if (match) {
-      match.facturat += c.total_factura;
+      match.facturat += o.total_factura;
       match.count += 1;
     }
   }
@@ -177,17 +177,14 @@ export interface GrtMonthDatum {
   grt: number | null;
 }
 
-/** GRT (Grad Realizare Target) pe ultimele N luni - combina targetul
- * (calculat automat din facturile bifate "Propus") cu valoarea real
- * incasata (din jurnal), recalculata mereu live, niciodata "inghetata" -
- * daca anulezi/adaugi o incasare pe o luna trecuta, GRT-ul acelei luni se
- * actualizeaza automat. */
+/** GRT pe ultimele N luni - target calculat automat din facturile bifate
+ * "Propus spre plata", realizat calculat mereu live din jurnalul de plati. */
 export function buildGrtSeries(
-  incasari: CreantaIncasare[],
+  plati: ObligatiePlata[],
   targets: Record<string, number>,
   monthsBack = 11
 ): GrtMonthDatum[] {
-  const timeSeries = buildIncasariTimeSeries(incasari, monthsBack);
+  const timeSeries = buildPlatiTimeSeries(plati, monthsBack);
   return timeSeries.map((m) => {
     const target = targets[m.monthKey] ?? 0;
     return {
@@ -201,12 +198,12 @@ export function buildGrtSeries(
 }
 
 /** Facturile cu risc mare: sold mare SI vechi (produsul sold x zile depasire). */
-export function topRiscCreante(creante: Creanta[], n = 5): Creanta[] {
-  return [...creante]
-    .filter((c) => getCreantaStatus(c) === "restanta")
+export function topRiscObligatii(obligatii: Obligatie[], n = 5): Obligatie[] {
+  return [...obligatii]
+    .filter((o) => getObligatieStatus(o) === "restanta")
     .sort((a, b) => {
-      const scoreA = a.sold * (getZileDepasire(a) ?? 0);
-      const scoreB = b.sold * (getZileDepasire(b) ?? 0);
+      const scoreA = a.sold * (getZileDepasireObligatie(a) ?? 0);
+      const scoreB = b.sold * (getZileDepasireObligatie(b) ?? 0);
       return scoreB - scoreA;
     })
     .slice(0, n);

@@ -225,6 +225,28 @@ export async function importObligatiiAction(
   };
 }
 
+/**
+ * Recalculeaza targetul lunii curente ca suma valorilor propuse spre plata -
+ * oglinda syncCurrentMonthTarget de la Creante.
+ */
+async function syncCurrentMonthTarget(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<void> {
+  const { data: propuse } = await supabase
+    .from("obligatii")
+    .select("sold, valoare_propusa_spre_plata")
+    .eq("propus_spre_plata", true)
+    .gt("sold", 0);
+
+  const target = (propuse ?? []).reduce(
+    (sum, o) => sum + (o.valoare_propusa_spre_plata ?? o.sold),
+    0
+  );
+  const luna = getTodayISO().slice(0, 7);
+
+  await supabase.from("obligatii_targets_lunare").upsert({ luna, target }, { onConflict: "luna" });
+}
+
 export async function updateObligatieTrackingAction(
   id: string,
   fields: {
@@ -253,10 +275,16 @@ export async function updateObligatieTrackingAction(
   const { error } = await supabase.from("obligatii").update(fields).eq("id", id);
   if (error) return { success: false, message: error.message };
 
+  if (fields.valoare_propusa_spre_plata !== undefined) {
+    await syncCurrentMonthTarget(supabase);
+  }
+
   revalidatePath("/obligatii");
+  revalidatePath("/obligatii/dashboard");
   return { success: true };
 }
 
+/** Targetul lunii curente se recalculeaza automat la fiecare bifare/debifare. */
 export async function toggleProposSprePlataAction(
   id: string,
   value: boolean
@@ -276,7 +304,10 @@ export async function toggleProposSprePlataAction(
     .eq("id", id);
   if (error) return { success: false, message: error.message };
 
+  await syncCurrentMonthTarget(supabase);
+
   revalidatePath("/obligatii");
+  revalidatePath("/obligatii/dashboard");
   return { success: true };
 }
 

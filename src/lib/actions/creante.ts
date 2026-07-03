@@ -329,6 +329,32 @@ export async function importCreanteAction(
   };
 }
 
+/**
+ * Recalculeaza targetul lunii curente ca suma valorilor propuse (facturi
+ * bifate "Propus spre incasare", cu sold > 0) si il salveaza in
+ * creante_targets_lunare - targetul nu se mai seteaza manual, se calculeaza
+ * automat pe masura ce bifezi/editezi facturile propuse. Lunile trecute nu
+ * mai sunt atinse de aceasta functie (doar luna curenta), deci raman
+ * "inghetate" la ultima valoare calculata cand acea luna era curenta.
+ */
+async function syncCurrentMonthTarget(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<void> {
+  const { data: propuse } = await supabase
+    .from("creante")
+    .select("sold, valoare_propusa_spre_incasare")
+    .eq("propus_spre_incasare", true)
+    .gt("sold", 0);
+
+  const target = (propuse ?? []).reduce(
+    (sum, c) => sum + (c.valoare_propusa_spre_incasare ?? c.sold),
+    0
+  );
+  const luna = getTodayISO().slice(0, 7);
+
+  await supabase.from("creante_targets_lunare").upsert({ luna, target }, { onConflict: "luna" });
+}
+
 export async function updateCreantaTrackingAction(
   id: string,
   fields: {
@@ -356,13 +382,19 @@ export async function updateCreantaTrackingAction(
   const { error } = await supabase.from("creante").update(fields).eq("id", id);
   if (error) return { success: false, message: error.message };
 
+  if (fields.valoare_propusa_spre_incasare !== undefined) {
+    await syncCurrentMonthTarget(supabase);
+  }
+
   revalidatePath("/creante");
+  revalidatePath("/creante/dashboard");
   return { success: true };
 }
 
 /** Bifa rapida "Propus spre incasare", direct din lista, fara sa deschizi modalul.
  * La bifare, valoarea propusa se initializeaza cu soldul integral - se poate
- * edita apoi in jos, din fisa facturii. La debifare, se goleste. */
+ * edita apoi in jos, din fisa facturii. La debifare, se goleste. Targetul
+ * lunii curente se recalculeaza automat la fiecare bifare/debifare. */
 export async function toggleProposSpreIncasareAction(
   id: string,
   value: boolean
@@ -382,7 +414,10 @@ export async function toggleProposSpreIncasareAction(
     .eq("id", id);
   if (error) return { success: false, message: error.message };
 
+  await syncCurrentMonthTarget(supabase);
+
   revalidatePath("/creante");
+  revalidatePath("/creante/dashboard");
   return { success: true };
 }
 

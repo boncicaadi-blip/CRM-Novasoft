@@ -92,3 +92,20 @@ export async function getObligatiiPlati(): Promise<Record<string, ObligatiePlata
   }
   return grouped;
 }
+
+/** Targetul lunar de plata, ca map "YYYY-MM" -> valoare. */
+export async function getObligatiiTargetsLunare(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("obligatii_targets_lunare").select("*");
+
+  if (error) {
+    console.error("getObligatiiTargetsLunare error:", error.message);
+    return {};
+  }
+
+  const map: Record<string, number> = {};
+  for (const row of data ?? []) {
+    map[row.luna] = Number(row.target) || 0;
+  }
+  return map;
+}

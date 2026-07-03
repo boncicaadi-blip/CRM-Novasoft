@@ -48,3 +48,11 @@ export interface CreantaIncasare {
   creat_de: string | null;
   creat_la: string;
 }
+
+export interface CreanteTargetLunar {
+  id: string;
+  luna: string;
+  target: number;
+  creat_la: string;
+  actualizat_la: string;
+}

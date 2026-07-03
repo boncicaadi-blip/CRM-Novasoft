@@ -67,6 +67,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/creante", label: "Creante", icon: Wallet },
       { href: "/creante/dashboard", label: "Dashboard Creante", icon: FileBarChart },
       { href: "/obligatii", label: "Obligatii", icon: Wallet },
+      { href: "/obligatii/dashboard", label: "Dashboard Obligatii", icon: FileBarChart },
     ],
   },
   {
