@@ -10,14 +10,16 @@ export interface OpportunityOption {
   oras: string | null;
 }
 
-/** Lista de clienti pentru selectorul din formularul de contract - toate
- * oportunitatile, cu datele de firma folosite pentru afisare informativa
- * (Grup, Tip activitate, Judet, Localitate) odata ce clientul e ales. */
+/** Lista de clienti pentru selectorul din formularul de contract - doar
+ * oportunitatile aflate la stage-ul "Client" (deja castigate/facturabile),
+ * nu orice oportunitate din pipeline. Asta evita confuzia intre un client
+ * existent si o oportunitate noua de cross-sell/up-sell pe aceeasi firma. */
 export async function getOpportunityOptions(): Promise<OpportunityOption[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("opportunities")
     .select("id, nume_potential, nume_grup, domeniul_activitate, judet, oras")
+    .eq("stage", "Client")
     .order("nume_potential", { ascending: true });
 
   if (error) {

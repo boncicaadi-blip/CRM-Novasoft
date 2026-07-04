@@ -94,15 +94,43 @@ export function VenituriCheltuieliClient({
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [filterClient, setFilterClient] = useState("");
+  const [filterProdus, setFilterProdus] = useState("");
+  const [filterServiciu, setFilterServiciu] = useState("");
   const [isPending, startTransition] = useTransition();
   const [showContractForm, setShowContractForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
+  const clientOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const l of venituriLinii) set.add(l.nume_client);
+    for (const c of contracte) set.add(c.nume_client);
+    return Array.from(set).sort();
+  }, [venituriLinii, contracte]);
+
   const filteredLinii = useMemo(
-    () => venituriLinii.filter((l) => inPeriod(l.luna, period, customFrom, customTo)),
-    [venituriLinii, period, customFrom, customTo]
+    () =>
+      venituriLinii.filter(
+        (l) =>
+          inPeriod(l.luna, period, customFrom, customTo) &&
+          (!filterClient || l.nume_client === filterClient) &&
+          (!filterProdus || l.produs === filterProdus) &&
+          (!filterServiciu || l.serviciu === filterServiciu)
+      ),
+    [venituriLinii, period, customFrom, customTo, filterClient, filterProdus, filterServiciu]
+  );
+
+  const filteredContracte = useMemo(
+    () =>
+      contracte.filter(
+        (c) =>
+          (!filterClient || c.nume_client === filterClient) &&
+          (!filterProdus || c.produs === filterProdus) &&
+          (!filterServiciu || c.serviciu === filterServiciu)
+      ),
+    [contracte, filterClient, filterProdus, filterServiciu]
   );
 
   const summary = useMemo(() => {
@@ -240,6 +268,56 @@ export function VenituriCheltuieliClient({
             )}
           </>
         )}
+        <select
+          value={filterClient}
+          onChange={(e) => setFilterClient(e.target.value)}
+          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+        >
+          <option value="" style={{ backgroundColor: "#111535" }}>
+            Toti clientii
+          </option>
+          {clientOptions.map((c) => (
+            <option key={c} value={c} style={{ backgroundColor: "#111535" }}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filterProdus}
+          onChange={(e) => setFilterProdus(e.target.value)}
+          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+        >
+          <option value="" style={{ backgroundColor: "#111535" }}>
+            Toate produsele
+          </option>
+          {produseOptions.map((n) => (
+            <NomOption key={n.id} n={n} />
+          ))}
+        </select>
+        <select
+          value={filterServiciu}
+          onChange={(e) => setFilterServiciu(e.target.value)}
+          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+        >
+          <option value="" style={{ backgroundColor: "#111535" }}>
+            Toate serviciile
+          </option>
+          {serviciiOptions.map((n) => (
+            <NomOption key={n.id} n={n} />
+          ))}
+        </select>
+        {(filterClient || filterProdus || filterServiciu) && (
+          <button
+            onClick={() => {
+              setFilterClient("");
+              setFilterProdus("");
+              setFilterServiciu("");
+            }}
+            className="text-xs text-[#E8007A] hover:text-[#FF4FAA]"
+          >
+            Sterge filtrele
+          </button>
+        )}
       </div>
 
       {viewMode === "venituri" ? (
@@ -249,7 +327,7 @@ export function VenituriCheltuieliClient({
           serviciiOptions={serviciiOptions}
         />
       ) : (
-        <ContracteTable contracte={contracte} onEdit={setEditingContract} />
+        <ContracteTable contracte={filteredContracte} onEdit={setEditingContract} />
       )}
 
       {showContractForm && (
@@ -495,7 +573,11 @@ function VenituriTable({
                       <input
                         type="checkbox"
                         checked={facturat}
-                        onChange={(e) => setFacturat(e.target.checked)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setFacturat(checked);
+                          if (checked) setVenitRealizat(venitEstimat);
+                        }}
                         className="h-3.5 w-3.5"
                       />
                     ) : l.facturat ? (
@@ -581,6 +663,7 @@ function ContracteTable({
             <th className="px-3 py-2">Tip venit</th>
             <th className="px-3 py-2">Produs</th>
             <th className="px-3 py-2">Serviciu</th>
+            <th className="px-3 py-2">Modalitate</th>
             <th className="px-3 py-2 text-right">Valoare</th>
             <th className="px-3 py-2">Inceput</th>
             <th className="px-3 py-2">Sfarsit</th>
@@ -600,6 +683,12 @@ function ContracteTable({
               <td className="px-3 py-2 text-slate-400">{c.tip_venit}</td>
               <td className="px-3 py-2 text-slate-400">{c.produs ?? "—"}</td>
               <td className="px-3 py-2 text-slate-400">{c.serviciu ?? "—"}</td>
+              <td className="px-3 py-2 text-slate-400">
+                {c.modalitate_facturare ?? "—"}
+                {c.tip_venit === "Nerecurent" && c.nr_rate > 1 && (
+                  <span className="ml-1 text-[10px] text-slate-500">({c.nr_rate}x)</span>
+                )}
+              </td>
               <td className="px-3 py-2 text-right font-mono text-white">
                 {formatEur(c.valoare_lunara)}
               </td>
@@ -628,7 +717,7 @@ function ContracteTable({
           ))}
           {contracte.length === 0 && (
             <tr>
-              <td colSpan={10} className="px-3 py-8 text-center text-sm text-slate-500">
+              <td colSpan={11} className="px-3 py-8 text-center text-sm text-slate-500">
                 Niciun contract inca.
               </td>
             </tr>
@@ -681,11 +770,11 @@ function ContractFormModal({
     contract?.status_contract ?? "Activ"
   );
   const [modalitateFacturare, setModalitateFacturare] = useState(contract?.modalitate_facturare ?? "");
+  const [nrRate, setNrRate] = useState(String(contract?.nr_rate ?? 1));
   const [observatii, setObservatii] = useState(contract?.observatii ?? "");
   const [message, setMessage] = useState<string | null>(null);
 
   const selectedOpportunity = opportunities.find((o) => o.id === opportunityId);
-  const esteRateSauEtape = tipVenit === "Nerecurent" && (modalitateFacturare === "Rate" || modalitateFacturare === "Etape");
 
   function handleSave() {
     setMessage(null);
@@ -712,6 +801,7 @@ function ContractFormModal({
         produs: produs || null,
         serviciu: serviciu || null,
         valoare_lunara: Number(valoare),
+        nr_rate: tipVenit === "Nerecurent" ? Math.max(1, Number(nrRate) || 1) : 1,
         data_inceput: dataInceput,
         data_sfarsit: dataSfarsit,
         stadiu_contract: stadiuContract || null,
@@ -955,12 +1045,24 @@ function ContractFormModal({
             </select>
           </div>
 
-          {esteRateSauEtape && (
-            <p className="rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-300">
-              Rate/Etape nu au o cadenta fixa - contractul se salveaza fara linii generate automat.
-              Adauga fiecare rata/etapa manual, cu data si valoarea ei, din butonul &quot;Venit
-              manual&quot; de pe pagina.
-            </p>
+          {tipVenit === "Nerecurent" && (
+            <div>
+              <label className={labelClass}>Numar rate</label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={nrRate}
+                onChange={(e) => setNrRate(e.target.value)}
+                className={inputClass}
+              />
+              <p className="mt-1 text-[11px] text-slate-500">
+                Se genereaza {nrRate || 1} {Number(nrRate) > 1 ? "linii lunare" : "linie"}, incepand cu
+                data de inceput, cu valoarea impartita egal ({formatEur(Number(valoare || 0) / Math.max(1, Number(nrRate) || 1))} fiecare).
+                Editezi apoi individual, pe fiecare linie, daca ratele nu sunt egale sau au alte date.
+                Pentru Integral, lasa 1 rata.
+              </p>
+            </div>
           )}
 
           <div>

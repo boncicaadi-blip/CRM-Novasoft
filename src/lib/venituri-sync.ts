@@ -42,27 +42,41 @@ interface LiniePlanificata {
  * finalul unui contract cu durata care nu se imparte exact, ultima perioada
  * e mai scurta (proportional mai mica).
  *
- * Nerecurent + Integral (sau nesetat): o singura linie, la data de inceput,
- * cu valoarea intreaga.
- * Nerecurent + Rate/Etape: nicio linie generata automat - se introduc manual,
- * cu valori si date diferite pentru fiecare rata/etapa.
+ * Nerecurent: genereaza exact nr_rate linii, spatiate lunar incepand cu data
+ * de inceput, cu valoarea impartita egal intre ele (1 rata = Integral, o
+ * singura linie cu valoarea intreaga). Modalitate_facturare (Rate/Etape/
+ * Integral) e doar informativa aici - fiecare linie generata se poate edita
+ * ulterior individual (valoare + luna), pentru rate inegale sau date
+ * specifice negociate cu clientul.
  */
 export function computeContractLines(
-  contract: Pick<Contract, "tip_venit" | "modalitate_facturare" | "data_inceput" | "data_sfarsit" | "valoare_lunara">,
+  contract: Pick<
+    Contract,
+    "tip_venit" | "modalitate_facturare" | "data_inceput" | "data_sfarsit" | "valoare_lunara" | "nr_rate"
+  >,
   bufferEndStr: string
 ): LiniePlanificata[] {
   if (contract.tip_venit === "Nerecurent") {
-    if (contract.modalitate_facturare === "Rate" || contract.modalitate_facturare === "Etape") {
-      return [];
+    const nrRate = Math.max(1, contract.nr_rate ?? 1);
+    const valoarePerRata = contract.valoare_lunara / nrRate;
+    const linii: LiniePlanificata[] = [];
+    for (let i = 0; i < nrRate; i++) {
+      linii.push({
+        luna: addMonths(firstOfMonth(contract.data_inceput), i),
+        luniInPerioada: 1,
+        venit_estimat: valoarePerRata,
+      });
     }
-    if (contract.data_inceput > bufferEndStr) return [];
-    return [{ luna: firstOfMonth(contract.data_inceput), luniInPerioada: 1, venit_estimat: contract.valoare_lunara }];
+    return linii;
   }
 
   const luniPerioada = MODALITATE_LUNI[contract.modalitate_facturare ?? "Lunar"] ?? 1;
   const start = firstOfMonth(contract.data_inceput);
-  const effectiveEnd =
-    contract.data_sfarsit && contract.data_sfarsit < bufferEndStr ? contract.data_sfarsit : bufferEndStr;
+  // Daca data_sfarsit e cunoscuta (contract cu durata clara, ex. 12 luni),
+  // generam TOT intervalul dintr-o data - nu doar pana la buffer. Doar
+  // contractele fara data_sfarsit (nedeterminate) sunt limitate la buffer,
+  // generandu-se incremental pe masura ce trece timpul.
+  const effectiveEnd = contract.data_sfarsit ?? bufferEndStr;
   const end = firstOfMonth(effectiveEnd);
 
   const totalLuni = monthDiff(start, end) + 1;

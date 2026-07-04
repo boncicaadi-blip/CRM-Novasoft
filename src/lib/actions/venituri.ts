@@ -82,6 +82,7 @@ export async function createContractAction(fields: {
   produs?: string | null;
   serviciu?: string | null;
   valoare_lunara: number;
+  nr_rate?: number;
   data_inceput: string;
   data_sfarsit?: string | null;
   status_contract?: ContractStatus;
@@ -123,6 +124,7 @@ export async function updateContractAction(
     produs?: string | null;
     serviciu?: string | null;
     valoare_lunara?: number;
+    nr_rate?: number;
     data_inceput?: string;
     data_sfarsit?: string | null;
     status_contract?: ContractStatus;
