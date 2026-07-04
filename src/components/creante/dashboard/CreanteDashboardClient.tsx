@@ -52,6 +52,7 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "ultimele_3_luni", label: "Ultimele 3 luni" },
   { value: "anul_curent", label: "Anul curent" },
   { value: "toate", label: "Tot istoricul" },
+  { value: "custom", label: "Perioada personalizata" },
 ];
 
 export function CreanteDashboardClient({
@@ -64,14 +65,16 @@ export function CreanteDashboardClient({
   targets: Record<string, number>;
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("toate");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
   const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<Creanta | null>(null);
 
   const incasariFlat = useMemo(() => Object.values(incasari).flat(), [incasari]);
 
   const inPeriodList = useMemo(
-    () => creante.filter((c) => inPeriod(c, period)),
-    [creante, period]
+    () => creante.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo })),
+    [creante, period, customFrom, customTo]
   );
 
   // Filtrare incrucisata - fiecare grafic reflecta selectiile din celelalte,
@@ -94,8 +97,8 @@ export function CreanteDashboardClient({
   const riscData = useMemo(() => topRiscCreante(filtered, 5), [filtered]);
 
   const totalIncasatInPeriod = useMemo(
-    () => computeTotalIncasatInPeriod(incasariFlat, period),
-    [incasariFlat, period]
+    () => computeTotalIncasatInPeriod(incasariFlat, period, { from: customFrom, to: customTo }),
+    [incasariFlat, period, customFrom, customTo]
   );
 
   // GRT si dinamica raman mereu pe ultimele 12 luni calendaristice, indiferent
@@ -141,6 +144,23 @@ export function CreanteDashboardClient({
               </option>
             ))}
           </select>
+          {period === "custom" && (
+            <>
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              />
+              <span className="text-xs text-slate-500">-</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              />
+            </>
+          )}
           <Link
             href="/creante"
             className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"

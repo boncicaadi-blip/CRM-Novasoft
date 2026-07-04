@@ -57,6 +57,7 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "ultimele_3_luni", label: "Ultimele 3 luni" },
   { value: "anul_curent", label: "Anul curent" },
   { value: "toate", label: "Tot istoricul" },
+  { value: "custom", label: "Perioada personalizata" },
 ];
 
 export function ObligatiiDashboardClient({
@@ -69,14 +70,16 @@ export function ObligatiiDashboardClient({
   targets: Record<string, number>;
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("toate");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
   const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<Obligatie | null>(null);
 
   const platiFlat = useMemo(() => Object.values(plati).flat(), [plati]);
 
   const inPeriodList = useMemo(
-    () => obligatii.filter((o) => inPeriodObligatie(o, period)),
-    [obligatii, period]
+    () => obligatii.filter((o) => inPeriodObligatie(o, period, { from: customFrom, to: customTo })),
+    [obligatii, period, customFrom, customTo]
   );
 
   const filtered = useMemo(() => {
@@ -97,8 +100,8 @@ export function ObligatiiDashboardClient({
   const riscData = useMemo(() => topRiscObligatii(filtered, 5), [filtered]);
 
   const totalPlatitInPeriod = useMemo(
-    () => computeTotalPlatitInPeriod(platiFlat, period),
-    [platiFlat, period]
+    () => computeTotalPlatitInPeriod(platiFlat, period, { from: customFrom, to: customTo }),
+    [platiFlat, period, customFrom, customTo]
   );
 
   const grtSeries = useMemo(() => buildGrtSeries(platiFlat, targets, 11), [platiFlat, targets]);
@@ -141,6 +144,23 @@ export function ObligatiiDashboardClient({
               </option>
             ))}
           </select>
+          {period === "custom" && (
+            <>
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              />
+              <span className="text-xs text-slate-500">-</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              />
+            </>
+          )}
           <Link
             href="/obligatii"
             className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"

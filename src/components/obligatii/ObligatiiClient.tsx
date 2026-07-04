@@ -638,18 +638,25 @@ export function ObligatiiClient({
         )}
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-4 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-xs text-slate-400">
-        <span>
-          Pentru filtrul curent:{" "}
-          <span className="font-mono font-medium text-white">{filteredTotals.count}</span> facturi
-        </span>
-        <span>
-          Total facturat:{" "}
-          <span className="font-mono font-medium text-white">{formatRon(filteredTotals.totalFacturat)}</span>
-        </span>
-        <span>
-          Sold: <span className="font-mono font-medium text-white">{formatRon(filteredTotals.totalSold)}</span>
-        </span>
+      <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            Facturi pentru filtrul curent
+          </p>
+          <p className="font-mono text-xl font-semibold text-white">{filteredTotals.count}</p>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">Total facturat</p>
+          <p className="font-mono text-xl font-semibold text-white">
+            {formatRon(filteredTotals.totalFacturat)}
+          </p>
+        </div>
+        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">Sold</p>
+          <p className="font-mono text-xl font-semibold text-white">
+            {formatRon(filteredTotals.totalSold)}
+          </p>
+        </div>
       </div>
 
       {viewMode === "facturi" && (
