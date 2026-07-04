@@ -26,7 +26,7 @@ import {
   syncVenituriLiniiAction,
 } from "@/lib/actions/venituri";
 import type { Contract, VenitLinie, ContractStatus, TipVenit } from "@/types/venituri";
-import type { OpportunityOption } from "@/lib/data/venituri";
+import type { ClientOption } from "@/lib/data/venituri";
 import type { Nomenclator } from "@/types/opportunity";
 
 type ViewMode = "venituri" | "contracte";
@@ -73,31 +73,10 @@ function NomOption({ n }: { n: Nomenclator }) {
   );
 }
 
-/** Eticheta pentru selectorul de client - adauga produsul si data cand mai
- * multe oportunitati facturabile au acelasi nume de firma (ex: doua vanzari
- * separate la aceeasi companie), ca sa poti alege pe cea corecta. */
-function opportunityLabel(o: OpportunityOption, duplicateNames: Set<string>): string {
-  if (!duplicateNames.has(o.nume_potential)) return o.nume_potential;
-  const detalii = [
-    o.produs_serviciu_propus,
-    new Date(o.created_at).toLocaleDateString("ro-RO"),
-    o.opportunity_code,
-  ].filter(Boolean);
-  return detalii.length > 0 ? `${o.nume_potential} — ${detalii.join(", ")}` : o.nume_potential;
-}
-
-function useDuplicateOpportunityNames(opportunities: OpportunityOption[]): Set<string> {
-  return useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const o of opportunities) counts.set(o.nume_potential, (counts.get(o.nume_potential) ?? 0) + 1);
-    return new Set(Array.from(counts.entries()).filter(([, n]) => n > 1).map(([name]) => name));
-  }, [opportunities]);
-}
-
 export function VenituriCheltuieliClient({
   contracte,
   venituriLinii,
-  opportunities,
+  clienti,
   produseOptions,
   serviciiOptions,
   modalitatiOptions,
@@ -105,7 +84,7 @@ export function VenituriCheltuieliClient({
 }: {
   contracte: Contract[];
   venituriLinii: VenitLinie[];
-  opportunities: OpportunityOption[];
+  clienti: ClientOption[];
   produseOptions: Nomenclator[];
   serviciiOptions: Nomenclator[];
   modalitatiOptions: Nomenclator[];
@@ -353,7 +332,7 @@ export function VenituriCheltuieliClient({
 
       {showContractForm && (
         <ContractFormModal
-          opportunities={opportunities}
+          clienti={clienti}
           produseOptions={produseOptions}
           serviciiOptions={serviciiOptions}
           modalitatiOptions={modalitatiOptions}
@@ -364,7 +343,7 @@ export function VenituriCheltuieliClient({
       {editingContract && (
         <ContractFormModal
           contract={editingContract}
-          opportunities={opportunities}
+          clienti={clienti}
           produseOptions={produseOptions}
           serviciiOptions={serviciiOptions}
           modalitatiOptions={modalitatiOptions}
@@ -374,7 +353,7 @@ export function VenituriCheltuieliClient({
       )}
       {showManualForm && (
         <ManualVenitFormModal
-          opportunities={opportunities}
+          clienti={clienti}
           produseOptions={produseOptions}
           serviciiOptions={serviciiOptions}
           onClose={() => setShowManualForm(false)}
@@ -772,7 +751,7 @@ function addMonthsToDateStr(dateStr: string, months: number): string {
 
 function ContractFormModal({
   contract,
-  opportunities,
+  clienti,
   produseOptions,
   serviciiOptions,
   modalitatiOptions,
@@ -780,7 +759,7 @@ function ContractFormModal({
   onClose,
 }: {
   contract?: Contract;
-  opportunities: OpportunityOption[];
+  clienti: ClientOption[];
   produseOptions: Nomenclator[];
   serviciiOptions: Nomenclator[];
   modalitatiOptions: Nomenclator[];
@@ -788,7 +767,7 @@ function ContractFormModal({
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [opportunityId, setOpportunityId] = useState(contract?.opportunity_id ?? "");
+  const [partnerId, setPartnerId] = useState(contract?.partner_id ?? "");
   const [tipVenit, setTipVenit] = useState<TipVenit>(contract?.tip_venit ?? "Recurent");
   const [produs, setProdus] = useState(contract?.produs ?? "");
   const [serviciu, setServiciu] = useState(contract?.serviciu ?? "");
@@ -807,13 +786,12 @@ function ContractFormModal({
   const [observatii, setObservatii] = useState(contract?.observatii ?? "");
   const [message, setMessage] = useState<string | null>(null);
 
-  const selectedOpportunity = opportunities.find((o) => o.id === opportunityId);
-  const duplicateNames = useDuplicateOpportunityNames(opportunities);
+  const selectedClient = clienti.find((c) => c.id === partnerId);
 
   function handleSave() {
     setMessage(null);
 
-    if (!contract && !opportunityId) {
+    if (!contract && !partnerId) {
       setMessage("Trebuie sa alegi un client din lista.");
       return;
     }
@@ -847,8 +825,8 @@ function ContractFormModal({
         ? await updateContractAction(contract.id, { ...fields, status_contract: statusContract })
         : await createContractAction({
             ...fields,
-            opportunity_id: opportunityId,
-            nume_client: selectedOpportunity?.nume_potential ?? "",
+            partner_id: partnerId,
+            nume_client: selectedClient?.nume ?? "",
           });
 
       if (result.success) onClose();
@@ -887,36 +865,36 @@ function ContractFormModal({
               </p>
             ) : (
               <select
-                value={opportunityId}
-                onChange={(e) => setOpportunityId(e.target.value)}
+                value={partnerId}
+                onChange={(e) => setPartnerId(e.target.value)}
                 className={selectClass}
               >
                 <option value="" style={{ backgroundColor: "#111535" }}>
                   Alege clientul...
                 </option>
-                {opportunities.map((o) => (
-                  <option key={o.id} value={o.id} style={{ backgroundColor: "#111535" }}>
-                    {opportunityLabel(o, duplicateNames)}
+                {clienti.map((c) => (
+                  <option key={c.id} value={c.id} style={{ backgroundColor: "#111535" }}>
+                    {c.nume}
                   </option>
                 ))}
               </select>
             )}
           </div>
 
-          {selectedOpportunity && (
+          {selectedClient && (
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-md border border-white/5 bg-white/[0.02] px-3 py-2 text-[11px] text-slate-400">
               <span>
-                Grup: <span className="text-slate-300">{selectedOpportunity.nume_grup}</span>
+                Cod fiscal: <span className="text-slate-300">{selectedClient.cod_fiscal ?? "—"}</span>
               </span>
               <span>
                 Tip activitate:{" "}
-                <span className="text-slate-300">{selectedOpportunity.domeniul_activitate ?? "—"}</span>
+                <span className="text-slate-300">{selectedClient.domeniul_activitate ?? "—"}</span>
               </span>
               <span>
-                Judet: <span className="text-slate-300">{selectedOpportunity.judet ?? "—"}</span>
+                Judet: <span className="text-slate-300">{selectedClient.judet ?? "—"}</span>
               </span>
               <span>
-                Localitate: <span className="text-slate-300">{selectedOpportunity.oras ?? "—"}</span>
+                Localitate: <span className="text-slate-300">{selectedClient.oras ?? "—"}</span>
               </span>
             </div>
           )}
@@ -1125,18 +1103,18 @@ function ContractFormModal({
 }
 
 function ManualVenitFormModal({
-  opportunities,
+  clienti,
   produseOptions,
   serviciiOptions,
   onClose,
 }: {
-  opportunities: OpportunityOption[];
+  clienti: ClientOption[];
   produseOptions: Nomenclator[];
   serviciiOptions: Nomenclator[];
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [opportunityId, setOpportunityId] = useState("");
+  const [partnerId, setPartnerId] = useState("");
   const [tipVenit, setTipVenit] = useState<TipVenit>("Nerecurent");
   const [produs, setProdus] = useState("");
   const [serviciu, setServiciu] = useState("");
@@ -1145,19 +1123,18 @@ function ManualVenitFormModal({
   const [observatii, setObservatii] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
-  const selectedOpportunity = opportunities.find((o) => o.id === opportunityId);
-  const duplicateNames = useDuplicateOpportunityNames(opportunities);
+  const selectedClient = clienti.find((c) => c.id === partnerId);
 
   function handleSave() {
     setMessage(null);
-    if (!opportunityId) {
+    if (!partnerId) {
       setMessage("Trebuie sa alegi un client din lista.");
       return;
     }
     startTransition(async () => {
       const result = await addVenitLinieManualAction({
-        opportunity_id: opportunityId,
-        nume_client: selectedOpportunity?.nume_potential ?? "",
+        partner_id: partnerId,
+        nume_client: selectedClient?.nume ?? "",
         tip_venit: tipVenit,
         produs: produs || null,
         serviciu: serviciu || null,
@@ -1191,16 +1168,16 @@ function ManualVenitFormModal({
           <div>
             <label className={labelClass}>Client *</label>
             <select
-              value={opportunityId}
-              onChange={(e) => setOpportunityId(e.target.value)}
+              value={partnerId}
+              onChange={(e) => setPartnerId(e.target.value)}
               className={selectClass}
             >
               <option value="" style={{ backgroundColor: "#111535" }}>
                 Alege clientul...
               </option>
-              {opportunities.map((o) => (
-                <option key={o.id} value={o.id} style={{ backgroundColor: "#111535" }}>
-                  {opportunityLabel(o, duplicateNames)}
+              {clienti.map((c) => (
+                <option key={c.id} value={c.id} style={{ backgroundColor: "#111535" }}>
+                  {c.nume}
                 </option>
               ))}
             </select>

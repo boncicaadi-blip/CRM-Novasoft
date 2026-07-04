@@ -1,37 +1,36 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Contract, VenitLinie } from "@/types/venituri";
 
-export interface OpportunityOption {
+export interface ClientOption {
   id: string;
-  opportunity_code: string | null;
-  nume_potential: string;
-  nume_grup: string;
+  nume: string;
+  cod_fiscal: string | null;
   domeniul_activitate: string | null;
   judet: string | null;
   oras: string | null;
-  produs_serviciu_propus: string | null;
-  created_at: string;
+  opportunity_id: string | null;
 }
 
-/** Lista de clienti pentru selectorul din formularul de contract - doar
- * oportunitatile bifate "Facturabil" (marcate manual, in fisa oportunitatii),
- * nu orice oportunitate din pipeline si nu neaparat legate de stage. Asta
- * permite sa marchezi si vanzari suplimentare (up-sell/cross-sell) pe un
- * client existent, fara sa fie nevoie de o oportunitate noua la stage Client.
- * Aducem si opportunity_code/produs/data, ca sa poti diferentia doua
- * oportunitati facturabile ale aceleiasi firme (ex: doua vanzari separate). */
-export async function getOpportunityOptions(): Promise<OpportunityOption[]> {
+/**
+ * Lista de clienti pentru selectorul din formularul de contract - din
+ * `partners`, nu direct din oportunitati. O firma cu mai multe oportunitati
+ * (vanzari separate) are un singur partener, deci apare o singura data aici,
+ * indiferent de cate oportunitati facturabile are in spate.
+ *
+ * Bifa "Facturabil" se pune tot din fisa oportunitatii (loc familiar), dar
+ * se propaga automat pe partenerul corespunzator - vezi
+ * updateOpportunitySectionAction din actions/opportunities.ts.
+ */
+export async function getClientOptions(): Promise<ClientOption[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("opportunities")
-    .select(
-      "id, opportunity_code, nume_potential, nume_grup, domeniul_activitate, judet, oras, produs_serviciu_propus, created_at"
-    )
+    .from("partners")
+    .select("id, nume, cod_fiscal, domeniul_activitate, judet, oras, opportunity_id")
     .eq("facturabil", true)
-    .order("nume_potential", { ascending: true });
+    .order("nume", { ascending: true });
 
   if (error) {
-    console.error("getOpportunityOptions error:", error.message);
+    console.error("getClientOptions error:", error.message);
     return [];
   }
   return data ?? [];

@@ -75,7 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Venituri & Cheltuieli",
     icon: TrendingUp,
     moduleKey: "venituri_cheltuieli",
-    items: [{ href: "/venituri-cheltuieli", label: "Venituri & Cheltuieli", icon: TrendingUp }],
+    items: [{ href: "/venituri-cheltuieli", label: "Venituri", icon: TrendingUp }],
   },
 ];
 

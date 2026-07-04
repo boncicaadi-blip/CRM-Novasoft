@@ -1,5 +1,5 @@
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
-import { getContracte, getVenituriLinii, getOpportunityOptions } from "@/lib/data/venituri";
+import { getContracte, getVenituriLinii, getClientOptions } from "@/lib/data/venituri";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { runVenituriLiniiSync } from "@/lib/venituri-sync";
 import { VenituriCheltuieliClient } from "@/components/venituri/VenituriCheltuieliClient";
@@ -16,10 +16,10 @@ export default async function VenituriCheltuieliPage() {
     await runVenituriLiniiSync(supabase);
   }
 
-  const [contracte, venituriLinii, opportunities, nomenclatoare] = await Promise.all([
+  const [contracte, venituriLinii, clienti, nomenclatoare] = await Promise.all([
     getContracte(),
     getVenituriLinii(),
-    getOpportunityOptions(),
+    getClientOptions(),
     getNomenclatoare(),
   ]);
 
@@ -27,7 +27,7 @@ export default async function VenituriCheltuieliPage() {
     <VenituriCheltuieliClient
       contracte={contracte}
       venituriLinii={venituriLinii}
-      opportunities={opportunities}
+      clienti={clienti}
       produseOptions={nomenclatoare.venit_produs ?? []}
       serviciiOptions={nomenclatoare.venit_serviciu ?? []}
       modalitatiOptions={nomenclatoare.modalitate_facturare ?? []}

@@ -10,6 +10,7 @@ import {
   getOpportunity,
 } from "@/lib/data/opportunities";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
+import { normalizeName } from "@/lib/normalizeName";
 import { validateOpportunityBusinessRules } from "@/lib/validation";
 import type { OpportunityInsert } from "@/types/opportunity";
 
@@ -268,6 +269,41 @@ export async function updateOpportunitySectionAction(
   if (errors.length > 0) return { success: false, message: errors.join(" ") };
 
   await updateOpportunity(id, payload);
+
+  // Daca s-a schimbat Facturabil, propagam catre partenerul corespunzator -
+  // partners.facturabil e cel folosit efectiv la selectia clientului in
+  // Contracte (Venituri), nu campul de pe oportunitate. O firma poate avea
+  // mai multe oportunitati; toate se leaga de acelasi partener unic.
+  if ("facturabil" in payload) {
+    const supabase = await createSupabaseServerClient();
+    const numeFirma = (merged.nume_potential as string) ?? current.nume_potential;
+    const norm = normalizeName(numeFirma);
+
+    const { data: existing } = await supabase
+      .from("partners")
+      .select("id")
+      .eq("nume_normalizat", norm)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("partners")
+        .update({ facturabil: payload.facturabil, opportunity_id: id })
+        .eq("id", existing.id);
+    } else {
+      await supabase.from("partners").insert({
+        nume: numeFirma,
+        nume_normalizat: norm,
+        opportunity_id: id,
+        facturabil: payload.facturabil,
+        cod_fiscal: current.cod_fiscal,
+        domeniul_activitate: current.domeniul_activitate,
+        judet: current.judet,
+        oras: current.oras,
+      });
+    }
+  }
+
   revalidatePath(`/oportunitati/${id}`);
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
