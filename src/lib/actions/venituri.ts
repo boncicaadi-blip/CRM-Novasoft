@@ -208,6 +208,7 @@ export async function updateVenitLinieAction(
   fields: {
     produs?: string | null;
     serviciu?: string | null;
+    luna?: string;
     venit_estimat?: number;
     venit_realizat?: number | null;
     facturat?: boolean;

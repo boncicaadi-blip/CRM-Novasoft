@@ -376,6 +376,7 @@ function VenituriTable({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [produs, setProdus] = useState("");
   const [serviciu, setServiciu] = useState("");
+  const [luna, setLuna] = useState("");
   const [venitEstimat, setVenitEstimat] = useState("");
   const [venitRealizat, setVenitRealizat] = useState("");
   const [facturat, setFacturat] = useState(false);
@@ -385,6 +386,7 @@ function VenituriTable({
     setEditingId(l.id);
     setProdus(l.produs ?? "");
     setServiciu(l.serviciu ?? "");
+    setLuna(l.luna.slice(0, 7));
     setVenitEstimat(String(l.venit_estimat));
     setVenitRealizat(l.venit_realizat !== null ? String(l.venit_realizat) : "");
     setFacturat(l.facturat);
@@ -395,6 +397,7 @@ function VenituriTable({
       await updateVenitLinieAction(id, {
         produs: produs || null,
         serviciu: serviciu || null,
+        luna: luna ? `${luna}-01` : undefined,
         venit_estimat: Number(venitEstimat),
         venit_realizat: venitRealizat === "" ? null : Number(venitRealizat),
         facturat,
@@ -538,7 +541,16 @@ function VenituriTable({
                     )}
                   </td>
                   <td className="px-3 py-2 text-slate-400">
-                    {new Date(l.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })}
+                    {isEditing ? (
+                      <input
+                        type="month"
+                        value={luna}
+                        onChange={(e) => setLuna(e.target.value)}
+                        className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
+                      />
+                    ) : (
+                      new Date(l.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })
+                    )}
                   </td>
                   <td className="px-3 py-2 text-right">
                     {isEditing ? (

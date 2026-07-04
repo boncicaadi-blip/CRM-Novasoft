@@ -11,15 +11,16 @@ export interface OpportunityOption {
 }
 
 /** Lista de clienti pentru selectorul din formularul de contract - doar
- * oportunitatile aflate la stage-ul "Client" (deja castigate/facturabile),
- * nu orice oportunitate din pipeline. Asta evita confuzia intre un client
- * existent si o oportunitate noua de cross-sell/up-sell pe aceeasi firma. */
+ * oportunitatile bifate "Facturabil" (marcate manual, in fisa oportunitatii),
+ * nu orice oportunitate din pipeline si nu neaparat legate de stage. Asta
+ * permite sa marchezi si vanzari suplimentare (up-sell/cross-sell) pe un
+ * client existent, fara sa fie nevoie de o oportunitate noua la stage Client. */
 export async function getOpportunityOptions(): Promise<OpportunityOption[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("opportunities")
     .select("id, nume_potential, nume_grup, domeniul_activitate, judet, oras")
-    .eq("stage", "Client")
+    .eq("facturabil", true)
     .order("nume_potential", { ascending: true });
 
   if (error) {

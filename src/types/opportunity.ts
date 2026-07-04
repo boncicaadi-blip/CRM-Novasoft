@@ -27,6 +27,7 @@ export interface Opportunity {
   // Calificare tehnica
   solutia_existenta: string | null;
   client_novasoft: boolean;
+  facturabil: boolean;
   client_windsoft: boolean;
   produs_serviciu_propus: string | null;
   produs_serviciu_propus_id: string | null;

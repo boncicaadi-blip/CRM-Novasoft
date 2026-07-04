@@ -200,6 +200,7 @@ export async function updateOpportunitySectionAction(
   const boolFields = new Set([
     "client_novasoft",
     "client_windsoft",
+    "facturabil",
     "mai_multe_firme_grup",
     "potential_fonduri_europene",
     "interes_planificator",
