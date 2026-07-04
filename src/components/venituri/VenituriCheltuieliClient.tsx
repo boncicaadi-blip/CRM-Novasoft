@@ -173,11 +173,15 @@ export function VenituriCheltuieliClient({
   const [filterClient, setFilterClient] = useState("");
   const [filterProdus, setFilterProdus] = useState("");
   const [filterServiciu, setFilterServiciu] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStadiu, setFilterStadiu] = useState("");
   const [isPending, startTransition] = useTransition();
   const [showContractForm, setShowContractForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
 
   const clientOptions = useMemo(() => {
     const set = new Set<string>();
@@ -188,14 +192,29 @@ export function VenituriCheltuieliClient({
 
   const filteredLinii = useMemo(
     () =>
-      venituriLinii.filter(
-        (l) =>
+      venituriLinii.filter((l) => {
+        const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
+        return (
           inPeriod(l.luna, period, customFrom, customTo) &&
           (!filterClient || l.nume_client === filterClient) &&
           (!filterProdus || l.produs === filterProdus) &&
-          (!filterServiciu || l.serviciu === filterServiciu)
-      ),
-    [venituriLinii, period, customFrom, customTo, filterClient, filterProdus, filterServiciu]
+          (!filterServiciu || l.serviciu === filterServiciu) &&
+          (!filterStatus || contract?.status_contract === filterStatus) &&
+          (!filterStadiu || contract?.stadiu_contract === filterStadiu)
+        );
+      }),
+    [
+      venituriLinii,
+      contractById,
+      period,
+      customFrom,
+      customTo,
+      filterClient,
+      filterProdus,
+      filterServiciu,
+      filterStatus,
+      filterStadiu,
+    ]
   );
 
   const filteredContracte = useMemo(
@@ -204,9 +223,11 @@ export function VenituriCheltuieliClient({
         (c) =>
           (!filterClient || c.nume_client === filterClient) &&
           (!filterProdus || c.produs === filterProdus) &&
-          (!filterServiciu || c.serviciu === filterServiciu)
+          (!filterServiciu || c.serviciu === filterServiciu) &&
+          (!filterStatus || c.status_contract === filterStatus) &&
+          (!filterStadiu || c.stadiu_contract === filterStadiu)
       ),
-    [contracte, filterClient, filterProdus, filterServiciu]
+    [contracte, filterClient, filterProdus, filterServiciu, filterStatus, filterStadiu]
   );
 
   const summary = useMemo(() => {
@@ -384,12 +405,41 @@ export function VenituriCheltuieliClient({
             <NomOption key={n.id} n={n} />
           ))}
         </select>
-        {(filterClient || filterProdus || filterServiciu) && (
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+        >
+          <option value="" style={{ backgroundColor: "#111535" }}>
+            Toate statusurile
+          </option>
+          <option value="Activ" style={{ backgroundColor: "#111535" }}>
+            Activ
+          </option>
+          <option value="Inactiv" style={{ backgroundColor: "#111535" }}>
+            Inactiv
+          </option>
+        </select>
+        <select
+          value={filterStadiu}
+          onChange={(e) => setFilterStadiu(e.target.value)}
+          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+        >
+          <option value="" style={{ backgroundColor: "#111535" }}>
+            Toate stadiile
+          </option>
+          {stadiiOptions.map((n) => (
+            <NomOption key={n.id} n={n} />
+          ))}
+        </select>
+        {(filterClient || filterProdus || filterServiciu || filterStatus || filterStadiu) && (
           <button
             onClick={() => {
               setFilterClient("");
               setFilterProdus("");
               setFilterServiciu("");
+              setFilterStatus("");
+              setFilterStadiu("");
             }}
             className="text-xs text-[#E8007A] hover:text-[#FF4FAA]"
           >

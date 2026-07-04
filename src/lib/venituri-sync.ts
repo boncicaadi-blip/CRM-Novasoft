@@ -111,35 +111,60 @@ export async function runVenituriLiniiSync(
   supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<{ generate: number }> {
   const { data: contracte } = await supabase.from("contracte").select("*").eq("status_contract", "Activ");
+  if (!contracte || contracte.length === 0) return { generate: 0 };
+
   const bufferEndStr = bufferEnd();
-  let totalGenerate = 0;
 
-  for (const contract of contracte ?? []) {
-    const { data: existente } = await supabase
-      .from("venituri_linii")
-      .select("luna")
-      .eq("contract_id", contract.id);
-    const existenteSet = new Set((existente ?? []).map((r) => r.luna));
+  // O singura interogare pentru TOATE liniile existente (nu una per
+  // contract) - cu ~100 contracte, varianta veche facea ~100 interogari
+  // secventiale la fiecare incarcare de pagina, ceea ce facea pagina foarte
+  // lenta. Aici aducem tot dintr-o data si grupam in memorie.
+  const contractIds = contracte.map((c) => c.id);
+  const { data: existente } = await supabase
+    .from("venituri_linii")
+    .select("contract_id, luna")
+    .in("contract_id", contractIds);
 
+  const existenteByContract = new Map<string, Set<string>>();
+  for (const row of existente ?? []) {
+    if (!row.contract_id) continue;
+    const set = existenteByContract.get(row.contract_id) ?? new Set<string>();
+    set.add(row.luna);
+    existenteByContract.set(row.contract_id, set);
+  }
+
+  const allRows: Record<string, unknown>[] = [];
+  for (const contract of contracte) {
+    const existenteSet = existenteByContract.get(contract.id) ?? new Set<string>();
     const planificate = computeContractLines(contract, bufferEndStr);
     const deGenerat = planificate.filter((p) => !existenteSet.has(p.luna));
-    if (deGenerat.length === 0) continue;
 
-    const rows = deGenerat.map((p) => ({
-      contract_id: contract.id,
-      partner_id: contract.partner_id,
-      nume_client: contract.nume_client,
-      tip_venit: contract.tip_venit as TipVenit,
-      produs: contract.produs,
-      serviciu: contract.serviciu,
-      luna: p.luna,
-      venit_estimat: p.venit_estimat,
-      venit_realizat: null,
-      facturat: false,
-    }));
+    for (const p of deGenerat) {
+      allRows.push({
+        contract_id: contract.id,
+        partner_id: contract.partner_id,
+        nume_client: contract.nume_client,
+        tip_venit: contract.tip_venit as TipVenit,
+        produs: contract.produs,
+        serviciu: contract.serviciu,
+        luna: p.luna,
+        venit_estimat: p.venit_estimat,
+        venit_realizat: null,
+        facturat: false,
+      });
+    }
+  }
 
-    const { error } = await supabase.from("venituri_linii").insert(rows);
-    if (!error) totalGenerate += rows.length;
+  if (allRows.length === 0) return { generate: 0 };
+
+  // Insert dintr-o singura data, in loturi de 500 (limita practica per
+  // request), nu una per contract.
+  let totalGenerate = 0;
+  const batchSize = 500;
+  for (let i = 0; i < allRows.length; i += batchSize) {
+    const batch = allRows.slice(i, i + batchSize);
+    const { error } = await supabase.from("venituri_linii").insert(batch);
+    if (!error) totalGenerate += batch.length;
   }
 
   return { generate: totalGenerate };
