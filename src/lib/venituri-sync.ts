@@ -32,7 +32,7 @@ function monthsBetween(startStr: string, endStr: string): string[] {
 export async function runVenituriLiniiSync(
   supabase: Awaited<ReturnType<typeof createClient>>
 ): Promise<{ generate: number }> {
-  const { data: contracte } = await supabase.from("contracte").select("*").eq("status", "Activ");
+  const { data: contracte } = await supabase.from("contracte").select("*").eq("status_contract", "Activ");
 
   const today = new Date(`${getTodayISO()}T00:00:00Z`);
   const bufferEnd = new Date(today);
@@ -42,18 +42,26 @@ export async function runVenituriLiniiSync(
   let totalGenerate = 0;
 
   for (const contract of contracte ?? []) {
-    const dataSfarsit =
-      contract.data_sfarsit && contract.data_sfarsit < bufferEndStr ? contract.data_sfarsit : bufferEndStr;
-
-    const luni = monthsBetween(contract.data_inceput, dataSfarsit);
-    if (luni.length === 0) continue;
-
     const { data: existente } = await supabase
       .from("venituri_linii")
       .select("luna")
       .eq("contract_id", contract.id);
-
     const existenteSet = new Set((existente ?? []).map((r) => r.luna));
+
+    // Nerecurent: o singura linie, pentru luna de inceput a contractului -
+    // nu se repeta lunar. Recurent: daca are data_sfarsit cunoscuta (ex: un
+    // contract pe 12 luni), generam TOT intervalul dintr-o data, chiar daca
+    // e mult in viitor - asta e exact rostul de a introduce contractul din
+    // start cu durata lui completa. Doar contractele fara data_sfarsit
+    // (nedeterminate) se genereaza incremental, pe masura ce trece timpul,
+    // limitate la buffer-ul de o luna in avans.
+    const luni =
+      contract.tip_venit === "Nerecurent"
+        ? contract.data_inceput <= bufferEndStr
+          ? [firstOfMonth(contract.data_inceput)]
+          : []
+        : monthsBetween(contract.data_inceput, contract.data_sfarsit ?? bufferEndStr);
+
     const deGenerat = luni.filter((l) => !existenteSet.has(l));
     if (deGenerat.length === 0) continue;
 
@@ -61,7 +69,7 @@ export async function runVenituriLiniiSync(
       contract_id: contract.id,
       partner_id: contract.partner_id,
       nume_client: contract.nume_client,
-      tip_venit: "Recurent" as TipVenit,
+      tip_venit: contract.tip_venit as TipVenit,
       produs: contract.produs,
       serviciu: contract.serviciu,
       luna,

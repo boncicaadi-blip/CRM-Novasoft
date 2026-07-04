@@ -139,4 +139,8 @@ export const NOMENCLATOR_CATEGORII: { value: string; label: string; hasColor: bo
   { value: "status_actiune", label: "Status actiune", hasColor: false, hasProbability: false },
   { value: "motiv_pierdere", label: "Motiv pierdere", hasColor: false, hasProbability: false },
   { value: "motiv_amanare", label: "Motiv amanare", hasColor: false, hasProbability: false },
+  { value: "venit_produs", label: "Venituri: Produs", hasColor: false, hasProbability: false },
+  { value: "venit_serviciu", label: "Venituri: Serviciu", hasColor: false, hasProbability: false },
+  { value: "modalitate_facturare", label: "Venituri: Modalitate facturare", hasColor: false, hasProbability: false },
+  { value: "stadiu_contract", label: "Venituri: Stadiu contract", hasColor: false, hasProbability: false },
 ];

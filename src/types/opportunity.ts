@@ -198,7 +198,13 @@ export type NomenclatorCategorie =
   | "actiune"
   | "status_actiune"
   | "motiv_pierdere"
-  | "motiv_amanare";
+  | "motiv_amanare"
+  | "venit_produs"
+  | "venit_serviciu"
+  | "tip_venit_contract"
+  | "stadiu_contract"
+  | "status_contract"
+  | "modalitate_facturare";
 
 export interface Nomenclator {
   id: string;

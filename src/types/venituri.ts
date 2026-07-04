@@ -1,16 +1,18 @@
-export type ContractStatus = "Activ" | "Inactiv" | "Suspendat";
+export type ContractStatus = "Activ" | "Inactiv";
 export type TipVenit = "Recurent" | "Nerecurent";
 
 export interface Contract {
   id: string;
   partner_id: string | null;
+  opportunity_id: string | null;
   nume_client: string;
+  tip_venit: TipVenit;
   produs: string | null;
   serviciu: string | null;
   valoare_lunara: number;
   data_inceput: string;
   data_sfarsit: string | null;
-  status: ContractStatus;
+  status_contract: ContractStatus;
   stadiu_contract: string | null;
   modalitate_facturare: string | null;
   observatii: string | null;

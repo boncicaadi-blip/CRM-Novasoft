@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeName } from "@/lib/normalizeName";
 import { runVenituriLiniiSync } from "@/lib/venituri-sync";
-import type { ContractStatus, TipVenit } from "@/types/venituri";
+import type { ContractStatus } from "@/types/venituri";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -19,16 +20,43 @@ async function requireAdmin() {
   return { supabase, userId: userData.user.id, isAdmin: profile?.role === "admin" };
 }
 
-function firstOfMonth(dateStr: string): string {
-  return `${dateStr.slice(0, 7)}-01`;
+/**
+ * Gaseste (sau creeaza) partenerul asociat unei oportunitati - reutilizeaza
+ * aceeasi identitate de firma ca in Creante/Obligatii, nu mai creeaza un
+ * al doilea "client" separat, in text liber.
+ */
+async function resolvePartnerId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  opportunityId: string,
+  numeClient: string
+): Promise<string | null> {
+  const { data: existing } = await supabase
+    .from("partners")
+    .select("id")
+    .eq("opportunity_id", opportunityId)
+    .maybeSingle();
+  if (existing) return existing.id;
+
+  const norm = normalizeName(numeClient);
+  const { data: byName } = await supabase
+    .from("partners")
+    .select("id")
+    .eq("nume_normalizat", norm)
+    .maybeSingle();
+  if (byName) {
+    await supabase.from("partners").update({ opportunity_id: opportunityId }).eq("id", byName.id);
+    return byName.id;
+  }
+
+  const { data: created } = await supabase
+    .from("partners")
+    .insert({ nume: numeClient, nume_normalizat: norm, opportunity_id: opportunityId })
+    .select("id")
+    .single();
+  return created?.id ?? null;
 }
 
-/**
- * Server Action pentru butonul "Genereaza linii lipsa" - apeleaza logica
- * pura din venituri-sync.ts, apoi invalideaza cache-ul. Aceeasi logica e
- * apelata si direct din pagina (fara acest wrapper), la fiecare vizitare -
- * vezi src/app/(app)/venituri-cheltuieli/page.tsx.
- */
+/** Server Action pentru butonul "Genereaza linii lipsa". */
 export async function syncVenituriLiniiAction(): Promise<{
   success: boolean;
   message?: string;
@@ -44,13 +72,15 @@ export async function syncVenituriLiniiAction(): Promise<{
 }
 
 export async function createContractAction(fields: {
+  opportunity_id: string;
   nume_client: string;
-  partner_id?: string | null;
+  tip_venit: "Recurent" | "Nerecurent";
   produs?: string | null;
   serviciu?: string | null;
   valoare_lunara: number;
   data_inceput: string;
   data_sfarsit?: string | null;
+  status_contract?: ContractStatus;
   stadiu_contract?: string | null;
   modalitate_facturare?: string | null;
   observatii?: string | null;
@@ -58,10 +88,16 @@ export async function createContractAction(fields: {
   const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot crea contracte." };
 
-  if (!fields.nume_client.trim()) return { success: false, message: "Numele clientului e obligatoriu." };
-  if (fields.valoare_lunara <= 0) return { success: false, message: "Valoarea lunara trebuie sa fie pozitiva." };
+  if (!fields.opportunity_id) return { success: false, message: "Trebuie sa alegi un client din lista." };
+  if (fields.valoare_lunara <= 0) return { success: false, message: "Valoarea trebuie sa fie pozitiva." };
 
-  const { error } = await supabase.from("contracte").insert({ ...fields, status: "Activ" });
+  const partnerId = await resolvePartnerId(supabase, fields.opportunity_id, fields.nume_client);
+
+  const { error } = await supabase.from("contracte").insert({
+    ...fields,
+    partner_id: partnerId,
+    status_contract: fields.status_contract ?? "Activ",
+  });
   if (error) return { success: false, message: error.message };
 
   await runVenituriLiniiSync(supabase);
@@ -73,12 +109,11 @@ export async function createContractAction(fields: {
 export async function updateContractAction(
   id: string,
   fields: {
-    nume_client?: string;
     produs?: string | null;
     serviciu?: string | null;
     valoare_lunara?: number;
     data_sfarsit?: string | null;
-    status?: ContractStatus;
+    status_contract?: ContractStatus;
     stadiu_contract?: string | null;
     modalitate_facturare?: string | null;
     observatii?: string | null;
@@ -90,7 +125,7 @@ export async function updateContractAction(
   const { error } = await supabase.from("contracte").update(fields).eq("id", id);
   if (error) return { success: false, message: error.message };
 
-  if (fields.status === "Activ") {
+  if (fields.status_contract === "Activ") {
     await runVenituriLiniiSync(supabase);
   }
 
@@ -109,38 +144,16 @@ export async function deleteContractAction(id: string): Promise<{ success: boole
   return { success: true };
 }
 
-/** Adauga o linie de venit NERECURENT, introdusa manual (fara contract). */
-export async function addVenitNerecurentAction(fields: {
-  nume_client: string;
-  partner_id?: string | null;
-  produs?: string | null;
-  serviciu?: string | null;
-  luna: string;
-  venit_estimat: number;
-  observatii?: string | null;
-}): Promise<{ success: boolean; message?: string }> {
-  const { supabase, isAdmin } = await requireAdmin();
-  if (!isAdmin) return { success: false, message: "Doar administratorii pot adauga venituri." };
-
-  if (!fields.nume_client.trim()) return { success: false, message: "Numele clientului e obligatoriu." };
-  if (fields.venit_estimat <= 0) return { success: false, message: "Valoarea trebuie sa fie pozitiva." };
-
-  const { error } = await supabase.from("venituri_linii").insert({
-    ...fields,
-    luna: firstOfMonth(fields.luna),
-    tip_venit: "Nerecurent" as TipVenit,
-    contract_id: null,
-  });
-  if (error) return { success: false, message: error.message };
-
-  revalidatePath("/venituri-cheltuieli");
-  return { success: true };
-}
-
-/** Editeaza venitul realizat (si optional Facturat/Observatii) pe orice linie. */
+/**
+ * Editeaza o linie de venit - orice camp, nu doar realizatul. Util pentru
+ * corectarea unei greseli, fara sa fie nevoie sa stergi si sa recreezi.
+ */
 export async function updateVenitLinieAction(
   id: string,
   fields: {
+    produs?: string | null;
+    serviciu?: string | null;
+    venit_estimat?: number;
     venit_realizat?: number | null;
     facturat?: boolean;
     observatii?: string | null;

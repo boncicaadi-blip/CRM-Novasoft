@@ -1,6 +1,32 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Contract, VenitLinie } from "@/types/venituri";
 
+export interface OpportunityOption {
+  id: string;
+  nume_potential: string;
+  nume_grup: string;
+  domeniul_activitate: string | null;
+  judet: string | null;
+  oras: string | null;
+}
+
+/** Lista de clienti pentru selectorul din formularul de contract - toate
+ * oportunitatile, cu datele de firma folosite pentru afisare informativa
+ * (Grup, Tip activitate, Judet, Localitate) odata ce clientul e ales. */
+export async function getOpportunityOptions(): Promise<OpportunityOption[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("opportunities")
+    .select("id, nume_potential, nume_grup, domeniul_activitate, judet, oras")
+    .order("nume_potential", { ascending: true });
+
+  if (error) {
+    console.error("getOpportunityOptions error:", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
 async function fetchAllRows<T>(
   buildQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
 ): Promise<T[]> {
