@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/server";
 import { getTodayISO } from "@/lib/date";
+import { syncPartnersAction } from "@/lib/actions/partners";
 import type { TipAchizitie } from "@/types/obligatii";
 
 function toNumber(v: unknown): number | null {
@@ -213,6 +214,10 @@ export async function importObligatiiAction(
     nr_facturi_actualizate: toUpdate.length,
     importat_de: userId,
   });
+
+  if (toInsert.length > 0) {
+    await syncPartnersAction();
+  }
 
   revalidatePath("/obligatii");
   return {

@@ -1,21 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Wallet, FileText, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Wallet, FileText, AlertTriangle, GitBranch, Building2 } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ObligatieDetailModal } from "./ObligatieDetailModal";
 import { formatRon } from "@/lib/format";
 import { getObligatieStatus, getZileDepasireObligatie } from "@/lib/obligatii-analytics";
 import type { Obligatie, ObligatiePlata } from "@/types/obligatii";
+import type { PartnerCrossLinks } from "@/lib/data/partners";
 
 export function FisaFurnizorClient({
   numeFurnizor,
   obligatii,
   plati,
+  crossLinks,
 }: {
   numeFurnizor: string;
   obligatii: Obligatie[];
   plati: Record<string, ObligatiePlata[]>;
+  crossLinks: PartnerCrossLinks;
 }) {
   const [selected, setSelected] = useState<Obligatie | null>(null);
 
@@ -40,6 +44,33 @@ export function FisaFurnizorClient({
         <h1 className="text-lg font-heading text-white">{numeFurnizor}</h1>
         <p className="text-sm text-slate-500">{obligatii.length} facturi in total</p>
       </div>
+
+      {(crossLinks.opportunityId || crossLinks.otherRoleSummary) && (
+        <div className="mb-5 flex flex-wrap gap-3">
+          {crossLinks.opportunityId && (
+            <Link
+              href={`/oportunitati/${crossLinks.opportunityId}`}
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5"
+            >
+              <GitBranch size={15} className="text-[#0070F3]" />
+              Are oportunitate in CRM
+              {crossLinks.opportunityNume && (
+                <span className="text-slate-500">— {crossLinks.opportunityNume}</span>
+              )}
+            </Link>
+          )}
+          {crossLinks.otherRoleSummary && (
+            <Link
+              href={`/creante/client/${encodeURIComponent(numeFurnizor)}`}
+              className="flex items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-500/5 px-3 py-2 text-sm text-blue-300 transition hover:bg-blue-500/10"
+            >
+              <Building2 size={15} />
+              Este si client — {crossLinks.otherRoleSummary.count} facturi, sold{" "}
+              {formatRon(crossLinks.otherRoleSummary.sold)}
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard

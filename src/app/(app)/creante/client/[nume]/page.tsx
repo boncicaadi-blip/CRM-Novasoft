@@ -1,4 +1,5 @@
 import { getCreanteByFirma, getCreanteIncasari } from "@/lib/data/creante";
+import { getClientCrossLinks } from "@/lib/data/partners";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { BackButton } from "@/components/BackButton";
 import { FisaClientClient } from "@/components/creante/FisaClientClient";
@@ -13,9 +14,10 @@ export default async function FisaClientPage({
 
   await requireModuleAccess("creante_obligatii");
 
-  const [creante, incasariByCreanta] = await Promise.all([
+  const [creante, incasariByCreanta, crossLinks] = await Promise.all([
     getCreanteByFirma(numeFirma),
     getCreanteIncasari(),
+    getClientCrossLinks(numeFirma),
   ]);
 
   return (
@@ -25,6 +27,7 @@ export default async function FisaClientPage({
         numeFirma={numeFirma}
         creante={creante}
         incasari={incasariByCreanta}
+        crossLinks={crossLinks}
       />
     </div>
   );

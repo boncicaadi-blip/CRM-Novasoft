@@ -16,6 +16,7 @@ import {
   ChevronRight,
   X,
   Users,
+  Link2,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { CreanteImportForm } from "./CreanteImportForm";
@@ -37,6 +38,7 @@ import {
   type AgingBucket,
 } from "@/lib/creante-analytics";
 import { toggleProposSpreIncasareAction, deleteCreanteAction, deleteAllCreanteAction } from "@/lib/actions/creante";
+import { syncPartnersAction } from "@/lib/actions/partners";
 import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
 
 type StatusFilter = "toate" | "restanta" | "la_zi" | "incasata";
@@ -127,6 +129,7 @@ export function CreanteClient({
   const [selected, setSelected] = useState<Creanta | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [colWidths, setColWidths] = useState<Record<string, number>>(() =>
@@ -311,6 +314,20 @@ export function CreanteClient({
     });
   }
 
+  function handleSyncPartners() {
+    setSyncMessage(null);
+    startTransition(async () => {
+      const result = await syncPartnersAction();
+      if (result.success && result.data) {
+        setSyncMessage(
+          `${result.data.parteneriNoi} parteneri noi, ${result.data.creanteLegate} facturi legate.`
+        );
+      } else {
+        setSyncMessage(result.message ?? "Eroare la sincronizare.");
+      }
+    });
+  }
+
   function handleExport() {
     const rows = filtered.map((c) => ({
       Firma: c.nume_firma,
@@ -371,7 +388,21 @@ export function CreanteClient({
               : "Niciun import inca."}
           </p>
         </div>
-        <CreanteImportForm />
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSyncPartners}
+              disabled={isPending}
+              title="Cauta firme comune intre Creante, Obligatii si CRM"
+              className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
+            >
+              <Link2 size={14} />
+              Sincronizeaza parteneri
+            </button>
+            <CreanteImportForm />
+          </div>
+          {syncMessage && <p className="text-xs text-slate-500">{syncMessage}</p>}
+        </div>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

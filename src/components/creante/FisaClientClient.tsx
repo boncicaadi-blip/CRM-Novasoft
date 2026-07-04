@@ -1,21 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Wallet, FileText, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Wallet, FileText, AlertTriangle, GitBranch, Truck } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { CreantaDetailModal } from "./CreantaDetailModal";
 import { formatRon } from "@/lib/format";
 import { getCreantaStatus, getZileDepasire } from "@/lib/creante-analytics";
 import type { Creanta, CreantaIncasare } from "@/types/creante";
+import type { PartnerCrossLinks } from "@/lib/data/partners";
 
 export function FisaClientClient({
   numeFirma,
   creante,
   incasari,
+  crossLinks,
 }: {
   numeFirma: string;
   creante: Creanta[];
   incasari: Record<string, CreantaIncasare[]>;
+  crossLinks: PartnerCrossLinks;
 }) {
   const [selected, setSelected] = useState<Creanta | null>(null);
 
@@ -40,6 +44,33 @@ export function FisaClientClient({
         <h1 className="text-lg font-heading text-white">{numeFirma}</h1>
         <p className="text-sm text-slate-500">{creante.length} facturi in total</p>
       </div>
+
+      {(crossLinks.opportunityId || crossLinks.otherRoleSummary) && (
+        <div className="mb-5 flex flex-wrap gap-3">
+          {crossLinks.opportunityId && (
+            <Link
+              href={`/oportunitati/${crossLinks.opportunityId}`}
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5"
+            >
+              <GitBranch size={15} className="text-[#0070F3]" />
+              Are oportunitate in CRM
+              {crossLinks.opportunityNume && (
+                <span className="text-slate-500">— {crossLinks.opportunityNume}</span>
+              )}
+            </Link>
+          )}
+          {crossLinks.otherRoleSummary && (
+            <Link
+              href={`/obligatii/furnizor/${encodeURIComponent(numeFirma)}`}
+              className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-sm text-amber-300 transition hover:bg-amber-500/10"
+            >
+              <Truck size={15} />
+              Este si furnizor — {crossLinks.otherRoleSummary.count} facturi, sold{" "}
+              {formatRon(crossLinks.otherRoleSummary.sold)}
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard

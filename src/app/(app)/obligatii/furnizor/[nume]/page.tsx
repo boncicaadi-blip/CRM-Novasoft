@@ -1,4 +1,5 @@
 import { getObligatiiByFurnizor, getObligatiiPlati } from "@/lib/data/obligatii";
+import { getFurnizorCrossLinks } from "@/lib/data/partners";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { BackButton } from "@/components/BackButton";
 import { FisaFurnizorClient } from "@/components/obligatii/FisaFurnizorClient";
@@ -13,9 +14,10 @@ export default async function FisaFurnizorPage({
 
   await requireModuleAccess("creante_obligatii");
 
-  const [obligatii, platiByObligatie] = await Promise.all([
+  const [obligatii, platiByObligatie, crossLinks] = await Promise.all([
     getObligatiiByFurnizor(numeFurnizor),
     getObligatiiPlati(),
+    getFurnizorCrossLinks(numeFurnizor),
   ]);
 
   return (
@@ -25,6 +27,7 @@ export default async function FisaFurnizorPage({
         numeFurnizor={numeFurnizor}
         obligatii={obligatii}
         plati={platiByObligatie}
+        crossLinks={crossLinks}
       />
     </div>
   );

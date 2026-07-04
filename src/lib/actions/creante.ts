@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/server";
 import { getTodayISO } from "@/lib/date";
+import { normalizeName } from "@/lib/normalizeName";
+import { syncPartnersAction } from "@/lib/actions/partners";
 import type { ComportamentPlata, TipVanzare } from "@/types/creante";
 
 function toNumber(v: unknown): number | null {
@@ -25,15 +27,6 @@ function toDateStr(v: unknown): string | null {
     if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0, 10);
   }
   return null;
-}
-
-function normalizeName(s: string): string {
-  return s
-    .trim()
-    .toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
 }
 
 async function requireAdmin() {
@@ -317,6 +310,13 @@ export async function importCreanteAction(
     nr_facturi_actualizate: toUpdate.length,
     importat_de: userId,
   });
+
+  // Facturile noi pot aduce firme noi - sincronizam partenerii ca fisele de
+  // client sa arate corect legaturile de la primul import, nu doar dupa o
+  // sincronizare manuala ulterioara.
+  if (toInsert.length > 0) {
+    await syncPartnersAction();
+  }
 
   revalidatePath("/creante");
   return {
