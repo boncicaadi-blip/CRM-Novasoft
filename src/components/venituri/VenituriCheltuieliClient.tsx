@@ -10,6 +10,7 @@ import {
   X,
   Check,
   Pencil,
+  CheckCheck,
 } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { getTodayISO } from "@/lib/date";
@@ -17,8 +18,11 @@ import {
   createContractAction,
   updateContractAction,
   deleteContractAction,
+  addVenitLinieManualAction,
   updateVenitLinieAction,
   deleteVenitLinieAction,
+  deleteVenituriLiniiAction,
+  bulkMarkFacturatAction,
   syncVenituriLiniiAction,
 } from "@/lib/actions/venituri";
 import type { Contract, VenitLinie, ContractStatus, TipVenit } from "@/types/venituri";
@@ -26,19 +30,25 @@ import type { OpportunityOption } from "@/lib/data/venituri";
 import type { Nomenclator } from "@/types/opportunity";
 
 type ViewMode = "venituri" | "contracte";
-type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate";
+type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
 const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "luna_curenta", label: "Luna curenta" },
   { value: "ultimele_3_luni", label: "Ultimele 3 luni" },
   { value: "anul_curent", label: "Anul curent" },
   { value: "toate", label: "Tot istoricul" },
+  { value: "custom", label: "Perioada personalizata" },
 ];
 
-function inPeriod(luna: string, period: PeriodFilter): boolean {
+function inPeriod(luna: string, period: PeriodFilter, customFrom: string, customTo: string): boolean {
   if (period === "toate") return true;
   const d = new Date(luna);
   const now = new Date();
+  if (period === "custom") {
+    if (customFrom && d < new Date(customFrom)) return false;
+    if (customTo && d > new Date(customTo)) return false;
+    return true;
+  }
   if (period === "luna_curenta") {
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   }
@@ -82,14 +92,17 @@ export function VenituriCheltuieliClient({
 }) {
   const [viewMode, setViewMode] = useState<ViewMode>("venituri");
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
   const [isPending, startTransition] = useTransition();
   const [showContractForm, setShowContractForm] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const filteredLinii = useMemo(
-    () => venituriLinii.filter((l) => inPeriod(l.luna, period)),
-    [venituriLinii, period]
+    () => venituriLinii.filter((l) => inPeriod(l.luna, period, customFrom, customTo)),
+    [venituriLinii, period, customFrom, customTo]
   );
 
   const summary = useMemo(() => {
@@ -133,6 +146,15 @@ export function VenituriCheltuieliClient({
               <RefreshCw size={13} />
               Genereaza linii lipsa
             </button>
+            {viewMode === "venituri" && (
+              <button
+                onClick={() => setShowManualForm(true)}
+                className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+              >
+                <Plus size={14} />
+                Venit manual
+              </button>
+            )}
             <button
               onClick={() => setShowContractForm(true)}
               className="flex items-center gap-1.5 rounded-md bg-[#E8007A] px-3 py-2 text-xs font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA]"
@@ -187,17 +209,36 @@ export function VenituriCheltuieliClient({
           </button>
         </div>
         {viewMode === "venituri" && (
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            {PERIOD_OPTIONS.map((p) => (
-              <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          <>
+            <select
+              value={period}
+              onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+              className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+            >
+              {PERIOD_OPTIONS.map((p) => (
+                <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+            {period === "custom" && (
+              <>
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                />
+                <span className="text-xs text-slate-500">-</span>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                />
+              </>
+            )}
+          </>
         )}
       </div>
 
@@ -232,6 +273,14 @@ export function VenituriCheltuieliClient({
           onClose={() => setEditingContract(null)}
         />
       )}
+      {showManualForm && (
+        <ManualVenitFormModal
+          opportunities={opportunities}
+          produseOptions={produseOptions}
+          serviciiOptions={serviciiOptions}
+          onClose={() => setShowManualForm(false)}
+        />
+      )}
     </div>
   );
 }
@@ -252,6 +301,7 @@ function VenituriTable({
   const [venitEstimat, setVenitEstimat] = useState("");
   const [venitRealizat, setVenitRealizat] = useState("");
   const [facturat, setFacturat] = useState(false);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 
   function startEdit(l: VenitLinie) {
     setEditingId(l.id);
@@ -282,144 +332,225 @@ function VenituriTable({
     });
   }
 
+  function toggleCheck(id: string) {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleCheckAll() {
+    setCheckedIds((prev) => (prev.size === sorted.length ? new Set() : new Set(sorted.map((l) => l.id))));
+  }
+
+  function handleBulkDelete() {
+    if (checkedIds.size === 0) return;
+    if (!confirm(`Stergi ${checkedIds.size} linii selectate? Actiunea nu poate fi anulata.`)) return;
+    startTransition(async () => {
+      await deleteVenituriLiniiAction(Array.from(checkedIds));
+      setCheckedIds(new Set());
+    });
+  }
+
+  function handleBulkFacturat() {
+    if (checkedIds.size === 0) return;
+    if (
+      !confirm(
+        `Marchezi ${checkedIds.size} linii ca "Facturat"? Valoarea estimata devine automat valoare realizata, pentru fiecare.`
+      )
+    )
+      return;
+    startTransition(async () => {
+      await bulkMarkFacturatAction(Array.from(checkedIds));
+      setCheckedIds(new Set());
+    });
+  }
+
   const sorted = [...linii].sort((a, b) => (a.luna < b.luna ? 1 : -1));
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/10">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
-            <th className="px-3 py-2">Client</th>
-            <th className="px-3 py-2">Tip</th>
-            <th className="px-3 py-2">Produs</th>
-            <th className="px-3 py-2">Serviciu</th>
-            <th className="px-3 py-2">Luna</th>
-            <th className="px-3 py-2 text-right">Estimat</th>
-            <th className="px-3 py-2 text-right">Realizat</th>
-            <th className="px-3 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.map((l) => {
-            const isEditing = editingId === l.id;
-            return (
-              <tr key={l.id} className="border-b border-white/5 hover:bg-white/[0.03]">
-                <td className="px-3 py-2 text-white">{l.nume_client}</td>
-                <td className="px-3 py-2 text-slate-400">{l.tip_venit}</td>
-                <td className="px-3 py-2 text-slate-400">
-                  {isEditing ? (
-                    <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
-                      <option value="" style={{ backgroundColor: "#111535" }}>
-                        —
-                      </option>
-                      {produseOptions.map((n) => (
-                        <NomOption key={n.id} n={n} />
-                      ))}
-                    </select>
-                  ) : (
-                    (l.produs ?? "—")
-                  )}
-                </td>
-                <td className="px-3 py-2 text-slate-400">
-                  {isEditing ? (
-                    <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
-                      <option value="" style={{ backgroundColor: "#111535" }}>
-                        —
-                      </option>
-                      {serviciiOptions.map((n) => (
-                        <NomOption key={n.id} n={n} />
-                      ))}
-                    </select>
-                  ) : (
-                    (l.serviciu ?? "—")
-                  )}
-                </td>
-                <td className="px-3 py-2 text-slate-400">
-                  {new Date(l.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  {isEditing ? (
+    <div>
+      {checkedIds.size > 0 && (
+        <div className="mb-2 flex items-center gap-2 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2">
+          <span className="text-xs text-slate-300">{checkedIds.size} selectate</span>
+          <button
+            onClick={handleBulkFacturat}
+            disabled={isPending}
+            className="flex items-center gap-1.5 rounded-md bg-green-500/15 px-2.5 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/25 disabled:opacity-50"
+          >
+            <CheckCheck size={13} />
+            Marcheaza facturat (= estimat)
+          </button>
+          <button
+            onClick={handleBulkDelete}
+            disabled={isPending}
+            className="ml-auto flex items-center gap-1.5 rounded-md bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+          >
+            <Trash2 size={13} />
+            Sterge selectate
+          </button>
+        </div>
+      )}
+      <div className="overflow-x-auto rounded-xl border border-white/10">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+              <th className="px-3 py-2">
+                <input
+                  type="checkbox"
+                  checked={sorted.length > 0 && checkedIds.size === sorted.length}
+                  onChange={toggleCheckAll}
+                  className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                />
+              </th>
+              <th className="px-3 py-2">Client</th>
+              <th className="px-3 py-2">Tip</th>
+              <th className="px-3 py-2">Produs</th>
+              <th className="px-3 py-2">Serviciu</th>
+              <th className="px-3 py-2">Luna</th>
+              <th className="px-3 py-2 text-right">Estimat</th>
+              <th className="px-3 py-2 text-right">Realizat</th>
+              <th className="px-3 py-2 text-center">Facturat</th>
+              <th className="px-3 py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((l) => {
+              const isEditing = editingId === l.id;
+              return (
+                <tr key={l.id} className="border-b border-white/5 hover:bg-white/[0.03]">
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <input
-                      type="number"
-                      step="0.01"
-                      value={venitEstimat}
-                      onChange={(e) => setVenitEstimat(e.target.value)}
-                      className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
+                      type="checkbox"
+                      checked={checkedIds.has(l.id)}
+                      onChange={() => toggleCheck(l.id)}
+                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
                     />
-                  ) : (
-                    <span className="font-mono text-slate-300">{formatEur(l.venit_estimat)}</span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={venitRealizat}
-                      onChange={(e) => setVenitRealizat(e.target.value)}
-                      className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
-                    />
-                  ) : (
-                    <span className="font-mono text-white">
-                      {l.venit_realizat !== null ? formatEur(l.venit_realizat) : "—"}
-                    </span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  {isEditing ? (
-                    <div className="flex items-center justify-end gap-1">
-                      <label className="mr-1 flex items-center gap-1 text-[11px] text-slate-400">
-                        <input
-                          type="checkbox"
-                          checked={facturat}
-                          onChange={(e) => setFacturat(e.target.checked)}
-                          className="h-3.5 w-3.5"
-                        />
-                        Facturat
-                      </label>
-                      <button
-                        onClick={() => handleSave(l.id)}
-                        disabled={isPending}
-                        className="rounded-md p-1 text-green-400 hover:bg-green-500/10"
-                      >
-                        <Check size={14} />
-                      </button>
-                      <button
-                        onClick={() => setEditingId(null)}
-                        className="rounded-md p-1 text-slate-500 hover:bg-white/5"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => startEdit(l)}
-                        className="rounded-md p-1 text-slate-500 hover:bg-white/5 hover:text-[#E8007A]"
-                      >
-                        <Pencil size={13} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(l.id)}
-                        className="rounded-md p-1 text-slate-600 hover:bg-red-500/10 hover:text-red-400"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  )}
+                  </td>
+                  <td className="px-3 py-2 text-white">{l.nume_client}</td>
+                  <td className="px-3 py-2 text-slate-400">{l.tip_venit}</td>
+                  <td className="px-3 py-2 text-slate-400">
+                    {isEditing ? (
+                      <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
+                        <option value="" style={{ backgroundColor: "#111535" }}>
+                          —
+                        </option>
+                        {produseOptions.map((n) => (
+                          <NomOption key={n.id} n={n} />
+                        ))}
+                      </select>
+                    ) : (
+                      (l.produs ?? "—")
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-slate-400">
+                    {isEditing ? (
+                      <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
+                        <option value="" style={{ backgroundColor: "#111535" }}>
+                          —
+                        </option>
+                        {serviciiOptions.map((n) => (
+                          <NomOption key={n.id} n={n} />
+                        ))}
+                      </select>
+                    ) : (
+                      (l.serviciu ?? "—")
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-slate-400">
+                    {new Date(l.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={venitEstimat}
+                        onChange={(e) => setVenitEstimat(e.target.value)}
+                        className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
+                      />
+                    ) : (
+                      <span className="font-mono text-slate-300">{formatEur(l.venit_estimat)}</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={venitRealizat}
+                        onChange={(e) => setVenitRealizat(e.target.value)}
+                        className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
+                      />
+                    ) : (
+                      <span className="font-mono text-white">
+                        {l.venit_realizat !== null ? formatEur(l.venit_realizat) : "—"}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    {isEditing ? (
+                      <input
+                        type="checkbox"
+                        checked={facturat}
+                        onChange={(e) => setFacturat(e.target.checked)}
+                        className="h-3.5 w-3.5"
+                      />
+                    ) : l.facturat ? (
+                      <Check size={14} className="mx-auto text-green-400" />
+                    ) : (
+                      <span className="text-slate-600">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {isEditing ? (
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleSave(l.id)}
+                          disabled={isPending}
+                          className="rounded-md p-1 text-green-400 hover:bg-green-500/10"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="rounded-md p-1 text-slate-500 hover:bg-white/5"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => startEdit(l)}
+                          className="rounded-md p-1 text-slate-500 hover:bg-white/5 hover:text-[#E8007A]"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(l.id)}
+                          className="rounded-md p-1 text-slate-600 hover:bg-red-500/10 hover:text-red-400"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {sorted.length === 0 && (
+              <tr>
+                <td colSpan={10} className="px-3 py-8 text-center text-sm text-slate-500">
+                  Nicio linie de venit pentru filtrul curent.
                 </td>
               </tr>
-            );
-          })}
-          {sorted.length === 0 && (
-            <tr>
-              <td colSpan={8} className="px-3 py-8 text-center text-sm text-slate-500">
-                Nicio linie de venit pentru filtrul curent.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -434,9 +565,7 @@ function ContracteTable({
   const [isPending, startTransition] = useTransition();
 
   function handleDelete(id: string) {
-    if (
-      !confirm("Stergi acest contract? Liniile de venit deja generate raman, dar se detaseaza de contract.")
-    )
+    if (!confirm("Stergi acest contract? Liniile lui de venit se sterg si ele, automat. Actiunea nu poate fi anulata."))
       return;
     startTransition(async () => {
       await deleteContractAction(id);
@@ -556,6 +685,7 @@ function ContractFormModal({
   const [message, setMessage] = useState<string | null>(null);
 
   const selectedOpportunity = opportunities.find((o) => o.id === opportunityId);
+  const esteRateSauEtape = tipVenit === "Nerecurent" && (modalitateFacturare === "Rate" || modalitateFacturare === "Etape");
 
   function handleSave() {
     setMessage(null);
@@ -578,9 +708,11 @@ function ContractFormModal({
 
     startTransition(async () => {
       const fields = {
+        tip_venit: tipVenit,
         produs: produs || null,
         serviciu: serviciu || null,
         valoare_lunara: Number(valoare),
+        data_inceput: dataInceput,
         data_sfarsit: dataSfarsit,
         stadiu_contract: stadiuContract || null,
         modalitate_facturare: modalitateFacturare || null,
@@ -593,8 +725,6 @@ function ContractFormModal({
             ...fields,
             opportunity_id: opportunityId,
             nume_client: selectedOpportunity?.nume_potential ?? "",
-            tip_venit: tipVenit,
-            data_inceput: dataInceput,
           });
 
       if (result.success) onClose();
@@ -616,6 +746,13 @@ function ContractFormModal({
             <X size={18} />
           </button>
         </div>
+
+        {contract && (
+          <p className="mb-3 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2 text-[11px] text-slate-300">
+            La salvare, toate liniile de venit ale acestui contract se regenereaza dupa noile setari.
+            Realizatul deja inregistrat se pastreaza, acolo unde perioadele se suprapun.
+          </p>
+        )}
 
         <div className="space-y-3">
           <div>
@@ -665,8 +802,7 @@ function ContractFormModal({
             <select
               value={tipVenit}
               onChange={(e) => setTipVenit(e.target.value as TipVenit)}
-              disabled={!!contract}
-              className={`${selectClass} disabled:opacity-50`}
+              className={selectClass}
             >
               <option value="Recurent" style={{ backgroundColor: "#111535" }}>
                 Recurent
@@ -713,11 +849,6 @@ function ContractFormModal({
               onChange={(e) => setValoare(e.target.value)}
               className={inputClass}
             />
-            {contract && (
-              <p className="mt-1 text-[11px] text-slate-500">
-                Schimbarea valorii afecteaza doar lunile viitoare, inca negenerate.
-              </p>
-            )}
           </div>
 
           <div>
@@ -726,8 +857,7 @@ function ContractFormModal({
               type="date"
               value={dataInceput}
               onChange={(e) => setDataInceput(e.target.value)}
-              disabled={!!contract}
-              className={`${inputClass} disabled:opacity-50`}
+              className={inputClass}
             />
           </div>
 
@@ -825,6 +955,179 @@ function ContractFormModal({
             </select>
           </div>
 
+          {esteRateSauEtape && (
+            <p className="rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-[11px] text-amber-300">
+              Rate/Etape nu au o cadenta fixa - contractul se salveaza fara linii generate automat.
+              Adauga fiecare rata/etapa manual, cu data si valoarea ei, din butonul &quot;Venit
+              manual&quot; de pe pagina.
+            </p>
+          )}
+
+          <div>
+            <label className={labelClass}>Observatii</label>
+            <textarea
+              value={observatii}
+              onChange={(e) => setObservatii(e.target.value)}
+              rows={2}
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {message && <p className="mt-3 text-xs text-red-400">{message}</p>}
+
+        <button
+          onClick={handleSave}
+          disabled={isPending}
+          className="mt-4 w-full rounded-md bg-[#E8007A] py-2 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
+        >
+          {isPending ? "Se salveaza..." : "Salveaza"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ManualVenitFormModal({
+  opportunities,
+  produseOptions,
+  serviciiOptions,
+  onClose,
+}: {
+  opportunities: OpportunityOption[];
+  produseOptions: Nomenclator[];
+  serviciiOptions: Nomenclator[];
+  onClose: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [opportunityId, setOpportunityId] = useState("");
+  const [tipVenit, setTipVenit] = useState<TipVenit>("Nerecurent");
+  const [produs, setProdus] = useState("");
+  const [serviciu, setServiciu] = useState("");
+  const [venitEstimat, setVenitEstimat] = useState("");
+  const [luna, setLuna] = useState(getTodayISO().slice(0, 7));
+  const [observatii, setObservatii] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+
+  const selectedOpportunity = opportunities.find((o) => o.id === opportunityId);
+
+  function handleSave() {
+    setMessage(null);
+    if (!opportunityId) {
+      setMessage("Trebuie sa alegi un client din lista.");
+      return;
+    }
+    startTransition(async () => {
+      const result = await addVenitLinieManualAction({
+        opportunity_id: opportunityId,
+        nume_client: selectedOpportunity?.nume_potential ?? "",
+        tip_venit: tipVenit,
+        produs: produs || null,
+        serviciu: serviciu || null,
+        venit_estimat: Number(venitEstimat),
+        luna: `${luna}-01`,
+        observatii: observatii || null,
+      });
+      if (result.success) onClose();
+      else setMessage(result.message ?? "Eroare la salvare.");
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-xl border border-white/10 bg-[#111535] p-5"
+      >
+        <div className="mb-4 flex items-start justify-between">
+          <h2 className="text-lg font-heading text-white">Venit manual</h2>
+          <button onClick={onClose} className="text-slate-500 hover:text-white">
+            <X size={18} />
+          </button>
+        </div>
+        <p className="mb-3 text-[11px] text-slate-500">
+          O singura linie, independenta - util pentru o rata sau o etapa dintr-un contract cu
+          facturare pe Rate/Etape, sau orice venit care nu se preteaza la generare automata.
+        </p>
+
+        <div className="space-y-3">
+          <div>
+            <label className={labelClass}>Client *</label>
+            <select
+              value={opportunityId}
+              onChange={(e) => setOpportunityId(e.target.value)}
+              className={selectClass}
+            >
+              <option value="" style={{ backgroundColor: "#111535" }}>
+                Alege clientul...
+              </option>
+              {opportunities.map((o) => (
+                <option key={o.id} value={o.id} style={{ backgroundColor: "#111535" }}>
+                  {o.nume_potential}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Tip venit</label>
+            <select
+              value={tipVenit}
+              onChange={(e) => setTipVenit(e.target.value as TipVenit)}
+              className={selectClass}
+            >
+              <option value="Recurent" style={{ backgroundColor: "#111535" }}>
+                Recurent
+              </option>
+              <option value="Nerecurent" style={{ backgroundColor: "#111535" }}>
+                Nerecurent
+              </option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Produs</label>
+              <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
+                <option value="" style={{ backgroundColor: "#111535" }}>
+                  —
+                </option>
+                {produseOptions.map((n) => (
+                  <NomOption key={n.id} n={n} />
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Serviciu</label>
+              <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
+                <option value="" style={{ backgroundColor: "#111535" }}>
+                  —
+                </option>
+                {serviciiOptions.map((n) => (
+                  <NomOption key={n.id} n={n} />
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Valoare (EUR, fara TVA)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={venitEstimat}
+                onChange={(e) => setVenitEstimat(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Luna</label>
+              <input
+                type="month"
+                value={luna}
+                onChange={(e) => setLuna(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+          </div>
           <div>
             <label className={labelClass}>Observatii</label>
             <textarea
