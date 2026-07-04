@@ -3,12 +3,17 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { formatRon, formatRonCompact } from "@/lib/format";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { OBLIGATII_KPI_DEFINITIONS } from "@/lib/obligatii-kpi-definitions";
 import type { PlatiMonthDatum } from "@/lib/obligatii-dashboard-analytics";
 
 export function ObligatiiPlatiTimeSeriesChart({ data }: { data: PlatiMonthDatum[] }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 text-sm font-medium text-white">Evolutie plati (ultimele 12 luni)</p>
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+        Evolutie plati (ultimele 12 luni)
+        <InfoTooltip title="Evolutie plati" definition={OBLIGATII_KPI_DEFINITIONS.platiTimeSeriesChart} />
+      </p>
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
           <defs>

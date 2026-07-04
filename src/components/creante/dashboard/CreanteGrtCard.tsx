@@ -2,6 +2,8 @@
 
 import { Target } from "lucide-react";
 import { formatRon } from "@/lib/format";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 
 const LUNI_RO = [
   "ianuarie", "februarie", "martie", "aprilie", "mai", "iunie",
@@ -35,6 +37,7 @@ export function CreanteGrtCard({
         <p className="flex items-center gap-1.5 text-sm font-medium text-white">
           <Target size={15} className="text-[#E8007A]" />
           GRT — {labelLuna}
+          <InfoTooltip title="GRT (Grad Realizare Target)" definition={CREANTE_KPI_DEFINITIONS.grtCard} />
         </p>
         <p className="text-[11px] text-slate-500">Calculat automat din facturile propuse</p>
       </div>

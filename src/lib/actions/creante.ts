@@ -359,6 +359,7 @@ export async function updateCreantaTrackingAction(
   id: string,
   fields: {
     tip_vanzare?: TipVanzare | null;
+    serviciu_facturat?: string | null;
     observatii?: string | null;
     valoare_propusa_spre_incasare?: number | null;
   }

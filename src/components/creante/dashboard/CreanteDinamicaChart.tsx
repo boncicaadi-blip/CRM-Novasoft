@@ -2,6 +2,8 @@
 
 import { ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import { formatRon, formatRonCompact } from "@/lib/format";
 
 interface DinamicaDatum {
@@ -13,7 +15,10 @@ interface DinamicaDatum {
 export function CreanteDinamicaChart({ data }: { data: DinamicaDatum[] }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-1 text-sm font-medium text-white">Dinamica creantelor (facturat vs. incasat)</p>
+      <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-white">
+        Dinamica creantelor (facturat vs. incasat)
+        <InfoTooltip title="Dinamica creantelor" definition={CREANTE_KPI_DEFINITIONS.dinamicaChart} />
+      </p>
       <p className="mb-3 text-[11px] text-slate-500">
         Cat s-a emis nou in fiecare luna (dupa data facturii) fata de cat s-a incasat efectiv
         (dupa data incasarii).

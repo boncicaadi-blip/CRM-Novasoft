@@ -3,6 +3,8 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { formatRon, formatRonCompact } from "@/lib/format";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import type { ClientDatum } from "@/lib/creante-dashboard-analytics";
 
 export function CreanteTopClientiChart({
@@ -26,7 +28,7 @@ export function CreanteTopClientiChart({
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">Top clienti dupa sold restant</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">Top clienti dupa sold restant<InfoTooltip title="Top clienti dupa sold restant" definition={CREANTE_KPI_DEFINITIONS.topClientiChart} /></p>
         {selected && onSelect && (
           <button
             onClick={() => onSelect(null)}

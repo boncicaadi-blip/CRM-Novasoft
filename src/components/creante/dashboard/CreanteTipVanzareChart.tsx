@@ -2,6 +2,8 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import { formatRon } from "@/lib/format";
 import type { TipVanzareDatum } from "@/lib/creante-dashboard-analytics";
 
@@ -25,7 +27,7 @@ export function CreanteTipVanzareChart({
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">Distributie Tip Vanzare (dupa sold)</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">Distributie Tip Vanzare (dupa sold)<InfoTooltip title="Distributie Tip Vanzare" definition={CREANTE_KPI_DEFINITIONS.tipVanzareChart} /></p>
         {selected && onSelect && (
           <button
             onClick={() => onSelect(null)}

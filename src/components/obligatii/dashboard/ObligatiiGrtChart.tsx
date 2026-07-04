@@ -12,13 +12,18 @@ import {
   Legend,
 } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { OBLIGATII_KPI_DEFINITIONS } from "@/lib/obligatii-kpi-definitions";
 import { formatRon, formatRonCompact } from "@/lib/format";
 import type { GrtMonthDatum } from "@/lib/obligatii-dashboard-analytics";
 
 export function ObligatiiGrtChart({ data }: { data: GrtMonthDatum[] }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-1 text-sm font-medium text-white">Dinamica targetului (GRT pe luni)</p>
+      <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-white">
+        Dinamica targetului (GRT pe luni)
+        <InfoTooltip title="Dinamica targetului (GRT)" definition={OBLIGATII_KPI_DEFINITIONS.grtChart} />
+      </p>
       <p className="mb-3 text-[11px] text-slate-500">
         Bare: target propus vs. platit efectiv. Linie: gradul de realizare (%).
       </p>

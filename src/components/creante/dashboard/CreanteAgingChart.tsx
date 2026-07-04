@@ -11,6 +11,8 @@ import {
   Cell,
 } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import { formatRon, formatRonCompact } from "@/lib/format";
 import type { AgingDatum } from "@/lib/creante-dashboard-analytics";
 import type { AgingBucket } from "@/lib/creante-analytics";
@@ -34,7 +36,7 @@ export function CreanteAgingChart({
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">Vechime sold restant (aging)</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">Vechime sold restant (aging)<InfoTooltip title="Vechime sold (aging)" definition={CREANTE_KPI_DEFINITIONS.agingChart} /></p>
         {selected && onSelect && (
           <button
             onClick={() => onSelect(null)}

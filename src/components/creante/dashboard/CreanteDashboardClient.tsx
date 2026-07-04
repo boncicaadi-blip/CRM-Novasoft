@@ -104,7 +104,9 @@ export function CreanteDashboardClient({
   // GRT si dinamica raman mereu pe ultimele 12 luni calendaristice, indiferent
   // de filtrul de perioada de mai sus - sunt inerent lunare, n-are sens sa
   // le "restrangi" la o singura luna.
-  const grtSeries = useMemo(() => buildGrtSeries(incasariFlat, targets, 11), [incasariFlat, targets]);
+  // Fereastra mai lunga decat restul graficelor (19 luni, nu 12) - acopera
+  // tot istoricul de target importat (decembrie 2024 - prezent).
+  const grtSeries = useMemo(() => buildGrtSeries(incasariFlat, targets, 18), [incasariFlat, targets]);
   const incasariSeries = useMemo(() => buildIncasariTimeSeries(incasariFlat, 11), [incasariFlat]);
   const facturatSeries = useMemo(() => buildFacturatTimeSeries(creante, 11), [creante]);
   const dinamicaData = useMemo(

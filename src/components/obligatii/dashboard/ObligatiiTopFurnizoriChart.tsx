@@ -3,6 +3,8 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { formatRon, formatRonCompact } from "@/lib/format";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { OBLIGATII_KPI_DEFINITIONS } from "@/lib/obligatii-kpi-definitions";
 import type { FurnizorDatum } from "@/lib/obligatii-dashboard-analytics";
 
 export function ObligatiiTopFurnizoriChart({
@@ -26,7 +28,7 @@ export function ObligatiiTopFurnizoriChart({
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">Top furnizori dupa sold restant</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">Top furnizori dupa sold restant<InfoTooltip title="Top furnizori dupa sold restant" definition={OBLIGATII_KPI_DEFINITIONS.topFurnizoriChart} /></p>
         {selected && onSelect && (
           <button
             onClick={() => onSelect(null)}

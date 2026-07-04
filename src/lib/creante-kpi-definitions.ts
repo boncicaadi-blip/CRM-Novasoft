@@ -28,4 +28,56 @@ export const CREANTE_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     cumAnalizezi:
       "Spre deosebire de celelalte carduri, acesta chiar raspunde la filtrul de perioada. O factura emisa in martie dar incasata in iunie conteaza la iunie, nu la martie.",
   },
+  statusChart: {
+    descriere: "Cate facturi (si cat sold) sunt in fiecare status: La zi, Restanta sau Incasata.",
+    formula: "Numarare + suma sold, grupate dupa status curent al fiecarei facturi",
+    cumAnalizezi: "Click pe o felie filtreaza restul dashboard-ului la doar acel status.",
+  },
+  tipVanzareChart: {
+    descriere: "Cum se imparte soldul restant intre facturi Recurente si Nerecurente.",
+    formula: "Suma sold, grupata dupa campul Tip Vanzare",
+    cumAnalizezi:
+      "Util ca sa vezi daca restantele vin mai mult din contracte recurente (abonamente) sau din proiecte punctuale.",
+  },
+  agingChart: {
+    descriere: "Cum se distribuie soldul restant pe intervale de vechime a intarzierii.",
+    formula: "Suma sold pentru facturi restante, grupata pe intervale de zile depasire scadenta",
+    cumAnalizezi:
+      "Bara 90+ mare inseamna bani vechi, greu de recuperat - de obicei acolo trebuie concentrat efortul de recuperare.",
+  },
+  grtCard: {
+    descriere:
+      "Grad Realizare Target - cat din suma propusa spre incasare luna asta chiar s-a incasat pana acum.",
+    formula: "Incasat in luna curenta / Target lunii curente x 100",
+    cumAnalizezi:
+      "Targetul se calculeaza automat din facturile bifate 'Propus spre incasare' - nu se seteaza manual.",
+  },
+  grtChart: {
+    descriere: "Evolutia targetului si a incasarilor, luna de luna, plus procentul de realizare.",
+    formula: "Bare: target si incasat per luna. Linie: Incasat / Target x 100",
+    cumAnalizezi:
+      "Incasatul se recalculeaza mereu live din jurnal - daca anulezi o incasare pe o luna trecuta, graficul se actualizeaza automat.",
+  },
+  dinamicaChart: {
+    descriere: "Cat s-a emis nou in fiecare luna (facturat) fata de cat s-a incasat efectiv.",
+    formula: "Facturat: suma Total factura dupa Data facturii. Incasat: suma din jurnal dupa Data incasarii",
+    cumAnalizezi:
+      "Daca liniile se departeaza in timp (facturat mult mai mare decat incasat), soldul restant creste constant.",
+  },
+  incasariTimeSeriesChart: {
+    descriere: "Evolutia lunara a sumelor efectiv incasate, din jurnalul de incasari.",
+    formula: "Suma valorilor din jurnal, grupata dupa luna Datei incasarii",
+    cumAnalizezi: "Arata ritmul real de incasare, indiferent cand au fost emise facturile respective.",
+  },
+  topClientiChart: {
+    descriere: "Clientii cu cel mai mare sold restant chiar acum (doar facturi restante).",
+    formula: "Suma sold pentru facturi restante, grupata pe firma, top 8 dupa valoare",
+    cumAnalizezi: "Click pe o bara filtreaza restul dashboard-ului la acel client.",
+  },
+  riscZone: {
+    descriere: "Facturile cele mai importante de urmarit - combina sold mare cu vechime mare.",
+    formula: "Sortare dupa Sold x Zile depasire, descrescator - nu doar sold, nu doar vechime, ci produsul lor",
+    cumAnalizezi:
+      "O factura mica dar foarte veche, sau una mare dar recenta, nu urca la fel de sus ca una mare SI veche.",
+  },
 };

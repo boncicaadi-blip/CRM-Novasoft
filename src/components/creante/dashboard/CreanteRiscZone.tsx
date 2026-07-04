@@ -3,6 +3,8 @@
 import { AlertTriangle, Flame } from "lucide-react";
 import { formatRon } from "@/lib/format";
 import { getZileDepasire } from "@/lib/creante-analytics";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import type { Creanta } from "@/types/creante";
 
 export function CreanteRiscZone({
@@ -18,7 +20,10 @@ export function CreanteRiscZone({
     <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4">
       <div className="mb-3 flex items-center gap-2">
         <Flame size={16} className="text-amber-400" />
-        <p className="text-sm font-medium text-white">Facturi cu risc mare</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+          Facturi cu risc mare
+          <InfoTooltip title="Facturi cu risc mare" definition={CREANTE_KPI_DEFINITIONS.riscZone} />
+        </p>
       </div>
       <p className="mb-3 text-[11px] text-slate-500">
         Sold mare si vechime mare - cele mai importante de urmarit.

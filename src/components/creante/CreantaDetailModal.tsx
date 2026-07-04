@@ -21,6 +21,7 @@ export function CreantaDetailModal({
 }) {
   const [isPending, startTransition] = useTransition();
   const [tipVanzare, setTipVanzare] = useState<TipVanzare | "">(creanta.tip_vanzare ?? "");
+  const [serviciu, setServiciu] = useState(creanta.serviciu_facturat ?? "");
   const [observatii, setObservatii] = useState(creanta.observatii ?? "");
   const [valoarePropusa, setValoarePropusa] = useState(
     String(creanta.valoare_propusa_spre_incasare ?? creanta.sold)
@@ -41,6 +42,7 @@ export function CreantaDetailModal({
     startTransition(async () => {
       const result = await updateCreantaTrackingAction(creanta.id, {
         tip_vanzare: tipVanzare === "" ? null : tipVanzare,
+        serviciu_facturat: serviciu || null,
         observatii: observatii || null,
         ...(creanta.propus_spre_incasare
           ? { valoare_propusa_spre_incasare: Number(valoarePropusa) }
@@ -244,6 +246,16 @@ export function CreantaDetailModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] text-slate-500">Serviciu</label>
+            <input
+              value={serviciu}
+              onChange={(e) => setServiciu(e.target.value)}
+              placeholder="Serviciul scris pe factura"
+              className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+            />
           </div>
 
           <div>
