@@ -73,6 +73,27 @@ function NomOption({ n }: { n: Nomenclator }) {
   );
 }
 
+/** Eticheta pentru selectorul de client - adauga produsul si data cand mai
+ * multe oportunitati facturabile au acelasi nume de firma (ex: doua vanzari
+ * separate la aceeasi companie), ca sa poti alege pe cea corecta. */
+function opportunityLabel(o: OpportunityOption, duplicateNames: Set<string>): string {
+  if (!duplicateNames.has(o.nume_potential)) return o.nume_potential;
+  const detalii = [
+    o.produs_serviciu_propus,
+    new Date(o.created_at).toLocaleDateString("ro-RO"),
+    o.opportunity_code,
+  ].filter(Boolean);
+  return detalii.length > 0 ? `${o.nume_potential} — ${detalii.join(", ")}` : o.nume_potential;
+}
+
+function useDuplicateOpportunityNames(opportunities: OpportunityOption[]): Set<string> {
+  return useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const o of opportunities) counts.set(o.nume_potential, (counts.get(o.nume_potential) ?? 0) + 1);
+    return new Set(Array.from(counts.entries()).filter(([, n]) => n > 1).map(([name]) => name));
+  }, [opportunities]);
+}
+
 export function VenituriCheltuieliClient({
   contracte,
   venituriLinii,
@@ -787,6 +808,7 @@ function ContractFormModal({
   const [message, setMessage] = useState<string | null>(null);
 
   const selectedOpportunity = opportunities.find((o) => o.id === opportunityId);
+  const duplicateNames = useDuplicateOpportunityNames(opportunities);
 
   function handleSave() {
     setMessage(null);
@@ -874,7 +896,7 @@ function ContractFormModal({
                 </option>
                 {opportunities.map((o) => (
                   <option key={o.id} value={o.id} style={{ backgroundColor: "#111535" }}>
-                    {o.nume_potential}
+                    {opportunityLabel(o, duplicateNames)}
                   </option>
                 ))}
               </select>
@@ -1124,6 +1146,7 @@ function ManualVenitFormModal({
   const [message, setMessage] = useState<string | null>(null);
 
   const selectedOpportunity = opportunities.find((o) => o.id === opportunityId);
+  const duplicateNames = useDuplicateOpportunityNames(opportunities);
 
   function handleSave() {
     setMessage(null);
@@ -1177,7 +1200,7 @@ function ManualVenitFormModal({
               </option>
               {opportunities.map((o) => (
                 <option key={o.id} value={o.id} style={{ backgroundColor: "#111535" }}>
-                  {o.nume_potential}
+                  {opportunityLabel(o, duplicateNames)}
                 </option>
               ))}
             </select>

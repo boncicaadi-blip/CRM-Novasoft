@@ -3,23 +3,30 @@ import type { Contract, VenitLinie } from "@/types/venituri";
 
 export interface OpportunityOption {
   id: string;
+  opportunity_code: string | null;
   nume_potential: string;
   nume_grup: string;
   domeniul_activitate: string | null;
   judet: string | null;
   oras: string | null;
+  produs_serviciu_propus: string | null;
+  created_at: string;
 }
 
 /** Lista de clienti pentru selectorul din formularul de contract - doar
  * oportunitatile bifate "Facturabil" (marcate manual, in fisa oportunitatii),
  * nu orice oportunitate din pipeline si nu neaparat legate de stage. Asta
  * permite sa marchezi si vanzari suplimentare (up-sell/cross-sell) pe un
- * client existent, fara sa fie nevoie de o oportunitate noua la stage Client. */
+ * client existent, fara sa fie nevoie de o oportunitate noua la stage Client.
+ * Aducem si opportunity_code/produs/data, ca sa poti diferentia doua
+ * oportunitati facturabile ale aceleiasi firme (ex: doua vanzari separate). */
 export async function getOpportunityOptions(): Promise<OpportunityOption[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("opportunities")
-    .select("id, nume_potential, nume_grup, domeniul_activitate, judet, oras")
+    .select(
+      "id, opportunity_code, nume_potential, nume_grup, domeniul_activitate, judet, oras, produs_serviciu_propus, created_at"
+    )
     .eq("facturabil", true)
     .order("nume_potential", { ascending: true });
 
