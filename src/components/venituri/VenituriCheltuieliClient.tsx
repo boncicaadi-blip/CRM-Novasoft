@@ -2,6 +2,17 @@
 
 import { useMemo, useState, useTransition } from "react";
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+} from "recharts";
+import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import {
   TrendingUp,
   FileText,
   Plus,
@@ -11,6 +22,8 @@ import {
   Check,
   Pencil,
   CheckCheck,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { getTodayISO } from "@/lib/date";
@@ -70,6 +83,69 @@ function NomOption({ n }: { n: Nomenclator }) {
     <option value={n.valoare} style={{ backgroundColor: "#111535" }}>
       {n.valoare}
     </option>
+  );
+}
+
+interface LunaChartDatum {
+  luna: string;
+  label: string;
+  estimat: number;
+  realizat: number;
+}
+
+function buildMonthlyChartData(linii: VenitLinie[]): LunaChartDatum[] {
+  const byMonth = new Map<string, { estimat: number; realizat: number }>();
+  for (const l of linii) {
+    const key = l.luna.slice(0, 7);
+    const cur = byMonth.get(key) ?? { estimat: 0, realizat: 0 };
+    cur.estimat += l.venit_estimat;
+    cur.realizat += l.venit_realizat ?? 0;
+    byMonth.set(key, cur);
+  }
+  return Array.from(byMonth.entries())
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([key, v]) => ({
+      luna: key,
+      label: new Date(`${key}-01`).toLocaleDateString("ro-RO", { month: "short", year: "2-digit" }),
+      estimat: v.estimat,
+      realizat: v.realizat,
+    }));
+}
+
+function VeniturChart({ linii }: { linii: VenitLinie[] }) {
+  const data = useMemo(() => buildMonthlyChartData(linii), [linii]);
+
+  if (data.length === 0) return null;
+
+  return (
+    <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <p className="mb-3 text-sm font-medium text-white">Estimat vs. Realizat, pe perioada selectata</p>
+      <ResponsiveContainer width="100%" height={220}>
+        <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const d = payload[0].payload as LunaChartDatum;
+              return (
+                <ChartTooltipBox
+                  title={d.label}
+                  rows={[
+                    { label: "Estimat", value: `${d.estimat.toLocaleString("ro-RO")} EUR`, color: "#475569" },
+                    { label: "Realizat", value: `${d.realizat.toLocaleString("ro-RO")} EUR`, color: "#22C55E" },
+                  ]}
+                />
+              );
+            }}
+          />
+          <Legend wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} />
+          <Bar dataKey="estimat" name="Estimat" fill="#475569" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="realizat" name="Realizat" fill="#22C55E" radius={[3, 3, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 
@@ -215,6 +291,8 @@ export function VenituriCheltuieliClient({
         </div>
       </div>
 
+      <VeniturChart linii={filteredLinii} />
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center rounded-md border border-white/10 p-0.5">
           <button
@@ -323,6 +401,7 @@ export function VenituriCheltuieliClient({
       {viewMode === "venituri" ? (
         <VenituriTable
           linii={filteredLinii}
+          contracte={contracte}
           produseOptions={produseOptions}
           serviciiOptions={serviciiOptions}
         />
@@ -365,10 +444,12 @@ export function VenituriCheltuieliClient({
 
 function VenituriTable({
   linii,
+  contracte,
   produseOptions,
   serviciiOptions,
 }: {
   linii: VenitLinie[];
+  contracte: Contract[];
   produseOptions: Nomenclator[];
   serviciiOptions: Nomenclator[];
 }) {
@@ -381,6 +462,10 @@ function VenituriTable({
   const [venitRealizat, setVenitRealizat] = useState("");
   const [facturat, setFacturat] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [pageSize, setPageSize] = useState<number | "toate">(50);
+  const [page, setPage] = useState(1);
+
+  const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
 
   function startEdit(l: VenitLinie) {
     setEditingId(l.id);
@@ -428,7 +513,10 @@ function VenituriTable({
 
   function handleBulkDelete() {
     if (checkedIds.size === 0) return;
-    if (!confirm(`Stergi ${checkedIds.size} linii selectate? Actiunea nu poate fi anulata.`)) return;
+    const confirmation = prompt(
+      `Scrie STERGE ca sa confirmi stergerea celor ${checkedIds.size} linii selectate. Actiunea nu poate fi anulata.`
+    );
+    if (confirmation !== "STERGE") return;
     startTransition(async () => {
       await deleteVenituriLiniiAction(Array.from(checkedIds));
       setCheckedIds(new Set());
@@ -450,6 +538,12 @@ function VenituriTable({
   }
 
   const sorted = [...linii].sort((a, b) => (a.luna < b.luna ? 1 : -1));
+  const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(sorted.length / pageSize));
+  const pagedRows = useMemo(() => {
+    if (pageSize === "toate") return sorted;
+    const start = (page - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, page, pageSize]);
 
   return (
     <div>
@@ -490,6 +584,8 @@ function VenituriTable({
               <th className="px-3 py-2">Tip</th>
               <th className="px-3 py-2">Produs</th>
               <th className="px-3 py-2">Serviciu</th>
+              <th className="px-3 py-2">Contract</th>
+              <th className="px-3 py-2">Modalitate</th>
               <th className="px-3 py-2">Luna</th>
               <th className="px-3 py-2 text-right">Estimat</th>
               <th className="px-3 py-2 text-right">Realizat</th>
@@ -498,8 +594,9 @@ function VenituriTable({
             </tr>
           </thead>
           <tbody>
-            {sorted.map((l) => {
+            {pagedRows.map((l) => {
               const isEditing = editingId === l.id;
+              const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
               return (
                 <tr key={l.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
@@ -540,6 +637,16 @@ function VenituriTable({
                       (l.serviciu ?? "—")
                     )}
                   </td>
+                  <td className="px-3 py-2">
+                    {contract ? (
+                      <span className={contract.status_contract === "Activ" ? "text-green-400" : "text-slate-500"}>
+                        {contract.status_contract}
+                      </span>
+                    ) : (
+                      <span className="text-slate-600">Manual</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-slate-400">{contract?.modalitate_facturare ?? "—"}</td>
                   <td className="px-3 py-2 text-slate-400">
                     {isEditing ? (
                       <input
@@ -637,13 +744,60 @@ function VenituriTable({
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={12} className="px-3 py-8 text-center text-sm text-slate-500">
                   Nicio linie de venit pentru filtrul curent.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <div className="flex items-center gap-1.5">
+          <span>Randuri pe pagina:</span>
+          {[25, 50, 100, "toate" as const].map((size) => (
+            <button
+              key={size}
+              onClick={() => {
+                setPageSize(size);
+                setPage(1);
+              }}
+              className={`rounded-md px-2 py-1 font-medium transition ${
+                pageSize === size
+                  ? "bg-[#E8007A] text-[#0B0D1A]"
+                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+              }`}
+            >
+              {size === "toate" ? "Toate" : size}
+            </button>
+          ))}
+        </div>
+        {pageSize !== "toate" && (
+          <div className="flex items-center gap-2">
+            <span>
+              {sorted.length === 0
+                ? "0 rezultate"
+                : `${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, sorted.length)} din ${sorted.length}`}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span>
+              Pagina {page} din {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -657,6 +811,8 @@ function ContracteTable({
   onEdit: (c: Contract) => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [pageSize, setPageSize] = useState<number | "toate">(50);
+  const [page, setPage] = useState(1);
 
   function handleDelete(id: string) {
     if (!confirm("Stergi acest contract? Liniile lui de venit se sterg si ele, automat. Actiunea nu poate fi anulata."))
@@ -666,7 +822,15 @@ function ContracteTable({
     });
   }
 
+  const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(contracte.length / pageSize));
+  const pagedRows = useMemo(() => {
+    if (pageSize === "toate") return contracte;
+    const start = (page - 1) * pageSize;
+    return contracte.slice(start, start + pageSize);
+  }, [contracte, page, pageSize]);
+
   return (
+    <div>
     <div className="overflow-x-auto rounded-xl border border-white/10">
       <table className="w-full text-sm">
         <thead>
@@ -685,7 +849,7 @@ function ContracteTable({
           </tr>
         </thead>
         <tbody>
-          {contracte.map((c) => (
+          {pagedRows.map((c) => (
             <tr
               key={c.id}
               onClick={() => onEdit(c)}
@@ -736,6 +900,54 @@ function ContracteTable({
           )}
         </tbody>
       </table>
+    </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <div className="flex items-center gap-1.5">
+          <span>Randuri pe pagina:</span>
+          {[25, 50, 100, "toate" as const].map((size) => (
+            <button
+              key={size}
+              onClick={() => {
+                setPageSize(size);
+                setPage(1);
+              }}
+              className={`rounded-md px-2 py-1 font-medium transition ${
+                pageSize === size
+                  ? "bg-[#E8007A] text-[#0B0D1A]"
+                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+              }`}
+            >
+              {size === "toate" ? "Toate" : size}
+            </button>
+          ))}
+        </div>
+        {pageSize !== "toate" && (
+          <div className="flex items-center gap-2">
+            <span>
+              {contracte.length === 0
+                ? "0 rezultate"
+                : `${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, contracte.length)} din ${contracte.length}`}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span>
+              Pagina {page} din {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
