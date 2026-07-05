@@ -181,7 +181,7 @@ export async function generateCrmInsightAction(): Promise<{
     const raw = await askClaude({
       system: buildCrmInsightSystemPrompt(),
       prompt: buildCrmInsightPrompt(sumar),
-      maxTokens: 900,
+      maxTokens: 4000,
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {
@@ -202,7 +202,7 @@ export async function generateRaportComercialInsightAction(): Promise<{
     const raw = await askClaude({
       system: buildCrmInsightSystemPrompt(),
       prompt: buildCrmInsightPrompt(sumar),
-      maxTokens: 900,
+      maxTokens: 4000,
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {
@@ -223,7 +223,7 @@ export async function generateCreanteInsightAction(): Promise<{
     const raw = await askClaude({
       system: buildCreanteInsightSystemPrompt(),
       prompt: buildCreanteInsightPrompt(sumar),
-      maxTokens: 900,
+      maxTokens: 4000,
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {
@@ -244,7 +244,7 @@ export async function generateVenituriInsightAction(): Promise<{
     const raw = await askClaude({
       system: buildVenituriInsightSystemPrompt(),
       prompt: buildVenituriInsightPrompt(sumar),
-      maxTokens: 900,
+      maxTokens: 4000,
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {

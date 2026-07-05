@@ -42,7 +42,7 @@ export async function askClaude(params: {
     },
     body: JSON.stringify({
       model: params.model ?? DEFAULT_AI_MODEL,
-      max_tokens: params.maxTokens ?? 1500,
+      max_tokens: params.maxTokens ?? 3000,
       system: params.system,
       messages: [{ role: "user", content: params.prompt }],
     }),

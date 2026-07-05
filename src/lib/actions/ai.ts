@@ -39,7 +39,7 @@ export async function generateOpportunitySummaryAction(
     const raw = await askClaude({
       system: buildOpportunitySummarySystemPrompt(),
       prompt: buildOpportunitySummaryPrompt(opportunity as Opportunity, timeline),
-      maxTokens: 800,
+      maxTokens: 3000,
     });
 
     const parsed = parseOpportunitySummaryResponse(raw);
