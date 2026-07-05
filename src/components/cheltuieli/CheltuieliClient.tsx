@@ -26,6 +26,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { formatEur } from "@/lib/format";
+import { useTableSort } from "@/lib/useTableSort";
+import { SortableTh } from "@/components/ui/SortableTh";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { CHELTUIELI_KPI_DEFINITIONS } from "@/lib/cheltuieli-kpi-definitions";
 import { getTodayISO } from "@/lib/date";
@@ -539,7 +541,30 @@ function CheltuieliTable({
     });
   }
 
-  const sorted = [...linii].sort((a, b) => (a.luna < b.luna ? 1 : -1));
+  const [colWidths, setColWidths] = useState<Record<string, number>>({});
+
+  const defaultOrdered = useMemo(() => [...linii].sort((a, b) => (a.luna < b.luna ? 1 : -1)), [linii]);
+  const { sorted, sortKey, sortDir, requestSort } = useTableSort(defaultOrdered, (l, key) => {
+    const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
+    switch (key) {
+      case "incadrare":
+        return l.incadrare;
+      case "clasa":
+        return l.clasa;
+      case "status":
+        return contract?.status_contract ?? "";
+      case "luna":
+        return l.luna;
+      case "prognozat":
+        return l.valoare_prognozata;
+      case "realizat":
+        return l.valoare_realizata ?? -Infinity;
+      case "platit":
+        return l.platit ? 1 : 0;
+      default:
+        return null;
+    }
+  });
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(sorted.length / pageSize));
   const pagedRows = useMemo(() => {
     if (pageSize === "toate") return sorted;
@@ -571,10 +596,10 @@ function CheltuieliTable({
         </div>
       )}
       <div className="overflow-x-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead>
             <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
-              <th className="px-3 py-2">
+              <th className="w-8 px-3 py-2">
                 <input
                   type="checkbox"
                   checked={sorted.length > 0 && checkedIds.size === sorted.length}
@@ -582,14 +607,13 @@ function CheltuieliTable({
                   className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
                 />
               </th>
-              <th className="px-3 py-2">Furnizor</th>
-              <th className="px-3 py-2">Incadrare</th>
-              <th className="px-3 py-2">Clasa</th>
-              <th className="px-3 py-2">Contract</th>
-              <th className="px-3 py-2">Luna</th>
-              <th className="px-3 py-2 text-right">Prognozat</th>
-              <th className="px-3 py-2 text-right">Realizat</th>
-              <th className="px-3 py-2 text-center">Platit</th>
+              <SortableTh label="Incadrare" sortKey="incadrare" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.incadrare} onResize={(w) => setColWidths((c) => ({ ...c, incadrare: w }))} />
+              <SortableTh label="Clasa" sortKey="clasa" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.clasa} onResize={(w) => setColWidths((c) => ({ ...c, clasa: w }))} />
+              <SortableTh label="Contract" sortKey="status" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.status} onResize={(w) => setColWidths((c) => ({ ...c, status: w }))} />
+              <SortableTh label="Luna" sortKey="luna" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.luna} onResize={(w) => setColWidths((c) => ({ ...c, luna: w }))} />
+              <SortableTh label="Prognozat" sortKey="prognozat" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="right" width={colWidths.prognozat} onResize={(w) => setColWidths((c) => ({ ...c, prognozat: w }))} />
+              <SortableTh label="Realizat" sortKey="realizat" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="right" width={colWidths.realizat} onResize={(w) => setColWidths((c) => ({ ...c, realizat: w }))} />
+              <SortableTh label="Platit" sortKey="platit" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="center" width={colWidths.platit} onResize={(w) => setColWidths((c) => ({ ...c, platit: w }))} />
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
@@ -607,7 +631,6 @@ function CheltuieliTable({
                       className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
                     />
                   </td>
-                  <td className="px-3 py-2 text-white">{l.furnizor ?? "—"}</td>
                   <td className="px-3 py-2 text-slate-400">
                     {isEditing ? (
                       <select value={incadrare} onChange={(e) => setIncadrare(e.target.value)} className={selectClass}>
@@ -736,7 +759,7 @@ function CheltuieliTable({
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={9} className="px-3 py-8 text-center text-sm text-slate-500">
                   Nicio cheltuiala pentru filtrul curent.
                 </td>
               </tr>
@@ -829,7 +852,6 @@ function ContracteCheltuieliTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
-              <th className="px-3 py-2">Furnizor</th>
               <th className="px-3 py-2">Incadrare</th>
               <th className="px-3 py-2">Clasa</th>
               <th className="px-3 py-2">Tip / Frecventa</th>
@@ -847,7 +869,6 @@ function ContracteCheltuieliTable({
                 onClick={() => onEdit(c)}
                 className="cursor-pointer border-b border-white/5 hover:bg-white/[0.03]"
               >
-                <td className="px-3 py-2 text-white">{c.furnizor ?? "—"}</td>
                 <td className="px-3 py-2 text-slate-400">{c.incadrare}</td>
                 <td className="px-3 py-2 text-slate-400">{c.clasa}</td>
                 <td className="px-3 py-2 text-slate-400">
@@ -879,7 +900,7 @@ function ContracteCheltuieliTable({
             ))}
             {contracte.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-3 py-8 text-center text-sm text-slate-500">
                   Niciun contract de cheltuiala inca.
                 </td>
               </tr>
@@ -959,7 +980,6 @@ function ContractCheltuialaFormModal({
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [furnizor, setFurnizor] = useState(contract?.furnizor ?? "");
   const [incadrare, setIncadrare] = useState(contract?.incadrare ?? incadrareOptions[0]?.valoare ?? "");
   const [clasa, setClasa] = useState(contract?.clasa ?? clasaOptions[0]?.valoare ?? "");
   const [detaliu, setDetaliu] = useState(contract?.detaliu ?? "");
@@ -1000,7 +1020,6 @@ function ContractCheltuialaFormModal({
 
     startTransition(async () => {
       const fields = {
-        furnizor: furnizor || null,
         incadrare,
         clasa,
         detaliu: detaliu || null,
@@ -1047,11 +1066,6 @@ function ContractCheltuialaFormModal({
         )}
 
         <div className="space-y-3">
-          <div>
-            <label className={labelClass}>Furnizor</label>
-            <input value={furnizor} onChange={(e) => setFurnizor(e.target.value)} className={inputClass} />
-          </div>
-
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Incadrare *</label>
@@ -1263,7 +1277,6 @@ function ManualCheltuialaFormModal({
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [furnizor, setFurnizor] = useState("");
   const [incadrare, setIncadrare] = useState(incadrareOptions[0]?.valoare ?? "");
   const [clasa, setClasa] = useState(clasaOptions[0]?.valoare ?? "");
   const [detaliu, setDetaliu] = useState("");
@@ -1281,7 +1294,6 @@ function ManualCheltuialaFormModal({
     }
     startTransition(async () => {
       const result = await addCheltuialaLinieManualAction({
-        furnizor: furnizor || null,
         incadrare,
         clasa,
         detaliu: detaliu || null,
@@ -1309,10 +1321,6 @@ function ManualCheltuialaFormModal({
         </div>
 
         <div className="space-y-3">
-          <div>
-            <label className={labelClass}>Furnizor</label>
-            <input value={furnizor} onChange={(e) => setFurnizor(e.target.value)} className={inputClass} />
-          </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Incadrare *</label>

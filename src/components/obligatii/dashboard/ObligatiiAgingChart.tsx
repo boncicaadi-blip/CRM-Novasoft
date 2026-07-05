@@ -28,25 +28,17 @@ const AGING_COLORS: Record<AgingBucketObligatie, string> = {
 
 export function ObligatiiAgingChart({
   data,
-  onSelect,
-  selected,
+  onToggle,
+  selected = [],
 }: {
   data: AgingDatum[];
-  onSelect?: (bucket: AgingBucketObligatie | null) => void;
-  selected?: AgingBucketObligatie | null;
+  onToggle?: (bucket: AgingBucketObligatie) => void;
+  selected?: AgingBucketObligatie[];
 }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-sm font-medium text-white">Vechime sold restant (aging)<InfoTooltip title="Vechime sold (aging)" definition={OBLIGATII_KPI_DEFINITIONS.agingChart} /></p>
-        {selected && onSelect && (
-          <button
-            onClick={() => onSelect(null)}
-            className="text-[11px] text-[#E8007A] hover:text-[#FF4FAA]"
-          >
-            Sterge filtrul
-          </button>
-        )}
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
@@ -77,15 +69,15 @@ export function ObligatiiAgingChart({
             radius={[4, 4, 0, 0]}
             onClick={(entry) => {
               const bucket = (entry as unknown as AgingDatum).bucket;
-              onSelect?.(selected === bucket ? null : bucket);
+              onToggle?.(bucket);
             }}
-            cursor={onSelect ? "pointer" : undefined}
+            cursor={onToggle ? "pointer" : undefined}
           >
             {data.map((entry) => (
               <Cell
                 key={entry.bucket}
                 fill={AGING_COLORS[entry.bucket] ?? "#E8007A"}
-                opacity={!selected || selected === entry.bucket ? 1 : 0.3}
+                opacity={selected.length === 0 || selected.includes(entry.bucket) ? 1 : 0.3}
               />
             ))}
           </Bar>

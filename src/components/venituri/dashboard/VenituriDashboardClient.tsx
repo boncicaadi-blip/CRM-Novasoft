@@ -5,8 +5,10 @@ import Link from "next/link";
 import { TrendingUp, Target, PiggyBank } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { VENITURI_KPI_DEFINITIONS } from "@/lib/venituri-kpi-definitions";
 import {
+  groupBy,
   groupByProdus,
   groupByServiciu,
   groupByTipVenit,
@@ -17,9 +19,11 @@ import {
 import { VenituriEvolutieChart } from "./VenituriEvolutieChart";
 import { VenituriPieChart } from "./VenituriPieChart";
 import { VenituriTopClientiChart } from "./VenituriTopClientiChart";
+import { VenituriComponentaList } from "./VenituriComponentaList";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { generateVenituriInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import type { Contract, VenitLinie } from "@/types/venituri";
+import type { PartnerGrupInfo } from "@/lib/data/venituri";
 
 type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate";
 
@@ -45,25 +49,38 @@ function inPeriod(luna: string, period: PeriodFilter): boolean {
 }
 
 interface Filters {
-  produs: string | null;
-  serviciu: string | null;
-  tipVenit: string | null;
-  client: string | null;
+  produs: string[];
+  serviciu: string[];
+  tipVenit: string[];
+  client: string[];
+  grup: string[];
 }
 
-const EMPTY_FILTERS: Filters = { produs: null, serviciu: null, tipVenit: null, client: null };
+const EMPTY_FILTERS: Filters = { produs: [], serviciu: [], tipVenit: [], client: [], grup: [] };
+
+function toggleIn(arr: string[], value: string): string[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+}
 
 export function VenituriDashboardClient({
   venituriLinii,
   contracte,
+  partnersGrup,
 }: {
   venituriLinii: VenitLinie[];
   contracte: Contract[];
+  partnersGrup: PartnerGrupInfo[];
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
 
   const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
+  const grupByPartnerId = useMemo(
+    () => new Map(partnersGrup.map((p) => [p.id, p.nume_grup])),
+    [partnersGrup]
+  );
+  const grupOf = (l: VenitLinie): string | null =>
+    l.partner_id ? (grupByPartnerId.get(l.partner_id) ?? null) : null;
 
   const clientOptions = useMemo(
     () => Array.from(new Set(venituriLinii.map((l) => l.nume_client))).sort(),
@@ -77,20 +94,23 @@ export function VenituriDashboardClient({
     () => Array.from(new Set(venituriLinii.map((l) => l.serviciu).filter((v): v is string => !!v))).sort(),
     [venituriLinii]
   );
+  const grupOptions = useMemo(
+    () => Array.from(new Set(partnersGrup.map((p) => p.nume_grup).filter((v): v is string => !!v))).sort(),
+    [partnersGrup]
+  );
 
   const inPeriodList = useMemo(() => venituriLinii.filter((l) => inPeriod(l.luna, period)), [venituriLinii, period]);
 
-  const filtered = useMemo(
-    () =>
-      inPeriodList.filter(
-        (l) =>
-          (!filters.produs || l.produs === filters.produs) &&
-          (!filters.serviciu || l.serviciu === filters.serviciu) &&
-          (!filters.tipVenit || l.tip_venit === filters.tipVenit) &&
-          (!filters.client || l.nume_client === filters.client)
-      ),
-    [inPeriodList, filters]
-  );
+  function matchesFilters(l: VenitLinie): boolean {
+    if (filters.produs.length > 0 && !filters.produs.includes(l.produs ?? "")) return false;
+    if (filters.serviciu.length > 0 && !filters.serviciu.includes(l.serviciu ?? "")) return false;
+    if (filters.tipVenit.length > 0 && !filters.tipVenit.includes(l.tip_venit)) return false;
+    if (filters.client.length > 0 && !filters.client.includes(l.nume_client)) return false;
+    if (filters.grup.length > 0 && !filters.grup.includes(grupOf(l) ?? "")) return false;
+    return true;
+  }
+
+  const filtered = useMemo(() => inPeriodList.filter(matchesFilters), [inPeriodList, filters, grupByPartnerId]);
 
   const summary = useMemo(() => {
     const acum = new Date();
@@ -104,10 +124,6 @@ export function VenituriDashboardClient({
       realizat += l.venit_realizat ?? 0;
       if (l.luna.slice(0, 7) <= lunaCurentaKey) estimatPanaAcum += l.venit_estimat;
     }
-    // Diferenta si Gradul de realizare se calculeaza fata de bugetul PANA
-    // ACUM (luna curenta inclusiv), nu fata de tot anul - altfel lunile
-    // viitoare, inca negeneralizate ca realizat, ar arata o diferenta
-    // negativa falsa, desi acele luni inca nu s-au intamplat.
     const diferenta = realizat - estimatPanaAcum;
     const grt = estimatPanaAcum > 0 ? (realizat / estimatPanaAcum) * 100 : null;
     return { estimat, realizat, estimatPanaAcum, diferenta, grt };
@@ -117,25 +133,20 @@ export function VenituriDashboardClient({
   const serviciuData = useMemo(() => groupByServiciu(filtered), [filtered]);
   const tipVenitData = useMemo(() => groupByTipVenit(filtered), [filtered]);
   const statusData = useMemo(() => groupByStatusContract(filtered, contractById), [filtered, contractById]);
+  const grupData = useMemo(() => groupBy(filtered, (l) => grupOf(l)), [filtered, grupByPartnerId]);
   const topClientiData = useMemo(() => topClienti(filtered, 10), [filtered]);
-  // Evolutia lunara ramane pe tot istoricul disponibil (nu pe perioada filtrata sus),
-  // ca sa vezi mereu traiectoria completa, indiferent ce ai selectat pentru KPI-uri.
+
   const evolutieData = useMemo(
-    () =>
-      buildEvolutieLunara(
-        venituriLinii.filter(
-          (l) =>
-            (!filters.produs || l.produs === filters.produs) &&
-            (!filters.serviciu || l.serviciu === filters.serviciu) &&
-            (!filters.tipVenit || l.tip_venit === filters.tipVenit) &&
-            (!filters.client || l.nume_client === filters.client)
-        ),
-        18
-      ),
-    [venituriLinii, filters]
+    () => buildEvolutieLunara(venituriLinii.filter(matchesFilters), 18),
+    [venituriLinii, filters, grupByPartnerId]
   );
 
-  const hasFilter = filters.produs || filters.serviciu || filters.tipVenit || filters.client;
+  const hasFilter =
+    filters.produs.length > 0 ||
+    filters.serviciu.length > 0 ||
+    filters.tipVenit.length > 0 ||
+    filters.client.length > 0 ||
+    filters.grup.length > 0;
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -146,7 +157,7 @@ export function VenituriDashboardClient({
             {filtered.length} din {inPeriodList.length} linii{hasFilter ? " (filtrate)" : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
@@ -158,63 +169,36 @@ export function VenituriDashboardClient({
               </option>
             ))}
           </select>
-          <select
-            value={filters.client ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, client: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toti clientii
-            </option>
-            {clientOptions.map((c) => (
-              <option key={c} value={c} style={{ backgroundColor: "#111535" }}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.produs ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, produs: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toate produsele
-            </option>
-            {produsOptions.map((p) => (
-              <option key={p} value={p} style={{ backgroundColor: "#111535" }}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.serviciu ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, serviciu: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toate serviciile
-            </option>
-            {serviciuOptions.map((s) => (
-              <option key={s} value={s} style={{ backgroundColor: "#111535" }}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.tipVenit ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, tipVenit: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Recurent + Nerecurent
-            </option>
-            <option value="Recurent" style={{ backgroundColor: "#111535" }}>
-              Recurent
-            </option>
-            <option value="Nerecurent" style={{ backgroundColor: "#111535" }}>
-              Nerecurent
-            </option>
-          </select>
+          <MultiSelect
+            label="Clienti"
+            options={clientOptions}
+            selected={filters.client}
+            onChange={(client) => setFilters((f) => ({ ...f, client }))}
+          />
+          <MultiSelect
+            label="Grup"
+            options={grupOptions}
+            selected={filters.grup}
+            onChange={(grup) => setFilters((f) => ({ ...f, grup }))}
+          />
+          <MultiSelect
+            label="Produs"
+            options={produsOptions}
+            selected={filters.produs}
+            onChange={(produs) => setFilters((f) => ({ ...f, produs }))}
+          />
+          <MultiSelect
+            label="Serviciu"
+            options={serviciuOptions}
+            selected={filters.serviciu}
+            onChange={(serviciu) => setFilters((f) => ({ ...f, serviciu }))}
+          />
+          <MultiSelect
+            label="Tip venit"
+            options={["Recurent", "Nerecurent"]}
+            selected={filters.tipVenit}
+            onChange={(tipVenit) => setFilters((f) => ({ ...f, tipVenit }))}
+          />
           {hasFilter && (
             <button
               onClick={() => setFilters(EMPTY_FILTERS)}
@@ -278,35 +262,47 @@ export function VenituriDashboardClient({
         <div className="space-y-4 lg:col-span-2">
           <VenituriEvolutieChart data={evolutieData} />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <VenituriPieChart
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <VenituriTopClientiChart
               title="Dupa Produs"
               data={produsData}
               selected={filters.produs}
-              onSelect={(v) => setFilters((f) => ({ ...f, produs: v === f.produs ? null : v }))}
+              onToggle={(v) => setFilters((f) => ({ ...f, produs: toggleIn(f.produs, v) }))}
               definition={VENITURI_KPI_DEFINITIONS.dupaProdus}
             />
-            <VenituriPieChart
+            <VenituriTopClientiChart
               title="Dupa Serviciu"
               data={serviciuData}
               selected={filters.serviciu}
-              onSelect={(v) => setFilters((f) => ({ ...f, serviciu: v === f.serviciu ? null : v }))}
+              onToggle={(v) => setFilters((f) => ({ ...f, serviciu: toggleIn(f.serviciu, v) }))}
               definition={VENITURI_KPI_DEFINITIONS.dupaServiciu}
             />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <VenituriPieChart
               title="Recurent vs. Nerecurent"
               data={tipVenitData}
               selected={filters.tipVenit}
-              onSelect={(v) => setFilters((f) => ({ ...f, tipVenit: v === f.tipVenit ? null : v }))}
+              onToggle={(v) => setFilters((f) => ({ ...f, tipVenit: toggleIn(f.tipVenit, v) }))}
               definition={VENITURI_KPI_DEFINITIONS.recurentVsNerecurent}
+            />
+            <VenituriPieChart
+              title="Dupa Status Contract"
+              data={statusData.map((s) => ({ cheie: s.status, count: s.count, estimat: s.valoare, realizat: s.valoare }))}
+              definition={VENITURI_KPI_DEFINITIONS.dupaStatusContract}
             />
           </div>
 
-          <VenituriPieChart
-            title="Dupa Status Contract"
-            data={statusData.map((s) => ({ cheie: s.status, count: s.count, estimat: s.valoare, realizat: s.valoare }))}
-            definition={VENITURI_KPI_DEFINITIONS.dupaStatusContract}
+          <VenituriTopClientiChart
+            title="Dupa Grup"
+            data={grupData}
+            selected={filters.grup}
+            onToggle={(v) => setFilters((f) => ({ ...f, grup: toggleIn(f.grup, v) }))}
+            definition={VENITURI_KPI_DEFINITIONS.dupaGrup}
           />
+
+          {hasFilter && <VenituriComponentaList linii={filtered} />}
         </div>
 
         <div className="space-y-4">
@@ -316,9 +312,11 @@ export function VenituriDashboardClient({
             historyAction={() => getAiInsightHistoryAction("venituri_insight")}
           />
           <VenituriTopClientiChart
+            title="Top clienti dupa venit realizat"
             data={topClientiData}
             selected={filters.client}
-            onSelect={(v) => setFilters((f) => ({ ...f, client: v === f.client ? null : v }))}
+            onToggle={(v) => setFilters((f) => ({ ...f, client: toggleIn(f.client, v) }))}
+            definition={VENITURI_KPI_DEFINITIONS.topClienti}
           />
         </div>
       </div>

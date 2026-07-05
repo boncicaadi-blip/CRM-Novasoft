@@ -4,6 +4,7 @@ import type { Contract, VenitLinie } from "@/types/venituri";
 export interface ClientOption {
   id: string;
   nume: string;
+  nume_grup: string | null;
   cod_fiscal: string | null;
   domeniul_activitate: string | null;
   judet: string | null;
@@ -25,7 +26,7 @@ export async function getClientOptions(): Promise<ClientOption[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("partners")
-    .select("id, nume, cod_fiscal, domeniul_activitate, judet, oras, opportunity_id")
+    .select("id, nume, nume_grup, cod_fiscal, domeniul_activitate, judet, oras, opportunity_id")
     .eq("facturabil", true)
     .order("nume", { ascending: true });
 
@@ -84,4 +85,23 @@ export async function getVenituriLinii(): Promise<VenitLinie[]> {
     supabase.from("venituri_linii").select("*").order("luna", { ascending: false }).range(from, to)
   );
   return rows.map(normalizeVenitLinie);
+}
+
+export interface PartnerGrupInfo {
+  id: string;
+  nume_grup: string | null;
+}
+
+/** Lookup partener -> grup, pentru TOTI partenerii (nu doar cei facturabili) -
+ * liniile de venit pot referi si parteneri istorici, deveniti between timp
+ * nefacturabili. Folosit pe Dashboard Venituri pentru analiza pe grup. */
+export async function getPartnersGrupLookup(): Promise<PartnerGrupInfo[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("partners").select("id, nume_grup");
+
+  if (error) {
+    console.error("getPartnersGrupLookup error:", error.message);
+    return [];
+  }
+  return data ?? [];
 }

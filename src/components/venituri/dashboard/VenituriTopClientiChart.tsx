@@ -3,23 +3,32 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
-import { VENITURI_KPI_DEFINITIONS } from "@/lib/venituri-kpi-definitions";
 import { formatEur } from "@/lib/format";
 import type { GrupareDatum } from "@/lib/venituri-dashboard-analytics";
+import type { KpiDefinition } from "@/lib/kpi-definitions";
 
+/** Bar chart generic, reutilizabil - folosit pentru Top Clienti, dar si
+ * pentru Produs/Serviciu (bare, nu placinte, la cererea utilizatorului). */
 export function VenituriTopClientiChart({
+  title,
   data,
-  onSelect,
-  selected,
+  onToggle,
+  selected = [],
+  definition,
 }: {
+  title: string;
   data: GrupareDatum[];
-  onSelect?: (cheie: string | null) => void;
-  selected?: string | null;
+  onToggle?: (cheie: string) => void;
+  selected?: string[];
+  definition?: KpiDefinition;
 }) {
   if (data.length === 0) {
     return (
       <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-        <p className="mb-1 text-sm font-medium text-white">Top clienti dupa venit realizat</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+          {title}
+          {definition && <InfoTooltip title={title} definition={definition} />}
+        </p>
         <p className="py-8 text-center text-xs text-slate-500">Niciun rezultat pentru filtrul curent.</p>
       </div>
     );
@@ -29,14 +38,9 @@ export function VenituriTopClientiChart({
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-sm font-medium text-white">
-          Top clienti dupa venit realizat
-          <InfoTooltip title="Top clienti dupa venit realizat" definition={VENITURI_KPI_DEFINITIONS.topClienti} />
+          {title}
+          {definition && <InfoTooltip title={title} definition={definition} />}
         </p>
-        {selected && onSelect && (
-          <button onClick={() => onSelect(null)} className="text-[11px] text-[#E8007A] hover:text-[#FF4FAA]">
-            Sterge filtrul
-          </button>
-        )}
       </div>
       <ResponsiveContainer width="100%" height={Math.max(200, data.length * 30)}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -65,12 +69,16 @@ export function VenituriTopClientiChart({
             barSize={16}
             onClick={(entry) => {
               const cheie = (entry as unknown as GrupareDatum).cheie;
-              onSelect?.(selected === cheie ? null : cheie);
+              onToggle?.(cheie);
             }}
-            cursor={onSelect ? "pointer" : undefined}
+            cursor={onToggle ? "pointer" : undefined}
           >
             {data.map((entry) => (
-              <Cell key={entry.cheie} fill="#E8007A" opacity={!selected || selected === entry.cheie ? 1 : 0.3} />
+              <Cell
+                key={entry.cheie}
+                fill="#E8007A"
+                opacity={selected.length === 0 || selected.includes(entry.cheie) ? 1 : 0.3}
+              />
             ))}
           </Bar>
         </BarChart>

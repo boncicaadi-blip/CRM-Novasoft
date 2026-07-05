@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Wallet, AlertTriangle, Target, TrendingDown } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { ObligatieDetailModal } from "@/components/obligatii/ObligatieDetailModal";
 import { ObligatiiStatusChart } from "./ObligatiiStatusChart";
 import { ObligatiiTipAchizitieChart } from "./ObligatiiTipAchizitieChart";
@@ -11,6 +12,7 @@ import { ObligatiiAgingChart } from "./ObligatiiAgingChart";
 import { ObligatiiPlatiTimeSeriesChart } from "./ObligatiiPlatiTimeSeriesChart";
 import { ObligatiiTopFurnizoriChart } from "./ObligatiiTopFurnizoriChart";
 import { ObligatiiRiscZone } from "./ObligatiiRiscZone";
+import { ObligatiiComponentaList } from "./ObligatiiComponentaList";
 import { ObligatiiGrtCard } from "./ObligatiiGrtCard";
 import { ObligatiiGrtChart } from "./ObligatiiGrtChart";
 import { ObligatiiDinamicaChart } from "./ObligatiiDinamicaChart";
@@ -39,18 +41,22 @@ import {
 import type { Obligatie, ObligatiePlata } from "@/types/obligatii";
 
 interface DashboardFilters {
-  status: string | null;
-  aging: AgingBucketObligatie | null;
-  tipAchizitie: string | null;
-  furnizor: string | null;
+  status: string[];
+  aging: AgingBucketObligatie[];
+  tipAchizitie: string[];
+  furnizor: string[];
 }
 
 const EMPTY_FILTERS: DashboardFilters = {
-  status: null,
-  aging: null,
-  tipAchizitie: null,
-  furnizor: null,
+  status: [],
+  aging: [],
+  tipAchizitie: [],
+  furnizor: [],
 };
+
+function toggleIn<T>(arr: T[], value: T): T[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+}
 
 const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "luna_curenta", label: "Luna curenta" },
@@ -84,10 +90,10 @@ export function ObligatiiDashboardClient({
 
   const filtered = useMemo(() => {
     return inPeriodList.filter((o) => {
-      if (filters.status && getObligatieStatus(o) !== filters.status) return false;
-      if (filters.tipAchizitie && (o.tip_achizitie ?? "Necunoscut") !== filters.tipAchizitie) return false;
-      if (filters.furnizor && o.nume_furnizor !== filters.furnizor) return false;
-      if (filters.aging && !matchesAgingBucketObligatie(o, filters.aging)) return false;
+      if (filters.status.length > 0 && !filters.status.includes(getObligatieStatus(o))) return false;
+      if (filters.tipAchizitie.length > 0 && !filters.tipAchizitie.includes(o.tip_achizitie ?? "Necunoscut")) return false;
+      if (filters.furnizor.length > 0 && !filters.furnizor.includes(o.nume_furnizor)) return false;
+      if (filters.aging.length > 0 && !filters.aging.some((b) => matchesAgingBucketObligatie(o, b))) return false;
       return true;
     });
   }, [inPeriodList, filters]);
@@ -129,7 +135,8 @@ export function ObligatiiDashboardClient({
     [obligatii]
   );
 
-  const hasFilter = filters.status || filters.aging || filters.tipAchizitie || filters.furnizor;
+  const hasFilter =
+    filters.status.length > 0 || filters.aging.length > 0 || filters.tipAchizitie.length > 0 || filters.furnizor.length > 0;
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -170,52 +177,24 @@ export function ObligatiiDashboardClient({
               />
             </>
           )}
-          <select
-            value={filters.furnizor ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, furnizor: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toti furnizorii
-            </option>
-            {furnizorOptions.map((f) => (
-              <option key={f} value={f} style={{ backgroundColor: "#111535" }}>
-                {f}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.tipAchizitie ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, tipAchizitie: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toate tipurile
-            </option>
-            {tipAchizitieOptions.map((t) => (
-              <option key={t} value={t} style={{ backgroundColor: "#111535" }}>
-                {t}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.status ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toate statusurile
-            </option>
-            <option value="restanta" style={{ backgroundColor: "#111535" }}>
-              Restanta
-            </option>
-            <option value="la_zi" style={{ backgroundColor: "#111535" }}>
-              La zi
-            </option>
-            <option value="platita" style={{ backgroundColor: "#111535" }}>
-              Platita
-            </option>
-          </select>
+          <MultiSelect
+            label="Furnizori"
+            options={furnizorOptions}
+            selected={filters.furnizor}
+            onChange={(furnizor) => setFilters((f) => ({ ...f, furnizor }))}
+          />
+          <MultiSelect
+            label="Tip achizitie"
+            options={tipAchizitieOptions}
+            selected={filters.tipAchizitie}
+            onChange={(tipAchizitie) => setFilters((f) => ({ ...f, tipAchizitie }))}
+          />
+          <MultiSelect
+            label="Status"
+            options={["restanta", "la_zi", "platita"]}
+            selected={filters.status}
+            onChange={(status) => setFilters((f) => ({ ...f, status }))}
+          />
           {hasFilter && (
             <button
               onClick={() => setFilters(EMPTY_FILTERS)}
@@ -281,19 +260,19 @@ export function ObligatiiDashboardClient({
             <ObligatiiStatusChart
               data={statusData}
               selected={filters.status}
-              onSelect={(status) => setFilters((f) => ({ ...f, status: status === f.status ? null : status }))}
+              onToggle={(status) => setFilters((f) => ({ ...f, status: toggleIn(f.status, status) }))}
             />
             <ObligatiiTipAchizitieChart
               data={tipAchizitieData}
               selected={filters.tipAchizitie}
-              onSelect={(tip) => setFilters((f) => ({ ...f, tipAchizitie: tip === f.tipAchizitie ? null : tip }))}
+              onToggle={(tip) => setFilters((f) => ({ ...f, tipAchizitie: toggleIn(f.tipAchizitie, tip) }))}
             />
           </div>
 
           <ObligatiiAgingChart
             data={agingData}
             selected={filters.aging}
-            onSelect={(bucket) => setFilters((f) => ({ ...f, aging: bucket === f.aging ? null : bucket }))}
+            onToggle={(bucket) => setFilters((f) => ({ ...f, aging: toggleIn(f.aging, bucket) }))}
           />
 
           <ObligatiiGrtChart data={grtSeries} />
@@ -308,8 +287,9 @@ export function ObligatiiDashboardClient({
           <ObligatiiTopFurnizoriChart
             data={furnizorData}
             selected={filters.furnizor}
-            onSelect={(furnizor) => setFilters((f) => ({ ...f, furnizor: furnizor === f.furnizor ? null : furnizor }))}
+            onToggle={(furnizor) => setFilters((f) => ({ ...f, furnizor: toggleIn(f.furnizor, furnizor) }))}
           />
+          {hasFilter && <ObligatiiComponentaList facturi={filtered} onSelect={setSelected} />}
         </div>
       </div>
 

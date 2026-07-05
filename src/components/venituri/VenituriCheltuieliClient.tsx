@@ -26,6 +26,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { formatEur } from "@/lib/format";
+import { useTableSort } from "@/lib/useTableSort";
+import { SortableTh } from "@/components/ui/SortableTh";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { VENITURI_KPI_DEFINITIONS } from "@/lib/venituri-kpi-definitions";
 import { getTodayISO } from "@/lib/date";
@@ -607,7 +609,36 @@ function VenituriTable({
     });
   }
 
-  const sorted = [...linii].sort((a, b) => (a.luna < b.luna ? 1 : -1));
+  const [colWidths, setColWidths] = useState<Record<string, number>>({});
+
+  const defaultOrdered = useMemo(() => [...linii].sort((a, b) => (a.luna < b.luna ? 1 : -1)), [linii]);
+  const { sorted, sortKey, sortDir, requestSort } = useTableSort(defaultOrdered, (l, key) => {
+    const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
+    switch (key) {
+      case "client":
+        return l.nume_client;
+      case "tip":
+        return l.tip_venit;
+      case "produs":
+        return l.produs ?? "";
+      case "serviciu":
+        return l.serviciu ?? "";
+      case "status":
+        return contract?.status_contract ?? "";
+      case "modalitate":
+        return contract?.modalitate_facturare ?? "";
+      case "luna":
+        return l.luna;
+      case "estimat":
+        return l.venit_estimat;
+      case "realizat":
+        return l.venit_realizat ?? -Infinity;
+      case "facturat":
+        return l.facturat ? 1 : 0;
+      default:
+        return null;
+    }
+  });
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(sorted.length / pageSize));
   const pagedRows = useMemo(() => {
     if (pageSize === "toate") return sorted;
@@ -639,10 +670,10 @@ function VenituriTable({
         </div>
       )}
       <div className="overflow-x-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
           <thead>
             <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
-              <th className="px-3 py-2">
+              <th className="w-8 px-3 py-2">
                 <input
                   type="checkbox"
                   checked={sorted.length > 0 && checkedIds.size === sorted.length}
@@ -650,16 +681,16 @@ function VenituriTable({
                   className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
                 />
               </th>
-              <th className="px-3 py-2">Client</th>
-              <th className="px-3 py-2">Tip</th>
-              <th className="px-3 py-2">Produs</th>
-              <th className="px-3 py-2">Serviciu</th>
-              <th className="px-3 py-2">Contract</th>
-              <th className="px-3 py-2">Modalitate</th>
-              <th className="px-3 py-2">Luna</th>
-              <th className="px-3 py-2 text-right">Estimat</th>
-              <th className="px-3 py-2 text-right">Realizat</th>
-              <th className="px-3 py-2 text-center">Facturat</th>
+              <SortableTh label="Client" sortKey="client" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.client} onResize={(w) => setColWidths((c) => ({ ...c, client: w }))} />
+              <SortableTh label="Tip" sortKey="tip" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.tip} onResize={(w) => setColWidths((c) => ({ ...c, tip: w }))} />
+              <SortableTh label="Produs" sortKey="produs" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.produs} onResize={(w) => setColWidths((c) => ({ ...c, produs: w }))} />
+              <SortableTh label="Serviciu" sortKey="serviciu" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.serviciu} onResize={(w) => setColWidths((c) => ({ ...c, serviciu: w }))} />
+              <SortableTh label="Contract" sortKey="status" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.status} onResize={(w) => setColWidths((c) => ({ ...c, status: w }))} />
+              <SortableTh label="Modalitate" sortKey="modalitate" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.modalitate} onResize={(w) => setColWidths((c) => ({ ...c, modalitate: w }))} />
+              <SortableTh label="Luna" sortKey="luna" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.luna} onResize={(w) => setColWidths((c) => ({ ...c, luna: w }))} />
+              <SortableTh label="Estimat" sortKey="estimat" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="right" width={colWidths.estimat} onResize={(w) => setColWidths((c) => ({ ...c, estimat: w }))} />
+              <SortableTh label="Realizat" sortKey="realizat" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="right" width={colWidths.realizat} onResize={(w) => setColWidths((c) => ({ ...c, realizat: w }))} />
+              <SortableTh label="Facturat" sortKey="facturat" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="center" width={colWidths.facturat} onResize={(w) => setColWidths((c) => ({ ...c, facturat: w }))} />
               <th className="px-3 py-2"></th>
             </tr>
           </thead>

@@ -20,4 +20,20 @@ export const CHELTUIELI_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     descriere: "Traiectoria lunara a bugetului de cheltuieli comparat cu ce s-a platit efectiv.",
     cumAnalizezi: "Arata daca cheltuielile reale se abat sistematic de la buget, in plus sau in minus.",
   },
+  dupaIncadrare: {
+    descriere: "Cheltuiala realizata grupata pe Incadrare (SALARII, SPATIU, INFRASTRUCTURA IT etc).",
+    cumAnalizezi: "Care categorie mare consuma cel mai mult din buget.",
+  },
+  dupaClasa: {
+    descriere: "Cheltuiala realizata grupata pe Clasa cheltuielii (Salarii nete, Chirie, Utilitati etc).",
+    cumAnalizezi: "O detaliere mai fina decat Incadrarea, utila pentru a gasi exact ce anume creste.",
+  },
+  fixeVsVariabile: {
+    descriere: "Ponderea cheltuielilor Recurente (aceeasi cheltuiala, luna de luna) fata de cele Nerecurente (punctuale).",
+    cumAnalizezi: "Un procent mare de cheltuieli recurente inseamna costuri fixe previzibile, dar si mai putina flexibilitate daca veniturile scad.",
+  },
+  dupaStatusContract: {
+    descriere: "Cheltuiala realizata grupata dupa statusul contractului care a generat-o (Activ/Inactiv), sau 'Fara contract' pentru liniile manuale.",
+    cumAnalizezi: "Cat din cheltuiala vine din contracte inca active, versus contracte deja incheiate.",
+  },
 };

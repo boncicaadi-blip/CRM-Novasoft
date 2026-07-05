@@ -15,12 +15,12 @@ const TIP_COLORS: Record<string, string> = {
 
 export function CreanteTipVanzareChart({
   data,
-  onSelect,
-  selected,
+  onToggle,
+  selected = [],
 }: {
   data: TipVanzareDatum[];
-  onSelect?: (tip: string | null) => void;
-  selected?: string | null;
+  onToggle?: (tip: string) => void;
+  selected?: string[];
 }) {
   const total = data.reduce((s, d) => s + d.sold, 0);
 
@@ -28,14 +28,6 @@ export function CreanteTipVanzareChart({
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-sm font-medium text-white">Distributie Tip Vanzare (dupa sold)<InfoTooltip title="Distributie Tip Vanzare" definition={CREANTE_KPI_DEFINITIONS.tipVanzareChart} /></p>
-        {selected && onSelect && (
-          <button
-            onClick={() => onSelect(null)}
-            className="text-[11px] text-[#E8007A] hover:text-[#FF4FAA]"
-          >
-            Sterge filtrul
-          </button>
-        )}
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
@@ -48,15 +40,15 @@ export function CreanteTipVanzareChart({
             paddingAngle={2}
             onClick={(entry) => {
               const tip = (entry as unknown as TipVanzareDatum).tip;
-              onSelect?.(selected === tip ? null : tip);
+              onToggle?.(tip);
             }}
-            cursor={onSelect ? "pointer" : undefined}
+            cursor={onToggle ? "pointer" : undefined}
           >
             {data.map((entry) => (
               <Cell
                 key={entry.tip}
                 fill={TIP_COLORS[entry.tip] ?? "#94A3B8"}
-                opacity={!selected || selected === entry.tip ? 1 : 0.3}
+                opacity={selected.length === 0 || selected.includes(entry.tip) ? 1 : 0.3}
               />
             ))}
           </Pie>

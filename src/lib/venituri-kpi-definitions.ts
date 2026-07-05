@@ -45,4 +45,8 @@ export const VENITURI_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     descriere: "Cei mai mari 10 clienti dupa venit realizat, in perioada selectata.",
     cumAnalizezi: "Un client foarte mare in top poate insemna dependenta de concentrare - risc daca acel client pleaca.",
   },
+  dupaGrup: {
+    descriere: "Venitul realizat grupat pe Grupul de firme din care face parte fiecare client (din fisa oportunitatii) - util cand acelasi grup are mai multe firme/contracte separate.",
+    cumAnalizezi: "Vezi valoarea reala a unui grup de firme, nu doar a unei singure entitati legale din grup.",
+  },
 };

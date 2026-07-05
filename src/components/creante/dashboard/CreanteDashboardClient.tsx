@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Wallet, AlertTriangle, Target, TrendingUp } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
+import { MultiSelect } from "@/components/ui/MultiSelect";
 import { CreantaDetailModal } from "@/components/creante/CreantaDetailModal";
 import { CreanteStatusChart } from "./CreanteStatusChart";
 import { CreanteTipVanzareChart } from "./CreanteTipVanzareChart";
@@ -11,6 +12,7 @@ import { CreanteAgingChart } from "./CreanteAgingChart";
 import { CreanteIncasariTimeSeriesChart } from "./CreanteIncasariTimeSeriesChart";
 import { CreanteTopClientiChart } from "./CreanteTopClientiChart";
 import { CreanteRiscZone } from "./CreanteRiscZone";
+import { CreanteComponentaList } from "./CreanteComponentaList";
 import { CreanteGrtCard } from "./CreanteGrtCard";
 import { CreanteGrtChart } from "./CreanteGrtChart";
 import { CreanteDinamicaChart } from "./CreanteDinamicaChart";
@@ -41,13 +43,17 @@ import {
 import type { Creanta, CreantaIncasare } from "@/types/creante";
 
 interface DashboardFilters {
-  status: string | null;
-  aging: AgingBucket | null;
-  tipVanzare: string | null;
-  client: string | null;
+  status: string[];
+  aging: AgingBucket[];
+  tipVanzare: string[];
+  client: string[];
 }
 
-const EMPTY_FILTERS: DashboardFilters = { status: null, aging: null, tipVanzare: null, client: null };
+const EMPTY_FILTERS: DashboardFilters = { status: [], aging: [], tipVanzare: [], client: [] };
+
+function toggleIn<T>(arr: T[], value: T): T[] {
+  return arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value];
+}
 
 const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "luna_curenta", label: "Luna curenta" },
@@ -83,10 +89,10 @@ export function CreanteDashboardClient({
   // exact ca la Dashboard-ul din CRM.
   const filtered = useMemo(() => {
     return inPeriodList.filter((c) => {
-      if (filters.status && getCreantaStatus(c) !== filters.status) return false;
-      if (filters.tipVanzare && (c.tip_vanzare ?? "Necunoscut") !== filters.tipVanzare) return false;
-      if (filters.client && c.nume_firma !== filters.client) return false;
-      if (filters.aging && !matchesAgingBucket(c, filters.aging)) return false;
+      if (filters.status.length > 0 && !filters.status.includes(getCreantaStatus(c))) return false;
+      if (filters.tipVanzare.length > 0 && !filters.tipVanzare.includes(c.tip_vanzare ?? "Necunoscut")) return false;
+      if (filters.client.length > 0 && !filters.client.includes(c.nume_firma)) return false;
+      if (filters.aging.length > 0 && !filters.aging.some((b) => matchesAgingBucket(c, b))) return false;
       return true;
     });
   }, [inPeriodList, filters]);
@@ -133,7 +139,8 @@ export function CreanteDashboardClient({
     [creante]
   );
 
-  const hasFilter = filters.status || filters.aging || filters.tipVanzare || filters.client;
+  const hasFilter =
+    filters.status.length > 0 || filters.aging.length > 0 || filters.tipVanzare.length > 0 || filters.client.length > 0;
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -174,52 +181,24 @@ export function CreanteDashboardClient({
               />
             </>
           )}
-          <select
-            value={filters.client ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, client: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toti clientii
-            </option>
-            {clientOptions.map((c) => (
-              <option key={c} value={c} style={{ backgroundColor: "#111535" }}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.tipVanzare ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, tipVanzare: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toate tipurile
-            </option>
-            {tipVanzareOptions.map((t) => (
-              <option key={t} value={t} style={{ backgroundColor: "#111535" }}>
-                {t}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filters.status ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value || null }))}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-          >
-            <option value="" style={{ backgroundColor: "#111535" }}>
-              Toate statusurile
-            </option>
-            <option value="restanta" style={{ backgroundColor: "#111535" }}>
-              Restanta
-            </option>
-            <option value="la_zi" style={{ backgroundColor: "#111535" }}>
-              La zi
-            </option>
-            <option value="incasata" style={{ backgroundColor: "#111535" }}>
-              Incasata
-            </option>
-          </select>
+          <MultiSelect
+            label="Clienti"
+            options={clientOptions}
+            selected={filters.client}
+            onChange={(client) => setFilters((f) => ({ ...f, client }))}
+          />
+          <MultiSelect
+            label="Tip vanzare"
+            options={tipVanzareOptions}
+            selected={filters.tipVanzare}
+            onChange={(tipVanzare) => setFilters((f) => ({ ...f, tipVanzare }))}
+          />
+          <MultiSelect
+            label="Status"
+            options={["restanta", "la_zi", "incasata"]}
+            selected={filters.status}
+            onChange={(status) => setFilters((f) => ({ ...f, status }))}
+          />
           {hasFilter && (
             <button
               onClick={() => setFilters(EMPTY_FILTERS)}
@@ -285,19 +264,19 @@ export function CreanteDashboardClient({
             <CreanteStatusChart
               data={statusData}
               selected={filters.status}
-              onSelect={(status) => setFilters((f) => ({ ...f, status: status === f.status ? null : status }))}
+              onToggle={(status) => setFilters((f) => ({ ...f, status: toggleIn(f.status, status) }))}
             />
             <CreanteTipVanzareChart
               data={tipVanzareData}
               selected={filters.tipVanzare}
-              onSelect={(tip) => setFilters((f) => ({ ...f, tipVanzare: tip === f.tipVanzare ? null : tip }))}
+              onToggle={(tip) => setFilters((f) => ({ ...f, tipVanzare: toggleIn(f.tipVanzare, tip) }))}
             />
           </div>
 
           <CreanteAgingChart
             data={agingData}
             selected={filters.aging}
-            onSelect={(bucket) => setFilters((f) => ({ ...f, aging: bucket === f.aging ? null : bucket }))}
+            onToggle={(bucket) => setFilters((f) => ({ ...f, aging: toggleIn(f.aging, bucket) }))}
           />
 
           <CreanteGrtChart data={grtSeries} />
@@ -317,8 +296,9 @@ export function CreanteDashboardClient({
           <CreanteTopClientiChart
             data={clientData}
             selected={filters.client}
-            onSelect={(client) => setFilters((f) => ({ ...f, client: client === f.client ? null : client }))}
+            onToggle={(client) => setFilters((f) => ({ ...f, client: toggleIn(f.client, client) }))}
           />
+          {hasFilter && <CreanteComponentaList facturi={filtered} onSelect={setSelected} />}
         </div>
       </div>
 

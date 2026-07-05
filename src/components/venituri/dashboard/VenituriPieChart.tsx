@@ -12,14 +12,15 @@ const CULORI = ["#E8007A", "#0070F3", "#22C55E", "#FBBF24", "#F97316", "#A855F7"
 export function VenituriPieChart({
   title,
   data,
-  onSelect,
-  selected,
+  onToggle,
+  selected = [],
   definition,
 }: {
   title: string;
   data: GrupareDatum[];
-  onSelect?: (cheie: string | null) => void;
-  selected?: string | null;
+  /** Click pe o felie ADAUGA/SCOATE acea valoare din selectie (multi-select) - nu inlocuieste selectia. */
+  onToggle?: (cheie: string) => void;
+  selected?: string[];
   definition?: KpiDefinition;
 }) {
   const total = data.reduce((s, d) => s + d.realizat, 0);
@@ -31,11 +32,6 @@ export function VenituriPieChart({
           {title}
           {definition && <InfoTooltip title={title} definition={definition} />}
         </p>
-        {selected && onSelect && (
-          <button onClick={() => onSelect(null)} className="text-[11px] text-[#E8007A] hover:text-[#FF4FAA]">
-            Sterge filtrul
-          </button>
-        )}
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
@@ -48,15 +44,15 @@ export function VenituriPieChart({
             paddingAngle={2}
             onClick={(entry) => {
               const cheie = (entry as unknown as GrupareDatum).cheie;
-              onSelect?.(selected === cheie ? null : cheie);
+              onToggle?.(cheie);
             }}
-            cursor={onSelect ? "pointer" : undefined}
+            cursor={onToggle ? "pointer" : undefined}
           >
             {data.map((entry, i) => (
               <Cell
                 key={entry.cheie}
                 fill={CULORI[i % CULORI.length]}
-                opacity={!selected || selected === entry.cheie ? 1 : 0.3}
+                opacity={selected.length === 0 || selected.includes(entry.cheie) ? 1 : 0.3}
               />
             ))}
           </Pie>

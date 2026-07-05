@@ -38,3 +38,40 @@ export async function updateTargetComercialAction(
   revalidatePath("/setari/comercial");
   return { success: true };
 }
+
+/** Seteaza (sau actualizeaza) targetul comercial pentru un an anume - permite
+ * si completarea retroactiva a anilor din istoric, ca sa te poti raporta la ei. */
+export async function upsertTargetComercialAnAction(
+  an: number,
+  target: number
+): Promise<{ success: boolean; message?: string }> {
+  if (Number.isNaN(target) || target < 0) {
+    return { success: false, message: "Valoarea targetului trebuie sa fie un numar pozitiv." };
+  }
+  if (!Number.isInteger(an) || an < 2000 || an > 2100) {
+    return { success: false, message: "Anul nu este valid." };
+  }
+
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userData?.user?.id ?? "")
+    .single();
+
+  if (profile?.role !== "admin") {
+    return { success: false, message: "Doar administratorii pot modifica targetul comercial." };
+  }
+
+  const { error } = await supabase
+    .from("target_comercial_anual")
+    .upsert({ an, target, actualizat_la: new Date().toISOString() }, { onConflict: "an" });
+
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/rapoarte");
+  revalidatePath("/setari/comercial");
+  return { success: true };
+}

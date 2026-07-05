@@ -9,12 +9,12 @@ import type { ClientDatum } from "@/lib/creante-dashboard-analytics";
 
 export function CreanteTopClientiChart({
   data,
-  onSelect,
-  selected,
+  onToggle,
+  selected = [],
 }: {
   data: ClientDatum[];
-  onSelect?: (numeFirma: string | null) => void;
-  selected?: string | null;
+  onToggle?: (numeFirma: string) => void;
+  selected?: string[];
 }) {
   if (data.length === 0) {
     return (
@@ -29,14 +29,6 @@ export function CreanteTopClientiChart({
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-sm font-medium text-white">Top clienti dupa sold restant<InfoTooltip title="Top clienti dupa sold restant" definition={CREANTE_KPI_DEFINITIONS.topClientiChart} /></p>
-        {selected && onSelect && (
-          <button
-            onClick={() => onSelect(null)}
-            className="text-[11px] text-[#E8007A] hover:text-[#FF4FAA]"
-          >
-            Sterge filtrul
-          </button>
-        )}
       </div>
       <ResponsiveContainer width="100%" height={Math.max(180, data.length * 32)}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
@@ -69,16 +61,16 @@ export function CreanteTopClientiChart({
             radius={[0, 4, 4, 0]}
             barSize={18}
             onClick={(entry) => {
-              const numeFirma = (entry as unknown as ClientDatum).numeFirma ?? null;
-              onSelect?.(selected === numeFirma ? null : numeFirma);
+              const numeFirma = (entry as unknown as ClientDatum).numeFirma;
+              if (numeFirma) onToggle?.(numeFirma);
             }}
-            cursor={onSelect ? "pointer" : undefined}
+            cursor={onToggle ? "pointer" : undefined}
           >
             {data.map((entry) => (
               <Cell
                 key={entry.numeFirma}
                 fill="#E8007A"
-                opacity={!selected || selected === entry.numeFirma ? 1 : 0.3}
+                opacity={selected.length === 0 || selected.includes(entry.numeFirma) ? 1 : 0.3}
               />
             ))}
           </Bar>

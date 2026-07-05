@@ -1,4 +1,4 @@
-import type { VenitLinie, Contract } from "@/types/venituri";
+import type { CheltuialaLinie, ContractCheltuiala } from "@/types/cheltuieli";
 
 export interface StatusDatum {
   status: string;
@@ -6,11 +6,9 @@ export interface StatusDatum {
   valoare: number;
 }
 
-/** Grupeaza pe Status Contract (al contractului legat) - liniile fara
- * contract (manuale) intra la "Fara contract". */
 export function groupByStatusContract(
-  linii: VenitLinie[],
-  contractById: Map<string, Contract>
+  linii: CheltuialaLinie[],
+  contractById: Map<string, ContractCheltuiala>
 ): StatusDatum[] {
   const map = new Map<string, StatusDatum>();
   for (const l of linii) {
@@ -18,7 +16,7 @@ export function groupByStatusContract(
     const status = contract?.status_contract ?? "Fara contract";
     const cur = map.get(status) ?? { status, count: 0, valoare: 0 };
     cur.count += 1;
-    cur.valoare += l.venit_realizat ?? l.venit_estimat;
+    cur.valoare += l.valoare_realizata ?? l.valoare_prognozata;
     map.set(status, cur);
   }
   return Array.from(map.values());
@@ -31,33 +29,29 @@ export interface GrupareDatum {
   realizat: number;
 }
 
-export function groupBy(linii: VenitLinie[], keyFn: (l: VenitLinie) => string | null): GrupareDatum[] {
+export function groupBy(linii: CheltuialaLinie[], keyFn: (l: CheltuialaLinie) => string | null): GrupareDatum[] {
   const map = new Map<string, GrupareDatum>();
   for (const l of linii) {
     const cheie = keyFn(l) ?? "Nespecificat";
     const cur = map.get(cheie) ?? { cheie, count: 0, estimat: 0, realizat: 0 };
     cur.count += 1;
-    cur.estimat += l.venit_estimat;
-    cur.realizat += l.venit_realizat ?? 0;
+    cur.estimat += l.valoare_prognozata;
+    cur.realizat += l.valoare_realizata ?? 0;
     map.set(cheie, cur);
   }
   return Array.from(map.values()).sort((a, b) => b.realizat - a.realizat);
 }
 
-export function groupByProdus(linii: VenitLinie[]): GrupareDatum[] {
-  return groupBy(linii, (l) => l.produs);
+export function groupByIncadrare(linii: CheltuialaLinie[]): GrupareDatum[] {
+  return groupBy(linii, (l) => l.incadrare);
 }
 
-export function groupByServiciu(linii: VenitLinie[]): GrupareDatum[] {
-  return groupBy(linii, (l) => l.serviciu);
+export function groupByClasa(linii: CheltuialaLinie[]): GrupareDatum[] {
+  return groupBy(linii, (l) => l.clasa);
 }
 
-export function groupByTipVenit(linii: VenitLinie[]): GrupareDatum[] {
-  return groupBy(linii, (l) => l.tip_venit);
-}
-
-export function topClienti(linii: VenitLinie[], n = 10): GrupareDatum[] {
-  return groupBy(linii, (l) => l.nume_client).slice(0, n);
+export function groupByFrecventa(linii: CheltuialaLinie[]): GrupareDatum[] {
+  return groupBy(linii, (l) => l.frecventa);
 }
 
 export interface LunaDatum {
@@ -67,7 +61,7 @@ export interface LunaDatum {
   realizat: number;
 }
 
-export function buildEvolutieLunara(linii: VenitLinie[], luni = 15): LunaDatum[] {
+export function buildEvolutieLunara(linii: CheltuialaLinie[], luni = 15): LunaDatum[] {
   const now = new Date();
   const buckets: LunaDatum[] = [];
   for (let i = luni - 1; i >= 0; i--) {
@@ -85,8 +79,8 @@ export function buildEvolutieLunara(linii: VenitLinie[], luni = 15): LunaDatum[]
     const key = l.luna.slice(0, 7);
     const bucket = byKey.get(key);
     if (bucket) {
-      bucket.estimat += l.venit_estimat;
-      bucket.realizat += l.venit_realizat ?? 0;
+      bucket.estimat += l.valoare_prognozata;
+      bucket.realizat += l.valoare_realizata ?? 0;
     }
   }
   return buckets;

@@ -82,6 +82,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/venituri-cheltuieli", label: "Venituri", icon: TrendingUp },
       { href: "/venituri-cheltuieli/dashboard", label: "Dashboard Venituri", icon: FileBarChart },
       { href: "/venituri-cheltuieli/cheltuieli", label: "Cheltuieli", icon: Wallet },
+      { href: "/venituri-cheltuieli/cheltuieli/dashboard", label: "Dashboard Cheltuieli", icon: FileBarChart },
     ],
   },
 ];
