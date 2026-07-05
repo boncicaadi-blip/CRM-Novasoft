@@ -15,6 +15,8 @@ import {
 import { VenituriEvolutieChart } from "./VenituriEvolutieChart";
 import { VenituriPieChart } from "./VenituriPieChart";
 import { VenituriTopClientiChart } from "./VenituriTopClientiChart";
+import { AiInsightCard } from "@/components/ui/AiInsightCard";
+import { generateVenituriInsightAction } from "@/lib/actions/financial-ai";
 import type { Contract, VenitLinie } from "@/types/venituri";
 
 type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate";
@@ -201,6 +203,7 @@ export function VenituriDashboardClient({
         </div>
 
         <div className="space-y-4">
+          <AiInsightCard title="Interpretare AI (Claude)" generateAction={generateVenituriInsightAction} />
           <VenituriTopClientiChart
             data={topClientiData}
             selected={filters.client}

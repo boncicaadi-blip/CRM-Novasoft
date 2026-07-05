@@ -14,6 +14,8 @@ import { CreanteRiscZone } from "./CreanteRiscZone";
 import { CreanteGrtCard } from "./CreanteGrtCard";
 import { CreanteGrtChart } from "./CreanteGrtChart";
 import { CreanteDinamicaChart } from "./CreanteDinamicaChart";
+import { AiInsightCard } from "@/components/ui/AiInsightCard";
+import { generateCreanteInsightAction } from "@/lib/actions/financial-ai";
 import { formatRon } from "@/lib/format";
 import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import { getTodayISO } from "@/lib/date";
@@ -243,6 +245,7 @@ export function CreanteDashboardClient({
         </div>
 
         <div className="space-y-4">
+          <AiInsightCard title="Interpretare AI (Claude)" generateAction={generateCreanteInsightAction} />
           <CreanteRiscZone facturi={riscData} onSelect={setSelected} />
           <CreanteTopClientiChart
             data={clientData}
