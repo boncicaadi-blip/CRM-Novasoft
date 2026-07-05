@@ -12,6 +12,7 @@ import {
   CalendarDays,
   Map,
   Settings,
+  Sparkles,
   Plus,
   LogOut,
   User,
@@ -281,6 +282,14 @@ export function Sidebar({
                   >
                     <Settings size={15} />
                     Nomenclatoare
+                  </Link>
+                  <Link
+                    href="/setari/consum-ai"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <Sparkles size={15} />
+                    Consum AI
                   </Link>
                 </>
               )}

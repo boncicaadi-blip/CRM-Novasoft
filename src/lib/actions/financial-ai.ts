@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { askClaude, AiConfigError, AiRequestError } from "@/lib/ai/client";
+import { logAiUsage } from "@/lib/ai/usage-log";
 import {
   buildCreanteInsightSystemPrompt,
   buildCreanteInsightPrompt,
@@ -29,9 +30,9 @@ import { computeKpis, computePipelineReportKpis, groupByStage, groupByStatus, bu
 async function requireAdmin() {
   const supabase = await createClient();
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData?.user) return { isAdmin: false };
+  if (!userData?.user) return { supabase, isAdmin: false };
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", userData.user.id).single();
-  return { isAdmin: profile?.role === "admin" };
+  return { supabase, isAdmin: profile?.role === "admin" };
 }
 
 function handleAiError(err: unknown): { success: false; message: string } {
@@ -173,7 +174,7 @@ export async function generateCrmInsightAction(): Promise<{
   message?: string;
   data?: FinancialInsightResult;
 }> {
-  const { isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
 
   try {
@@ -182,6 +183,7 @@ export async function generateCrmInsightAction(): Promise<{
       system: buildCrmInsightSystemPrompt(),
       prompt: buildCrmInsightPrompt(sumar),
       maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "crm_insight", usage),
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {
@@ -194,7 +196,7 @@ export async function generateRaportComercialInsightAction(): Promise<{
   message?: string;
   data?: FinancialInsightResult;
 }> {
-  const { isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
 
   try {
@@ -203,6 +205,7 @@ export async function generateRaportComercialInsightAction(): Promise<{
       system: buildCrmInsightSystemPrompt(),
       prompt: buildCrmInsightPrompt(sumar),
       maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "raport_comercial_insight", usage),
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {
@@ -215,7 +218,7 @@ export async function generateCreanteInsightAction(): Promise<{
   message?: string;
   data?: FinancialInsightResult;
 }> {
-  const { isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
 
   try {
@@ -224,6 +227,7 @@ export async function generateCreanteInsightAction(): Promise<{
       system: buildCreanteInsightSystemPrompt(),
       prompt: buildCreanteInsightPrompt(sumar),
       maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "creante_insight", usage),
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {
@@ -236,7 +240,7 @@ export async function generateVenituriInsightAction(): Promise<{
   message?: string;
   data?: FinancialInsightResult;
 }> {
-  const { isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
 
   try {
@@ -245,6 +249,7 @@ export async function generateVenituriInsightAction(): Promise<{
       system: buildVenituriInsightSystemPrompt(),
       prompt: buildVenituriInsightPrompt(sumar),
       maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "venituri_insight", usage),
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {

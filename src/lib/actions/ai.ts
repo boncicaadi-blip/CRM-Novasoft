@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { askClaude, AiConfigError, AiRequestError } from "@/lib/ai/client";
+import { logAiUsage } from "@/lib/ai/usage-log";
 import {
   buildOpportunitySummarySystemPrompt,
   buildOpportunitySummaryPrompt,
@@ -40,6 +41,7 @@ export async function generateOpportunitySummaryAction(
       system: buildOpportunitySummarySystemPrompt(),
       prompt: buildOpportunitySummaryPrompt(opportunity as Opportunity, timeline),
       maxTokens: 3000,
+      onUsage: (usage) => logAiUsage(supabase, "opportunity_summary", usage),
     });
 
     const parsed = parseOpportunitySummaryResponse(raw);
