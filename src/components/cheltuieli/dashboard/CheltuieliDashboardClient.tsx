@@ -16,7 +16,6 @@ import {
 } from "@/lib/cheltuieli-dashboard-analytics";
 import { VenituriEvolutieChart } from "@/components/venituri/dashboard/VenituriEvolutieChart";
 import { VenituriPieChart } from "@/components/venituri/dashboard/VenituriPieChart";
-import { VenituriTopClientiChart } from "@/components/venituri/dashboard/VenituriTopClientiChart";
 import { CheltuieliComponentaList } from "./CheltuieliComponentaList";
 import type { ContractCheltuiala, CheltuialaLinie } from "@/types/cheltuieli";
 
@@ -211,45 +210,42 @@ export function CheltuieliDashboardClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <VenituriEvolutieChart data={evolutieData} />
+      <VenituriEvolutieChart data={evolutieData} />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <VenituriTopClientiChart
-              title="Dupa Incadrare"
-              data={incadrareData}
-              selected={filters.incadrare}
-              onToggle={(v) => setFilters((f) => ({ ...f, incadrare: toggleIn(f.incadrare, v) }))}
-              definition={CHELTUIELI_KPI_DEFINITIONS.dupaIncadrare}
-            />
-            <VenituriTopClientiChart
-              title="Dupa Clasa"
-              data={clasaData}
-              selected={filters.clasa}
-              onToggle={(v) => setFilters((f) => ({ ...f, clasa: toggleIn(f.clasa, v) }))}
-              definition={CHELTUIELI_KPI_DEFINITIONS.dupaClasa}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <VenituriPieChart
-              title="Recurenta vs. Nerecurenta"
-              data={frecventaData}
-              selected={filters.frecventa}
-              onToggle={(v) => setFilters((f) => ({ ...f, frecventa: toggleIn(f.frecventa, v) }))}
-              definition={CHELTUIELI_KPI_DEFINITIONS.fixeVsVariabile}
-            />
-            <VenituriPieChart
-              title="Dupa Status Contract"
-              data={statusData.map((s) => ({ cheie: s.status, count: s.count, estimat: s.valoare, realizat: s.valoare }))}
-              definition={CHELTUIELI_KPI_DEFINITIONS.dupaStatusContract}
-            />
-          </div>
-
-          {hasFilter && <CheltuieliComponentaList linii={filtered} />}
-        </div>
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <VenituriPieChart
+          title="Dupa Incadrare"
+          data={incadrareData}
+          selected={filters.incadrare}
+          onToggle={(v) => setFilters((f) => ({ ...f, incadrare: toggleIn(f.incadrare, v) }))}
+          definition={CHELTUIELI_KPI_DEFINITIONS.dupaIncadrare}
+        />
+        <VenituriPieChart
+          title="Dupa Clasa"
+          data={clasaData}
+          selected={filters.clasa}
+          onToggle={(v) => setFilters((f) => ({ ...f, clasa: toggleIn(f.clasa, v) }))}
+          definition={CHELTUIELI_KPI_DEFINITIONS.dupaClasa}
+        />
+        <VenituriPieChart
+          title="Recurenta vs. Nerecurenta"
+          data={frecventaData}
+          selected={filters.frecventa}
+          onToggle={(v) => setFilters((f) => ({ ...f, frecventa: toggleIn(f.frecventa, v) }))}
+          definition={CHELTUIELI_KPI_DEFINITIONS.fixeVsVariabile}
+        />
+        <VenituriPieChart
+          title="Dupa Status Contract"
+          data={statusData.map((s) => ({ cheie: s.status, count: s.count, estimat: s.valoare, realizat: s.valoare }))}
+          definition={CHELTUIELI_KPI_DEFINITIONS.dupaStatusContract}
+        />
       </div>
+
+      {hasFilter && (
+        <div className="mt-4">
+          <CheltuieliComponentaList linii={filtered} />
+        </div>
+      )}
     </div>
   );
 }

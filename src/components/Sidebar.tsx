@@ -85,6 +85,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/venituri-cheltuieli/cheltuieli/dashboard", label: "Dashboard Cheltuieli", icon: FileBarChart },
     ],
   },
+  {
+    id: "management",
+    label: "Management",
+    icon: LayoutDashboard,
+    moduleKey: "venituri_cheltuieli",
+    items: [{ href: "/management", label: "Management", icon: LayoutDashboard }],
+  },
 ];
 
 /** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta. */
@@ -306,6 +313,14 @@ export function Sidebar({
                   >
                     <Target size={15} />
                     Comercial
+                  </Link>
+                  <Link
+                    href="/setari/angajati"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <Users size={15} />
+                    Angajati
                   </Link>
                   <Link
                     href="/setari/nomenclatoare"
