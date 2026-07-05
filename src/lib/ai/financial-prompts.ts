@@ -35,17 +35,43 @@ export function buildVenituriInsightPrompt(sumar: string): string {
   return `Sumarul situatiei de Venituri, la data curenta:\n\n${sumar}`;
 }
 
-export function parseFinancialInsightResponse(raw: string): FinancialInsightResult {
-  const cleaned = raw.replace(/^```json\s*|```$/g, "").trim();
-  const parsed = JSON.parse(cleaned);
+export function buildCrmInsightSystemPrompt(): string {
+  return `Esti un asistent comercial intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar al pipeline-ului CRM (oportunitati, forecast, risc de stagnare) si trebuie sa produci o interpretare utila pentru administrator.
+${REGULI_COMUNE}`;
+}
 
+export function buildCrmInsightPrompt(sumar: string): string {
+  return `Sumarul pipeline-ului CRM, la data curenta:\n\n${sumar}`;
+}
+
+export function parseFinancialInsightResponse(raw: string): FinancialInsightResult {
+  let cleaned = raw.replace(/^```json\s*|```\s*$/g, "").trim();
+
+  // Daca modelul a adaugat orice text inainte/dupa obiectul JSON (desi i s-a
+  // cerut sa nu o faca), extragem doar portiunea intre prima { si ultima }.
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    console.error("Nu am putut parsa raspunsul AI ca JSON. Raspuns brut:", raw);
+    throw err;
+  }
+
+  const obj = parsed as Record<string, unknown>;
   if (
-    typeof parsed.rezumat !== "string" ||
-    typeof parsed.riscuri !== "string" ||
-    typeof parsed.recomandari !== "string"
+    typeof obj.rezumat !== "string" ||
+    typeof obj.riscuri !== "string" ||
+    typeof obj.recomandari !== "string"
   ) {
+    console.error("Raspunsul AI nu are structura asteptata. Raspuns brut:", raw);
     throw new Error("Raspunsul AI nu are structura asteptata.");
   }
 
-  return { rezumat: parsed.rezumat, riscuri: parsed.riscuri, recomandari: parsed.recomandari };
+  return { rezumat: obj.rezumat, riscuri: obj.riscuri, recomandari: obj.recomandari };
 }

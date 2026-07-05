@@ -13,6 +13,8 @@ import {
   ArrowLeftRight,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
+import { AiInsightCard } from "@/components/ui/AiInsightCard";
+import { generateRaportComercialInsightAction } from "@/lib/actions/financial-ai";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { formatEurCompact } from "@/lib/format";
 import type { PipelineReportKpis } from "@/lib/analytics";
@@ -64,6 +66,10 @@ export function RaportComercialClient({
           Analiza de ansamblu a pipeline-ului: volum, calitate si dinamica. Click pe iconita info
           de pe orice card pentru definitie si cum il analizezi.
         </p>
+      </div>
+
+      <div className="mb-6">
+        <AiInsightCard title="Interpretare AI (Claude)" generateAction={generateRaportComercialInsightAction} />
       </div>
 
       <Section title="Volum" dotColor="#0070F3" description="Cat business ai in lucru chiar acum.">

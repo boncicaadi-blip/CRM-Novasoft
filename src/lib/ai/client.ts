@@ -42,7 +42,7 @@ export async function askClaude(params: {
     },
     body: JSON.stringify({
       model: params.model ?? DEFAULT_AI_MODEL,
-      max_tokens: params.maxTokens ?? 1200,
+      max_tokens: params.maxTokens ?? 1500,
       system: params.system,
       messages: [{ role: "user", content: params.prompt }],
     }),
@@ -50,6 +50,7 @@ export async function askClaude(params: {
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
+    console.error(`Anthropic API error (${response.status}):`, errorBody);
     throw new AiRequestError(
       `Eroare API Claude (${response.status}): ${errorBody || response.statusText}`
     );
@@ -63,7 +64,10 @@ export async function askClaude(params: {
     .trim();
 
   if (!text) {
-    throw new AiRequestError("Raspuns gol de la Claude.");
+    // Logam raspunsul complet - fara asta, nu avem cum sa stim DE CE a iesit
+    // gol (stop_reason diferit, tip de content neasteptat, etc).
+    console.error("Raspuns gol de la Claude. Content brut:", JSON.stringify(data));
+    throw new AiRequestError("Raspuns gol de la Claude. Vezi logurile serverului pentru detalii.");
   }
 
   return text;

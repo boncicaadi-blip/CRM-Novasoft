@@ -7,6 +7,8 @@ import {
   buildCreanteInsightPrompt,
   buildVenituriInsightSystemPrompt,
   buildVenituriInsightPrompt,
+  buildCrmInsightSystemPrompt,
+  buildCrmInsightPrompt,
   parseFinancialInsightResponse,
   type FinancialInsightResult,
 } from "@/lib/ai/financial-prompts";
@@ -21,6 +23,8 @@ import {
   topClienti,
   buildEvolutieLunara,
 } from "@/lib/venituri-dashboard-analytics";
+import { getOpportunities } from "@/lib/data/opportunities";
+import { computeKpis, computePipelineReportKpis, groupByStage, groupByStatus, buildRiskLists } from "@/lib/analytics";
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -108,6 +112,102 @@ async function buildVenituriSummaryText(): Promise<string> {
   ];
 
   return lines.join("\n");
+}
+
+async function buildCrmSummaryText(): Promise<string> {
+  const opportunities = await getOpportunities();
+  const kpis = computeKpis(opportunities);
+  const stage = groupByStage(opportunities);
+  const status = groupByStatus(opportunities);
+  const risc = buildRiskLists(opportunities);
+
+  const lines = [
+    `ARR activ: ${formatEur(kpis.totalArr)} (${kpis.activeCount} oportunitati active, din ${kpis.totalOpportunities} total, exclus Lead Pool)`,
+    `Forecast ponderat: ${formatEur(kpis.weightedForecast)}`,
+    `Forecast implementare: ${formatEur(kpis.forecastImplementare)}`,
+    `Castigate: ${kpis.wonCount}, Pierdute: ${kpis.lostCount}, Win rate: ${Math.round(kpis.winRate * 100)}%`,
+    `Fara next step programat: ${kpis.faraNextStepCount} oportunitati active`,
+    `Lead Pool (suspecti reci, neinclusi in forecast): ${kpis.leadPoolCount}`,
+    ``,
+    `Oportunitati pe stage:`,
+    ...stage.map((s) => `- ${s.stage}: ${s.count} oportunitati, valoare ${formatEur(s.value)}`),
+    ``,
+    `Distributie status:`,
+    ...status.map((s) => `- ${s.status}: ${s.count}`),
+    ``,
+    `Riscuri vizibile in pipeline:`,
+    `- Ofertare fara follow-up recent: ${risc.ofertareFaraFollowUp.length} oportunitati`,
+    `- Negociere stagnanta: ${risc.negociereStagnanta.length} oportunitati`,
+    `- Probabilitate mare (peste 50%) fara actiune programata: ${risc.probabilitateMareFaraActiune.length} oportunitati`,
+    `- Amanate fara data de revenire: ${risc.amanateFaraDataRevenire.length} oportunitati`,
+  ];
+
+  return lines.join("\n");
+}
+
+async function buildRaportComercialSummaryText(): Promise<string> {
+  const opportunities = await getOpportunities();
+  const kpis = computePipelineReportKpis(opportunities);
+  const stage = groupByStage(opportunities);
+
+  const lines = [
+    `Pipeline activ SaaS: ${formatEur(kpis.pipelineActivSaas)}`,
+    `Pipeline activ On-premise: ${formatEur(kpis.pipelineActivOnprem)}`,
+    `Pipeline activ Implementare: ${formatEur(kpis.pipelineActivImplementare)}`,
+    `Pipeline total activ: ${formatEur(kpis.pipelineTotalActiv)}`,
+    `Forecast total SaaS: ${formatEur(kpis.forecastTotalSaas)}`,
+    `Forecast total On-premise: ${formatEur(kpis.forecastTotalOnpremise)}`,
+    `Forecast total: ${formatEur(kpis.forecastTotal)}`,
+    `Oportunitati active: ${kpis.oportunitatiActive}`,
+    `Win rate: ${Math.round(kpis.winRate * 100)}%`,
+    ``,
+    `Distributie pe stage:`,
+    ...stage.map((s) => `- ${s.stage}: ${s.count} oportunitati, valoare ${formatEur(s.value)}`),
+  ];
+
+  return lines.join("\n");
+}
+
+export async function generateCrmInsightAction(): Promise<{
+  success: boolean;
+  message?: string;
+  data?: FinancialInsightResult;
+}> {
+  const { isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
+
+  try {
+    const sumar = await buildCrmSummaryText();
+    const raw = await askClaude({
+      system: buildCrmInsightSystemPrompt(),
+      prompt: buildCrmInsightPrompt(sumar),
+      maxTokens: 900,
+    });
+    return { success: true, data: parseFinancialInsightResponse(raw) };
+  } catch (err) {
+    return handleAiError(err);
+  }
+}
+
+export async function generateRaportComercialInsightAction(): Promise<{
+  success: boolean;
+  message?: string;
+  data?: FinancialInsightResult;
+}> {
+  const { isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
+
+  try {
+    const sumar = await buildRaportComercialSummaryText();
+    const raw = await askClaude({
+      system: buildCrmInsightSystemPrompt(),
+      prompt: buildCrmInsightPrompt(sumar),
+      maxTokens: 900,
+    });
+    return { success: true, data: parseFinancialInsightResponse(raw) };
+  } catch (err) {
+    return handleAiError(err);
+  }
 }
 
 export async function generateCreanteInsightAction(): Promise<{

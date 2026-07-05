@@ -25,6 +25,8 @@ import { ResponsabilChart } from "@/components/dashboard/ResponsabilChart";
 import { ActionsList } from "@/components/dashboard/ActionsList";
 import { FilteredOpportunitiesList } from "@/components/dashboard/FilteredOpportunitiesList";
 import { DashboardFilterBar } from "@/components/dashboard/DashboardFilterBar";
+import { AiInsightCard } from "@/components/ui/AiInsightCard";
+import { generateCrmInsightAction } from "@/lib/actions/financial-ai";
 import type { Opportunity, OpportunityHistoryRow } from "@/types/opportunity";
 
 function toggleInArray(arr: string[], value: string): string[] {
@@ -230,6 +232,7 @@ export function DashboardClient({
         </div>
 
         <div className="space-y-4">
+          <AiInsightCard title="Interpretare AI (Claude)" generateAction={generateCrmInsightAction} />
           <RiskZone
             ofertareFaraFollowUp={riskLists.ofertareFaraFollowUp}
             negociereStagnanta={riskLists.negociereStagnanta}
