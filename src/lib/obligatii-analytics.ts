@@ -32,7 +32,13 @@ export function isPartialPropusObligatie(o: Obligatie): boolean {
   return propusa < o.sold;
 }
 
-export type AgingBucketObligatie = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
+export type AgingBucketObligatie =
+  | "sold0_30"
+  | "sold31_60"
+  | "sold61_90"
+  | "sold91_180"
+  | "sold181_365"
+  | "sold365Plus";
 
 export function matchesAgingBucketObligatie(o: Obligatie, bucket: AgingBucketObligatie): boolean {
   if (o.sold <= 0) return false;
@@ -41,7 +47,9 @@ export function matchesAgingBucketObligatie(o: Obligatie, bucket: AgingBucketObl
   if (bucket === "sold0_30") return zile <= 30;
   if (bucket === "sold31_60") return zile > 30 && zile <= 60;
   if (bucket === "sold61_90") return zile > 60 && zile <= 90;
-  return zile > 90;
+  if (bucket === "sold91_180") return zile > 90 && zile <= 180;
+  if (bucket === "sold181_365") return zile > 180 && zile <= 365;
+  return zile > 365;
 }
 
 export interface ObligatiiSummary {
@@ -53,7 +61,9 @@ export interface ObligatiiSummary {
   sold0_30: number;
   sold31_60: number;
   sold61_90: number;
-  sold90Plus: number;
+  sold91_180: number;
+  sold181_365: number;
+  sold365Plus: number;
   targetPropus: number;
   nrFacturiPropuse: number;
 }
@@ -70,7 +80,9 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
   let sold0_30 = 0;
   let sold31_60 = 0;
   let sold61_90 = 0;
-  let sold90Plus = 0;
+  let sold91_180 = 0;
+  let sold181_365 = 0;
+  let sold365Plus = 0;
   let targetPropus = 0;
   let nrFacturiPropuse = 0;
 
@@ -92,7 +104,9 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
       if (zile <= 30) sold0_30 += o.sold;
       else if (zile <= 60) sold31_60 += o.sold;
       else if (zile <= 90) sold61_90 += o.sold;
-      else sold90Plus += o.sold;
+      else if (zile <= 180) sold91_180 += o.sold;
+      else if (zile <= 365) sold181_365 += o.sold;
+      else sold365Plus += o.sold;
     } else {
       nrFacturiLaZi += 1;
     }
@@ -107,7 +121,9 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
     sold0_30,
     sold31_60,
     sold61_90,
-    sold90Plus,
+    sold91_180,
+    sold181_365,
+    sold365Plus,
     targetPropus,
     nrFacturiPropuse,
   };
@@ -149,7 +165,8 @@ export function dateMatchesPeriod(
   }
   if (period === "ultimele_3_luni") {
     const threshold = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    return d >= threshold;
+    const sfarsitLunaCurenta = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    return d >= threshold && d <= sfarsitLunaCurenta;
   }
   return true;
 }

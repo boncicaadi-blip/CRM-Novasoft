@@ -7,7 +7,9 @@ const BUCKETS: { key: AgingBucket; label: string; color: string }[] = [
   { key: "sold0_30", label: "0-30 zile", color: "#22C55E" },
   { key: "sold31_60", label: "31-60 zile", color: "#FBBF24" },
   { key: "sold61_90", label: "61-90 zile", color: "#F97316" },
-  { key: "sold90Plus", label: "90+ zile", color: "#EF4444" },
+  { key: "sold91_180", label: "91-180 zile", color: "#EF4444" },
+  { key: "sold181_365", label: "181-365 zile", color: "#B91C1C" },
+  { key: "sold365Plus", label: "peste 365 zile", color: "#7F1D1D" },
 ];
 
 export function AgingBar({
@@ -19,7 +21,13 @@ export function AgingBar({
   activeBucket: AgingBucket | null;
   onBucketClick: (bucket: AgingBucket) => void;
 }) {
-  const total = summary.sold0_30 + summary.sold31_60 + summary.sold61_90 + summary.sold90Plus;
+  const total =
+    summary.sold0_30 +
+    summary.sold31_60 +
+    summary.sold61_90 +
+    summary.sold91_180 +
+    summary.sold181_365 +
+    summary.sold365Plus;
 
   if (total <= 0) return null;
 

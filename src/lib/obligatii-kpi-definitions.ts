@@ -1,6 +1,11 @@
 import type { KpiDefinition } from "@/lib/kpi-definitions";
 
 export const OBLIGATII_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
+  totalFacturat: {
+    descriere: "Suma totala a tuturor facturilor primite de la acest furnizor, indiferent daca sunt platite sau nu.",
+    formula: "Suma Total factura, pentru toate facturile furnizorului",
+    cumAnalizezi: "Volumul total de business facturat de acest furnizor pana acum.",
+  },
   soldRestant: {
     descriere:
       "Suma soldurilor facturilor cu scadenta depasita. NU include facturile neplatite care inca nu au ajuns la scadenta (acelea sunt \"la zi\").",

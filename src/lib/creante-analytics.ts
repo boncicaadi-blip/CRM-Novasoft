@@ -33,7 +33,13 @@ export function isPartialPropus(c: Creanta): boolean {
   return c.valoare_propusa_spre_incasare !== null && c.valoare_propusa_spre_incasare < c.sold;
 }
 
-export type AgingBucket = "sold0_30" | "sold31_60" | "sold61_90" | "sold90Plus";
+export type AgingBucket =
+  | "sold0_30"
+  | "sold31_60"
+  | "sold61_90"
+  | "sold91_180"
+  | "sold181_365"
+  | "sold365Plus";
 
 /** In ce "bucket" de vechime cade o factura - doar facturile chiar
  * restante (scadenta depasita) intra intr-un bucket de aging. O factura
@@ -46,7 +52,9 @@ export function matchesAgingBucket(c: Creanta, bucket: AgingBucket): boolean {
   if (bucket === "sold0_30") return zile <= 30;
   if (bucket === "sold31_60") return zile > 30 && zile <= 60;
   if (bucket === "sold61_90") return zile > 60 && zile <= 90;
-  return zile > 90;
+  if (bucket === "sold91_180") return zile > 90 && zile <= 180;
+  if (bucket === "sold181_365") return zile > 180 && zile <= 365;
+  return zile > 365;
 }
 
 export interface CreanteSummary {
@@ -62,7 +70,9 @@ export interface CreanteSummary {
   sold0_30: number;
   sold31_60: number;
   sold61_90: number;
-  sold90Plus: number;
+  sold91_180: number;
+  sold181_365: number;
+  sold365Plus: number;
   /** Suma valorilor propuse (editabile per factura, nu neaparat soldul intreg). */
   targetPropus: number;
   nrFacturiPropuse: number;
@@ -85,7 +95,9 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
   let sold0_30 = 0;
   let sold31_60 = 0;
   let sold61_90 = 0;
-  let sold90Plus = 0;
+  let sold91_180 = 0;
+  let sold181_365 = 0;
+  let sold365Plus = 0;
   let targetPropus = 0;
   let nrFacturiPropuse = 0;
 
@@ -107,7 +119,9 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
       if (zile <= 30) sold0_30 += c.sold;
       else if (zile <= 60) sold31_60 += c.sold;
       else if (zile <= 90) sold61_90 += c.sold;
-      else sold90Plus += c.sold;
+      else if (zile <= 180) sold91_180 += c.sold;
+      else if (zile <= 365) sold181_365 += c.sold;
+      else sold365Plus += c.sold;
     } else {
       nrFacturiLaZi += 1;
     }
@@ -122,7 +136,9 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
     sold0_30,
     sold31_60,
     sold61_90,
-    sold90Plus,
+    sold91_180,
+    sold181_365,
+    sold365Plus,
     targetPropus,
     nrFacturiPropuse,
   };
@@ -171,7 +187,8 @@ export function dateMatchesPeriod(
   }
   if (period === "ultimele_3_luni") {
     const threshold = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-    return d >= threshold;
+    const sfarsitLunaCurenta = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    return d >= threshold && d <= sfarsitLunaCurenta;
   }
   return true;
 }

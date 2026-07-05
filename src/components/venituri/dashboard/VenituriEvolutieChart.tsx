@@ -2,13 +2,18 @@
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { VENITURI_KPI_DEFINITIONS } from "@/lib/venituri-kpi-definitions";
 import { formatEur } from "@/lib/format";
 import type { LunaDatum } from "@/lib/venituri-dashboard-analytics";
 
 export function VenituriEvolutieChart({ data }: { data: LunaDatum[] }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 text-sm font-medium text-white">Evolutie Estimat vs. Realizat</p>
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+        Evolutie Estimat vs. Realizat
+        <InfoTooltip title="Evolutie Estimat vs. Realizat" definition={VENITURI_KPI_DEFINITIONS.evolutieEstimatRealizat} />
+      </p>
       <ResponsiveContainer width="100%" height={260}>
         <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
           <defs>

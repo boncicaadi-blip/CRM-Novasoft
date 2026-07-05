@@ -15,7 +15,7 @@ import { CreanteGrtCard } from "./CreanteGrtCard";
 import { CreanteGrtChart } from "./CreanteGrtChart";
 import { CreanteDinamicaChart } from "./CreanteDinamicaChart";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
-import { generateCreanteInsightAction } from "@/lib/actions/financial-ai";
+import { generateCreanteInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { formatRon } from "@/lib/format";
 import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import { getTodayISO } from "@/lib/date";
@@ -124,6 +124,15 @@ export function CreanteDashboardClient({
   const currentMonthKey = getTodayISO().slice(0, 7);
   const currentMonthGrt = grtSeries.find((g) => g.monthKey === currentMonthKey);
 
+  const clientOptions = useMemo(
+    () => Array.from(new Set(creante.map((c) => c.nume_firma))).sort(),
+    [creante]
+  );
+  const tipVanzareOptions = useMemo(
+    () => Array.from(new Set(creante.map((c) => c.tip_vanzare ?? "Necunoscut"))).sort(),
+    [creante]
+  );
+
   const hasFilter = filters.status || filters.aging || filters.tipVanzare || filters.client;
 
   return (
@@ -164,6 +173,60 @@ export function CreanteDashboardClient({
                 className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
               />
             </>
+          )}
+          <select
+            value={filters.client ?? ""}
+            onChange={(e) => setFilters((f) => ({ ...f, client: e.target.value || null }))}
+            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          >
+            <option value="" style={{ backgroundColor: "#111535" }}>
+              Toti clientii
+            </option>
+            {clientOptions.map((c) => (
+              <option key={c} value={c} style={{ backgroundColor: "#111535" }}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filters.tipVanzare ?? ""}
+            onChange={(e) => setFilters((f) => ({ ...f, tipVanzare: e.target.value || null }))}
+            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          >
+            <option value="" style={{ backgroundColor: "#111535" }}>
+              Toate tipurile
+            </option>
+            {tipVanzareOptions.map((t) => (
+              <option key={t} value={t} style={{ backgroundColor: "#111535" }}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filters.status ?? ""}
+            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value || null }))}
+            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          >
+            <option value="" style={{ backgroundColor: "#111535" }}>
+              Toate statusurile
+            </option>
+            <option value="restanta" style={{ backgroundColor: "#111535" }}>
+              Restanta
+            </option>
+            <option value="la_zi" style={{ backgroundColor: "#111535" }}>
+              La zi
+            </option>
+            <option value="incasata" style={{ backgroundColor: "#111535" }}>
+              Incasata
+            </option>
+          </select>
+          {hasFilter && (
+            <button
+              onClick={() => setFilters(EMPTY_FILTERS)}
+              className="text-xs text-[#E8007A] hover:text-[#FF4FAA]"
+            >
+              Sterge filtrele
+            </button>
           )}
           <Link
             href="/creante"
@@ -245,7 +308,11 @@ export function CreanteDashboardClient({
         </div>
 
         <div className="space-y-4">
-          <AiInsightCard title="Interpretare AI (Claude)" generateAction={generateCreanteInsightAction} />
+          <AiInsightCard
+            title="Interpretare AI (Claude)"
+            generateAction={generateCreanteInsightAction}
+            historyAction={() => getAiInsightHistoryAction("creante_insight")}
+          />
           <CreanteRiscZone facturi={riscData} onSelect={setSelected} />
           <CreanteTopClientiChart
             data={clientData}

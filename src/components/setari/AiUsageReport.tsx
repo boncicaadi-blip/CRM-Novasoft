@@ -2,7 +2,7 @@
 
 import { Sparkles, DollarSign, CheckCircle2, XCircle } from "lucide-react";
 import type { AiUsageSummary, AiUsageRow } from "@/lib/data/ai-usage";
-import { FEATURE_LABELS } from "@/lib/data/ai-usage";
+import { FEATURE_LABELS } from "@/lib/ai/feature-labels";
 
 function usd(n: number): string {
   return `$${n.toFixed(4)}`;

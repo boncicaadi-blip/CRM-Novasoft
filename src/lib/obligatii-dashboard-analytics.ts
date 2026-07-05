@@ -39,7 +39,9 @@ const AGING_LABELS: { key: AgingBucketObligatie; label: string }[] = [
   { key: "sold0_30", label: "0-30 zile" },
   { key: "sold31_60", label: "31-60 zile" },
   { key: "sold61_90", label: "61-90 zile" },
-  { key: "sold90Plus", label: "90+ zile" },
+  { key: "sold91_180", label: "91-180 zile" },
+  { key: "sold181_365", label: "181-365 zile" },
+  { key: "sold365Plus", label: "peste 365 zile" },
 ];
 
 export function groupByAgingObligatii(obligatii: Obligatie[]): AgingDatum[] {

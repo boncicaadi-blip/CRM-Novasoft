@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
 import {
-  TrendingUp,
+  Wallet,
   FileText,
   Plus,
   RefreshCw,
@@ -27,24 +27,29 @@ import {
 } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
-import { VENITURI_KPI_DEFINITIONS } from "@/lib/venituri-kpi-definitions";
+import { CHELTUIELI_KPI_DEFINITIONS } from "@/lib/cheltuieli-kpi-definitions";
 import { getTodayISO } from "@/lib/date";
 import {
-  createContractAction,
-  updateContractAction,
-  deleteContractAction,
-  addVenitLinieManualAction,
-  updateVenitLinieAction,
-  deleteVenitLinieAction,
-  deleteVenituriLiniiAction,
-  bulkMarkFacturatAction,
-  syncVenituriLiniiAction,
-} from "@/lib/actions/venituri";
-import type { Contract, VenitLinie, ContractStatus, TipVenit } from "@/types/venituri";
-import type { ClientOption } from "@/lib/data/venituri";
+  createContractCheltuialaAction,
+  updateContractCheltuialaAction,
+  deleteContractCheltuialaAction,
+  addCheltuialaLinieManualAction,
+  updateCheltuialaLinieAction,
+  deleteCheltuialaLinieAction,
+  deleteCheltuieliLiniiAction,
+  bulkMarkPlatitAction,
+  syncCheltuieliLiniiAction,
+} from "@/lib/actions/cheltuieli";
+import type {
+  ContractCheltuiala,
+  CheltuialaLinie,
+  StatusContractCheltuiala,
+  TipCheltuiala,
+  FrecventaCheltuiala,
+} from "@/types/cheltuieli";
 import type { Nomenclator } from "@/types/opportunity";
 
-type ViewMode = "venituri" | "contracte";
+type ViewMode = "cheltuieli" | "contracte";
 type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
 const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
@@ -92,17 +97,17 @@ function NomOption({ n }: { n: Nomenclator }) {
 interface LunaChartDatum {
   luna: string;
   label: string;
-  estimat: number;
+  prognozat: number;
   realizat: number;
 }
 
-function buildMonthlyChartData(linii: VenitLinie[]): LunaChartDatum[] {
-  const byMonth = new Map<string, { estimat: number; realizat: number }>();
+function buildMonthlyChartData(linii: CheltuialaLinie[]): LunaChartDatum[] {
+  const byMonth = new Map<string, { prognozat: number; realizat: number }>();
   for (const l of linii) {
     const key = l.luna.slice(0, 7);
-    const cur = byMonth.get(key) ?? { estimat: 0, realizat: 0 };
-    cur.estimat += l.venit_estimat;
-    cur.realizat += l.venit_realizat ?? 0;
+    const cur = byMonth.get(key) ?? { prognozat: 0, realizat: 0 };
+    cur.prognozat += l.valoare_prognozata;
+    cur.realizat += l.valoare_realizata ?? 0;
     byMonth.set(key, cur);
   }
   return Array.from(byMonth.entries())
@@ -110,21 +115,20 @@ function buildMonthlyChartData(linii: VenitLinie[]): LunaChartDatum[] {
     .map(([key, v]) => ({
       luna: key,
       label: new Date(`${key}-01`).toLocaleDateString("ro-RO", { month: "short", year: "2-digit" }),
-      estimat: v.estimat,
+      prognozat: v.prognozat,
       realizat: v.realizat,
     }));
 }
 
-function VeniturChart({ linii }: { linii: VenitLinie[] }) {
+function CheltuieliChart({ linii }: { linii: CheltuialaLinie[] }) {
   const data = useMemo(() => buildMonthlyChartData(linii), [linii]);
-
   if (data.length === 0) return null;
 
   return (
     <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
-        Estimat vs. Realizat, pe perioada selectata
-        <InfoTooltip title="Estimat vs. Realizat" definition={VENITURI_KPI_DEFINITIONS.evolutieEstimatRealizat} />
+        Prognozat vs. Realizat, pe perioada selectata
+        <InfoTooltip title="Prognozat vs. Realizat" definition={CHELTUIELI_KPI_DEFINITIONS.evolutiePrognozatRealizat} />
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
@@ -139,125 +143,93 @@ function VeniturChart({ linii }: { linii: VenitLinie[] }) {
                 <ChartTooltipBox
                   title={d.label}
                   rows={[
-                    { label: "Estimat", value: `${d.estimat.toLocaleString("ro-RO")} EUR`, color: "#475569" },
-                    { label: "Realizat", value: `${d.realizat.toLocaleString("ro-RO")} EUR`, color: "#22C55E" },
+                    { label: "Prognozat", value: `${d.prognozat.toLocaleString("ro-RO")} EUR`, color: "#475569" },
+                    { label: "Realizat", value: `${d.realizat.toLocaleString("ro-RO")} EUR`, color: "#F97316" },
                   ]}
                 />
               );
             }}
           />
           <Legend wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} />
-          <Bar dataKey="estimat" name="Estimat" fill="#475569" radius={[3, 3, 0, 0]} />
-          <Bar dataKey="realizat" name="Realizat" fill="#22C55E" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="prognozat" name="Prognozat" fill="#475569" radius={[3, 3, 0, 0]} />
+          <Bar dataKey="realizat" name="Realizat" fill="#F97316" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-export function VenituriCheltuieliClient({
+export function CheltuieliClient({
   contracte,
-  venituriLinii,
-  clienti,
-  produseOptions,
-  serviciiOptions,
-  modalitatiOptions,
-  stadiiOptions,
+  cheltuieliLinii,
+  incadrareOptions,
+  clasaOptions,
 }: {
-  contracte: Contract[];
-  venituriLinii: VenitLinie[];
-  clienti: ClientOption[];
-  produseOptions: Nomenclator[];
-  serviciiOptions: Nomenclator[];
-  modalitatiOptions: Nomenclator[];
-  stadiiOptions: Nomenclator[];
+  contracte: ContractCheltuiala[];
+  cheltuieliLinii: CheltuialaLinie[];
+  incadrareOptions: Nomenclator[];
+  clasaOptions: Nomenclator[];
 }) {
-  const [viewMode, setViewMode] = useState<ViewMode>("venituri");
+  const [viewMode, setViewMode] = useState<ViewMode>("cheltuieli");
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
-  const [filterClient, setFilterClient] = useState("");
-  const [filterProdus, setFilterProdus] = useState("");
-  const [filterServiciu, setFilterServiciu] = useState("");
+  const [filterIncadrare, setFilterIncadrare] = useState("");
+  const [filterClasa, setFilterClasa] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [filterStadiu, setFilterStadiu] = useState("");
   const [isPending, startTransition] = useTransition();
   const [showContractForm, setShowContractForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
-  const [editingContract, setEditingContract] = useState<Contract | null>(null);
+  const [editingContract, setEditingContract] = useState<ContractCheltuiala | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
 
-  const clientOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const l of venituriLinii) set.add(l.nume_client);
-    for (const c of contracte) set.add(c.nume_client);
-    return Array.from(set).sort();
-  }, [venituriLinii, contracte]);
-
   const filteredLinii = useMemo(
     () =>
-      venituriLinii.filter((l) => {
+      cheltuieliLinii.filter((l) => {
         const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
         return (
           inPeriod(l.luna, period, customFrom, customTo) &&
-          (!filterClient || l.nume_client === filterClient) &&
-          (!filterProdus || l.produs === filterProdus) &&
-          (!filterServiciu || l.serviciu === filterServiciu) &&
-          (!filterStatus || contract?.status_contract === filterStatus) &&
-          (!filterStadiu || contract?.stadiu_contract === filterStadiu)
+          (!filterIncadrare || l.incadrare === filterIncadrare) &&
+          (!filterClasa || l.clasa === filterClasa) &&
+          (!filterStatus || contract?.status_contract === filterStatus)
         );
       }),
-    [
-      venituriLinii,
-      contractById,
-      period,
-      customFrom,
-      customTo,
-      filterClient,
-      filterProdus,
-      filterServiciu,
-      filterStatus,
-      filterStadiu,
-    ]
+    [cheltuieliLinii, contractById, period, customFrom, customTo, filterIncadrare, filterClasa, filterStatus]
   );
 
   const filteredContracte = useMemo(
     () =>
       contracte.filter(
         (c) =>
-          (!filterClient || c.nume_client === filterClient) &&
-          (!filterProdus || c.produs === filterProdus) &&
-          (!filterServiciu || c.serviciu === filterServiciu) &&
-          (!filterStatus || c.status_contract === filterStatus) &&
-          (!filterStadiu || c.stadiu_contract === filterStadiu)
+          (!filterIncadrare || c.incadrare === filterIncadrare) &&
+          (!filterClasa || c.clasa === filterClasa) &&
+          (!filterStatus || c.status_contract === filterStatus)
       ),
-    [contracte, filterClient, filterProdus, filterServiciu, filterStatus, filterStadiu]
+    [contracte, filterIncadrare, filterClasa, filterStatus]
   );
 
   const summary = useMemo(() => {
     const acum = new Date();
     const lunaCurentaKey = `${acum.getFullYear()}-${String(acum.getMonth() + 1).padStart(2, "0")}`;
-    let estimat = 0;
+    let prognozat = 0;
     let realizat = 0;
-    let estimatPanaAcum = 0;
+    let prognozatPanaAcum = 0;
     for (const l of filteredLinii) {
-      estimat += l.venit_estimat;
-      realizat += l.venit_realizat ?? 0;
-      if (l.luna.slice(0, 7) <= lunaCurentaKey) estimatPanaAcum += l.venit_estimat;
+      prognozat += l.valoare_prognozata;
+      realizat += l.valoare_realizata ?? 0;
+      if (l.luna.slice(0, 7) <= lunaCurentaKey) prognozatPanaAcum += l.valoare_prognozata;
     }
-    return { estimat, realizat, estimatPanaAcum, diferenta: realizat - estimatPanaAcum };
+    return { prognozat, realizat, prognozatPanaAcum, diferenta: realizat - prognozatPanaAcum };
   }, [filteredLinii]);
 
   function handleSync() {
     setSyncMessage(null);
     startTransition(async () => {
-      const result = await syncVenituriLiniiAction();
+      const result = await syncCheltuieliLiniiAction();
       setSyncMessage(
-        result.success
-          ? `${result.data?.generate ?? 0} linii noi generate.`
-          : (result.message ?? "Eroare.")
+        result.success ? `${result.data?.generate ?? 0} linii noi generate.` : (result.message ?? "Eroare.")
       );
     });
   }
@@ -266,9 +238,9 @@ export function VenituriCheltuieliClient({
     <div className="px-3 py-4 sm:px-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Venituri & Cheltuieli</h1>
+          <h1 className="text-lg font-heading text-white">Cheltuieli</h1>
           <p className="text-sm text-slate-500">
-            Contracte (recurente si nerecurente), buget vs. realizat. Toate valorile in EUR, fara TVA.
+            Contracte de cheltuiala (recurente si nerecurente), buget vs. realizat. EUR, fara TVA.
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -281,13 +253,13 @@ export function VenituriCheltuieliClient({
               <RefreshCw size={13} />
               Genereaza linii lipsa
             </button>
-            {viewMode === "venituri" && (
+            {viewMode === "cheltuieli" && (
               <button
                 onClick={() => setShowManualForm(true)}
                 className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5"
               >
                 <Plus size={14} />
-                Venit manual
+                Cheltuiala manuala
               </button>
             )}
             <button
@@ -305,25 +277,25 @@ export function VenituriCheltuieliClient({
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
-            Venit estimat (buget)
-            <InfoTooltip title="Venit estimat" definition={VENITURI_KPI_DEFINITIONS.venitEstimat} />
+            Prognozat (buget)
+            <InfoTooltip title="Prognozat" definition={CHELTUIELI_KPI_DEFINITIONS.prognozat} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.estimat)}</p>
+          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.prognozat)}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
-            Venit realizat
-            <InfoTooltip title="Venit realizat" definition={VENITURI_KPI_DEFINITIONS.venitRealizat} />
+            Realizat
+            <InfoTooltip title="Realizat" definition={CHELTUIELI_KPI_DEFINITIONS.realizat} />
           </p>
           <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.realizat)}</p>
         </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             Diferenta (pana in luna curenta)
-            <InfoTooltip title="Diferenta (YTD)" definition={VENITURI_KPI_DEFINITIONS.diferentaYtd} />
+            <InfoTooltip title="Diferenta (YTD)" definition={CHELTUIELI_KPI_DEFINITIONS.diferentaYtd} />
           </p>
           <p
-            className={`font-mono text-2xl font-medium ${summary.diferenta >= 0 ? "text-green-400" : "text-red-400"}`}
+            className={`font-mono text-2xl font-medium ${summary.diferenta <= 0 ? "text-green-400" : "text-red-400"}`}
           >
             {summary.diferenta >= 0 ? "+" : ""}
             {formatEur(summary.diferenta)}
@@ -332,18 +304,18 @@ export function VenituriCheltuieliClient({
         </div>
       </div>
 
-      <VeniturChart linii={filteredLinii} />
+      <CheltuieliChart linii={filteredLinii} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center rounded-md border border-white/10 p-0.5">
           <button
-            onClick={() => setViewMode("venituri")}
+            onClick={() => setViewMode("cheltuieli")}
             className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition ${
-              viewMode === "venituri" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "cheltuieli" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
             }`}
           >
-            <TrendingUp size={13} />
-            Venituri
+            <Wallet size={13} />
+            Cheltuieli
           </button>
           <button
             onClick={() => setViewMode("contracte")}
@@ -355,7 +327,7 @@ export function VenituriCheltuieliClient({
             Contracte
           </button>
         </div>
-        {viewMode === "venituri" && (
+        {viewMode === "cheltuieli" && (
           <>
             <select
               value={period}
@@ -388,40 +360,26 @@ export function VenituriCheltuieliClient({
           </>
         )}
         <select
-          value={filterClient}
-          onChange={(e) => setFilterClient(e.target.value)}
+          value={filterIncadrare}
+          onChange={(e) => setFilterIncadrare(e.target.value)}
           className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
         >
           <option value="" style={{ backgroundColor: "#111535" }}>
-            Toti clientii
+            Toate incadrarile
           </option>
-          {clientOptions.map((c) => (
-            <option key={c} value={c} style={{ backgroundColor: "#111535" }}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterProdus}
-          onChange={(e) => setFilterProdus(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-        >
-          <option value="" style={{ backgroundColor: "#111535" }}>
-            Toate produsele
-          </option>
-          {produseOptions.map((n) => (
+          {incadrareOptions.map((n) => (
             <NomOption key={n.id} n={n} />
           ))}
         </select>
         <select
-          value={filterServiciu}
-          onChange={(e) => setFilterServiciu(e.target.value)}
+          value={filterClasa}
+          onChange={(e) => setFilterClasa(e.target.value)}
           className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
         >
           <option value="" style={{ backgroundColor: "#111535" }}>
-            Toate serviciile
+            Toate clasele
           </option>
-          {serviciiOptions.map((n) => (
+          {clasaOptions.map((n) => (
             <NomOption key={n.id} n={n} />
           ))}
         </select>
@@ -440,26 +398,12 @@ export function VenituriCheltuieliClient({
             Inactiv
           </option>
         </select>
-        <select
-          value={filterStadiu}
-          onChange={(e) => setFilterStadiu(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-        >
-          <option value="" style={{ backgroundColor: "#111535" }}>
-            Toate stadiile
-          </option>
-          {stadiiOptions.map((n) => (
-            <NomOption key={n.id} n={n} />
-          ))}
-        </select>
-        {(filterClient || filterProdus || filterServiciu || filterStatus || filterStadiu) && (
+        {(filterIncadrare || filterClasa || filterStatus) && (
           <button
             onClick={() => {
-              setFilterClient("");
-              setFilterProdus("");
-              setFilterServiciu("");
+              setFilterIncadrare("");
+              setFilterClasa("");
               setFilterStatus("");
-              setFilterStadiu("");
             }}
             className="text-xs text-[#E8007A] hover:text-[#FF4FAA]"
           >
@@ -468,43 +412,31 @@ export function VenituriCheltuieliClient({
         )}
       </div>
 
-      {viewMode === "venituri" ? (
-        <VenituriTable
-          linii={filteredLinii}
-          contracte={contracte}
-          produseOptions={produseOptions}
-          serviciiOptions={serviciiOptions}
-        />
+      {viewMode === "cheltuieli" ? (
+        <CheltuieliTable linii={filteredLinii} contracte={contracte} incadrareOptions={incadrareOptions} clasaOptions={clasaOptions} />
       ) : (
-        <ContracteTable contracte={filteredContracte} onEdit={setEditingContract} />
+        <ContracteCheltuieliTable contracte={filteredContracte} onEdit={setEditingContract} />
       )}
 
       {showContractForm && (
-        <ContractFormModal
-          clienti={clienti}
-          produseOptions={produseOptions}
-          serviciiOptions={serviciiOptions}
-          modalitatiOptions={modalitatiOptions}
-          stadiiOptions={stadiiOptions}
+        <ContractCheltuialaFormModal
+          incadrareOptions={incadrareOptions}
+          clasaOptions={clasaOptions}
           onClose={() => setShowContractForm(false)}
         />
       )}
       {editingContract && (
-        <ContractFormModal
+        <ContractCheltuialaFormModal
           contract={editingContract}
-          clienti={clienti}
-          produseOptions={produseOptions}
-          serviciiOptions={serviciiOptions}
-          modalitatiOptions={modalitatiOptions}
-          stadiiOptions={stadiiOptions}
+          incadrareOptions={incadrareOptions}
+          clasaOptions={clasaOptions}
           onClose={() => setEditingContract(null)}
         />
       )}
       {showManualForm && (
-        <ManualVenitFormModal
-          clienti={clienti}
-          produseOptions={produseOptions}
-          serviciiOptions={serviciiOptions}
+        <ManualCheltuialaFormModal
+          incadrareOptions={incadrareOptions}
+          clasaOptions={clasaOptions}
           onClose={() => setShowManualForm(false)}
         />
       )}
@@ -512,59 +444,59 @@ export function VenituriCheltuieliClient({
   );
 }
 
-function VenituriTable({
+function CheltuieliTable({
   linii,
   contracte,
-  produseOptions,
-  serviciiOptions,
+  incadrareOptions,
+  clasaOptions,
 }: {
-  linii: VenitLinie[];
-  contracte: Contract[];
-  produseOptions: Nomenclator[];
-  serviciiOptions: Nomenclator[];
+  linii: CheltuialaLinie[];
+  contracte: ContractCheltuiala[];
+  incadrareOptions: Nomenclator[];
+  clasaOptions: Nomenclator[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [produs, setProdus] = useState("");
-  const [serviciu, setServiciu] = useState("");
+  const [incadrare, setIncadrare] = useState("");
+  const [clasa, setClasa] = useState("");
   const [luna, setLuna] = useState("");
-  const [venitEstimat, setVenitEstimat] = useState("");
-  const [venitRealizat, setVenitRealizat] = useState("");
-  const [facturat, setFacturat] = useState(false);
+  const [valoarePrognozata, setValoarePrognozata] = useState("");
+  const [valoareRealizata, setValoareRealizata] = useState("");
+  const [platit, setPlatit] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [pageSize, setPageSize] = useState<number | "toate">(50);
   const [page, setPage] = useState(1);
 
   const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
 
-  function startEdit(l: VenitLinie) {
+  function startEdit(l: CheltuialaLinie) {
     setEditingId(l.id);
-    setProdus(l.produs ?? "");
-    setServiciu(l.serviciu ?? "");
+    setIncadrare(l.incadrare);
+    setClasa(l.clasa);
     setLuna(l.luna.slice(0, 7));
-    setVenitEstimat(String(l.venit_estimat));
-    setVenitRealizat(l.venit_realizat !== null ? String(l.venit_realizat) : "");
-    setFacturat(l.facturat);
+    setValoarePrognozata(String(l.valoare_prognozata));
+    setValoareRealizata(l.valoare_realizata !== null ? String(l.valoare_realizata) : "");
+    setPlatit(l.platit);
   }
 
   function handleSave(id: string) {
     startTransition(async () => {
-      await updateVenitLinieAction(id, {
-        produs: produs || null,
-        serviciu: serviciu || null,
+      await updateCheltuialaLinieAction(id, {
+        incadrare,
+        clasa,
         luna: luna ? `${luna}-01` : undefined,
-        venit_estimat: Number(venitEstimat),
-        venit_realizat: venitRealizat === "" ? null : Number(venitRealizat),
-        facturat,
+        valoare_prognozata: Number(valoarePrognozata),
+        valoare_realizata: valoareRealizata === "" ? null : Number(valoareRealizata),
+        platit,
       });
       setEditingId(null);
     });
   }
 
   function handleDelete(id: string) {
-    if (!confirm("Stergi aceasta linie de venit?")) return;
+    if (!confirm("Stergi aceasta cheltuiala?")) return;
     startTransition(async () => {
-      await deleteVenitLinieAction(id);
+      await deleteCheltuialaLinieAction(id);
     });
   }
 
@@ -584,25 +516,25 @@ function VenituriTable({
   function handleBulkDelete() {
     if (checkedIds.size === 0) return;
     const confirmation = prompt(
-      `Scrie STERGE ca sa confirmi stergerea celor ${checkedIds.size} linii selectate. Actiunea nu poate fi anulata.`
+      `Scrie STERGE ca sa confirmi stergerea celor ${checkedIds.size} cheltuieli selectate. Actiunea nu poate fi anulata.`
     );
     if (confirmation !== "STERGE") return;
     startTransition(async () => {
-      await deleteVenituriLiniiAction(Array.from(checkedIds));
+      await deleteCheltuieliLiniiAction(Array.from(checkedIds));
       setCheckedIds(new Set());
     });
   }
 
-  function handleBulkFacturat() {
+  function handleBulkPlatit() {
     if (checkedIds.size === 0) return;
     if (
       !confirm(
-        `Marchezi ${checkedIds.size} linii ca "Facturat"? Valoarea estimata devine automat valoare realizata, pentru fiecare.`
+        `Marchezi ${checkedIds.size} cheltuieli ca "Platit"? Valoarea prognozata devine automat valoare realizata, pentru fiecare.`
       )
     )
       return;
     startTransition(async () => {
-      await bulkMarkFacturatAction(Array.from(checkedIds));
+      await bulkMarkPlatitAction(Array.from(checkedIds));
       setCheckedIds(new Set());
     });
   }
@@ -621,12 +553,12 @@ function VenituriTable({
         <div className="mb-2 flex items-center gap-2 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2">
           <span className="text-xs text-slate-300">{checkedIds.size} selectate</span>
           <button
-            onClick={handleBulkFacturat}
+            onClick={handleBulkPlatit}
             disabled={isPending}
             className="flex items-center gap-1.5 rounded-md bg-green-500/15 px-2.5 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/25 disabled:opacity-50"
           >
             <CheckCheck size={13} />
-            Marcheaza facturat (= estimat)
+            Marcheaza platit (= prognozat)
           </button>
           <button
             onClick={handleBulkDelete}
@@ -650,16 +582,14 @@ function VenituriTable({
                   className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
                 />
               </th>
-              <th className="px-3 py-2">Client</th>
-              <th className="px-3 py-2">Tip</th>
-              <th className="px-3 py-2">Produs</th>
-              <th className="px-3 py-2">Serviciu</th>
+              <th className="px-3 py-2">Furnizor</th>
+              <th className="px-3 py-2">Incadrare</th>
+              <th className="px-3 py-2">Clasa</th>
               <th className="px-3 py-2">Contract</th>
-              <th className="px-3 py-2">Modalitate</th>
               <th className="px-3 py-2">Luna</th>
-              <th className="px-3 py-2 text-right">Estimat</th>
+              <th className="px-3 py-2 text-right">Prognozat</th>
               <th className="px-3 py-2 text-right">Realizat</th>
-              <th className="px-3 py-2 text-center">Facturat</th>
+              <th className="px-3 py-2 text-center">Platit</th>
               <th className="px-3 py-2"></th>
             </tr>
           </thead>
@@ -677,34 +607,27 @@ function VenituriTable({
                       className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
                     />
                   </td>
-                  <td className="px-3 py-2 text-white">{l.nume_client}</td>
-                  <td className="px-3 py-2 text-slate-400">{l.tip_venit}</td>
+                  <td className="px-3 py-2 text-white">{l.furnizor ?? "—"}</td>
                   <td className="px-3 py-2 text-slate-400">
                     {isEditing ? (
-                      <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
-                        <option value="" style={{ backgroundColor: "#111535" }}>
-                          —
-                        </option>
-                        {produseOptions.map((n) => (
+                      <select value={incadrare} onChange={(e) => setIncadrare(e.target.value)} className={selectClass}>
+                        {incadrareOptions.map((n) => (
                           <NomOption key={n.id} n={n} />
                         ))}
                       </select>
                     ) : (
-                      (l.produs ?? "—")
+                      l.incadrare
                     )}
                   </td>
                   <td className="px-3 py-2 text-slate-400">
                     {isEditing ? (
-                      <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
-                        <option value="" style={{ backgroundColor: "#111535" }}>
-                          —
-                        </option>
-                        {serviciiOptions.map((n) => (
+                      <select value={clasa} onChange={(e) => setClasa(e.target.value)} className={selectClass}>
+                        {clasaOptions.map((n) => (
                           <NomOption key={n.id} n={n} />
                         ))}
                       </select>
                     ) : (
-                      (l.serviciu ?? "—")
+                      l.clasa
                     )}
                   </td>
                   <td className="px-3 py-2">
@@ -716,7 +639,6 @@ function VenituriTable({
                       <span className="text-slate-600">Manual</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">{contract?.modalitate_facturare ?? "—"}</td>
                   <td className="px-3 py-2 text-slate-400">
                     {isEditing ? (
                       <input
@@ -734,12 +656,12 @@ function VenituriTable({
                       <input
                         type="number"
                         step="0.01"
-                        value={venitEstimat}
-                        onChange={(e) => setVenitEstimat(e.target.value)}
+                        value={valoarePrognozata}
+                        onChange={(e) => setValoarePrognozata(e.target.value)}
                         className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
                       />
                     ) : (
-                      <span className="font-mono text-slate-300">{formatEur(l.venit_estimat)}</span>
+                      <span className="font-mono text-slate-300">{formatEur(l.valoare_prognozata)}</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -747,13 +669,13 @@ function VenituriTable({
                       <input
                         type="number"
                         step="0.01"
-                        value={venitRealizat}
-                        onChange={(e) => setVenitRealizat(e.target.value)}
+                        value={valoareRealizata}
+                        onChange={(e) => setValoareRealizata(e.target.value)}
                         className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
                       />
                     ) : (
                       <span className="font-mono text-white">
-                        {l.venit_realizat !== null ? formatEur(l.venit_realizat) : "—"}
+                        {l.valoare_realizata !== null ? formatEur(l.valoare_realizata) : "—"}
                       </span>
                     )}
                   </td>
@@ -761,15 +683,15 @@ function VenituriTable({
                     {isEditing ? (
                       <input
                         type="checkbox"
-                        checked={facturat}
+                        checked={platit}
                         onChange={(e) => {
                           const checked = e.target.checked;
-                          setFacturat(checked);
-                          if (checked) setVenitRealizat(venitEstimat);
+                          setPlatit(checked);
+                          if (checked) setValoareRealizata(valoarePrognozata);
                         }}
                         className="h-3.5 w-3.5"
                       />
-                    ) : l.facturat ? (
+                    ) : l.platit ? (
                       <Check size={14} className="mx-auto text-green-400" />
                     ) : (
                       <span className="text-slate-600">—</span>
@@ -814,8 +736,8 @@ function VenituriTable({
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-sm text-slate-500">
-                  Nicio linie de venit pentru filtrul curent.
+                <td colSpan={10} className="px-3 py-8 text-center text-sm text-slate-500">
+                  Nicio cheltuiala pentru filtrul curent.
                 </td>
               </tr>
             )}
@@ -873,22 +795,24 @@ function VenituriTable({
   );
 }
 
-function ContracteTable({
+function ContracteCheltuieliTable({
   contracte,
   onEdit,
 }: {
-  contracte: Contract[];
-  onEdit: (c: Contract) => void;
+  contracte: ContractCheltuiala[];
+  onEdit: (c: ContractCheltuiala) => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [pageSize, setPageSize] = useState<number | "toate">(50);
   const [page, setPage] = useState(1);
 
   function handleDelete(id: string) {
-    if (!confirm("Stergi acest contract? Liniile lui de venit se sterg si ele, automat. Actiunea nu poate fi anulata."))
+    if (
+      !confirm("Stergi acest contract? Liniile lui de cheltuiala se sterg si ele, automat. Actiunea nu poate fi anulata.")
+    )
       return;
     startTransition(async () => {
-      await deleteContractAction(id);
+      await deleteContractCheltuialaAction(id);
     });
   }
 
@@ -901,76 +825,68 @@ function ContracteTable({
 
   return (
     <div>
-    <div className="overflow-x-auto rounded-xl border border-white/10">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
-            <th className="px-3 py-2">Client</th>
-            <th className="px-3 py-2">Tip venit</th>
-            <th className="px-3 py-2">Produs</th>
-            <th className="px-3 py-2">Serviciu</th>
-            <th className="px-3 py-2">Modalitate</th>
-            <th className="px-3 py-2 text-right">Valoare</th>
-            <th className="px-3 py-2">Inceput</th>
-            <th className="px-3 py-2">Sfarsit</th>
-            <th className="px-3 py-2">Stadiu</th>
-            <th className="px-3 py-2">Status</th>
-            <th className="px-3 py-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {pagedRows.map((c) => (
-            <tr
-              key={c.id}
-              onClick={() => onEdit(c)}
-              className="cursor-pointer border-b border-white/5 hover:bg-white/[0.03]"
-            >
-              <td className="px-3 py-2 text-white">{c.nume_client}</td>
-              <td className="px-3 py-2 text-slate-400">{c.tip_venit}</td>
-              <td className="px-3 py-2 text-slate-400">{c.produs ?? "—"}</td>
-              <td className="px-3 py-2 text-slate-400">{c.serviciu ?? "—"}</td>
-              <td className="px-3 py-2 text-slate-400">
-                {c.modalitate_facturare ?? "—"}
-                {c.tip_venit === "Nerecurent" && c.nr_rate > 1 && (
-                  <span className="ml-1 text-[10px] text-slate-500">({c.nr_rate}x)</span>
-                )}
-              </td>
-              <td className="px-3 py-2 text-right font-mono text-white">
-                {formatEur(c.valoare_lunara)}
-              </td>
-              <td className="px-3 py-2 text-slate-400">
-                {new Date(c.data_inceput).toLocaleDateString("ro-RO")}
-              </td>
-              <td className="px-3 py-2 text-slate-400">
-                {c.data_sfarsit ? new Date(c.data_sfarsit).toLocaleDateString("ro-RO") : "Nedeterminat"}
-              </td>
-              <td className="px-3 py-2 text-slate-400">{c.stadiu_contract ?? "—"}</td>
-              <td className="px-3 py-2">
-                <span className={c.status_contract === "Activ" ? "text-green-400" : "text-slate-500"}>
-                  {c.status_contract}
-                </span>
-              </td>
-              <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
-                <button
-                  onClick={() => handleDelete(c.id)}
-                  disabled={isPending}
-                  className="rounded-md p-1 text-slate-600 hover:bg-red-500/10 hover:text-red-400"
-                >
-                  <Trash2 size={13} />
-                </button>
-              </td>
+      <div className="overflow-x-auto rounded-xl border border-white/10">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+              <th className="px-3 py-2">Furnizor</th>
+              <th className="px-3 py-2">Incadrare</th>
+              <th className="px-3 py-2">Clasa</th>
+              <th className="px-3 py-2">Tip / Frecventa</th>
+              <th className="px-3 py-2 text-right">Valoare</th>
+              <th className="px-3 py-2">Inceput</th>
+              <th className="px-3 py-2">Sfarsit</th>
+              <th className="px-3 py-2">Status</th>
+              <th className="px-3 py-2"></th>
             </tr>
-          ))}
-          {contracte.length === 0 && (
-            <tr>
-              <td colSpan={11} className="px-3 py-8 text-center text-sm text-slate-500">
-                Niciun contract inca.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {pagedRows.map((c) => (
+              <tr
+                key={c.id}
+                onClick={() => onEdit(c)}
+                className="cursor-pointer border-b border-white/5 hover:bg-white/[0.03]"
+              >
+                <td className="px-3 py-2 text-white">{c.furnizor ?? "—"}</td>
+                <td className="px-3 py-2 text-slate-400">{c.incadrare}</td>
+                <td className="px-3 py-2 text-slate-400">{c.clasa}</td>
+                <td className="px-3 py-2 text-slate-400">
+                  {c.tip_cheltuiala} / {c.frecventa}
+                  {c.frecventa === "Nerecurenta" && c.nr_rate > 1 && (
+                    <span className="ml-1 text-[10px] text-slate-500">({c.nr_rate}x)</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right font-mono text-white">{formatEur(c.valoare_lunara)}</td>
+                <td className="px-3 py-2 text-slate-400">{new Date(c.data_inceput).toLocaleDateString("ro-RO")}</td>
+                <td className="px-3 py-2 text-slate-400">
+                  {c.data_sfarsit ? new Date(c.data_sfarsit).toLocaleDateString("ro-RO") : "Nedeterminat"}
+                </td>
+                <td className="px-3 py-2">
+                  <span className={c.status_contract === "Activ" ? "text-green-400" : "text-slate-500"}>
+                    {c.status_contract}
+                  </span>
+                </td>
+                <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={() => handleDelete(c.id)}
+                    disabled={isPending}
+                    className="rounded-md p-1 text-slate-600 hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {contracte.length === 0 && (
+              <tr>
+                <td colSpan={9} className="px-3 py-8 text-center text-sm text-slate-500">
+                  Niciun contract de cheltuiala inca.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
@@ -1031,50 +947,43 @@ function addMonthsToDateStr(dateStr: string, months: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function ContractFormModal({
+function ContractCheltuialaFormModal({
   contract,
-  clienti,
-  produseOptions,
-  serviciiOptions,
-  modalitatiOptions,
-  stadiiOptions,
+  incadrareOptions,
+  clasaOptions,
   onClose,
 }: {
-  contract?: Contract;
-  clienti: ClientOption[];
-  produseOptions: Nomenclator[];
-  serviciiOptions: Nomenclator[];
-  modalitatiOptions: Nomenclator[];
-  stadiiOptions: Nomenclator[];
+  contract?: ContractCheltuiala;
+  incadrareOptions: Nomenclator[];
+  clasaOptions: Nomenclator[];
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [partnerId, setPartnerId] = useState(contract?.partner_id ?? "");
-  const [tipVenit, setTipVenit] = useState<TipVenit>(contract?.tip_venit ?? "Recurent");
-  const [produs, setProdus] = useState(contract?.produs ?? "");
-  const [serviciu, setServiciu] = useState(contract?.serviciu ?? "");
+  const [furnizor, setFurnizor] = useState(contract?.furnizor ?? "");
+  const [incadrare, setIncadrare] = useState(contract?.incadrare ?? incadrareOptions[0]?.valoare ?? "");
+  const [clasa, setClasa] = useState(contract?.clasa ?? clasaOptions[0]?.valoare ?? "");
+  const [detaliu, setDetaliu] = useState(contract?.detaliu ?? "");
+  const [tipCheltuiala, setTipCheltuiala] = useState<TipCheltuiala>(contract?.tip_cheltuiala ?? "Fixe");
+  const [frecventa, setFrecventa] = useState<FrecventaCheltuiala>(contract?.frecventa ?? "Recurenta");
+  const [investitie, setInvestitie] = useState(contract?.investitie ?? false);
+  const [repartizare, setRepartizare] = useState(contract?.repartizare ?? false);
   const [valoare, setValoare] = useState(String(contract?.valoare_lunara ?? ""));
+  const [nrRate, setNrRate] = useState(String(contract?.nr_rate ?? 1));
   const [dataInceput, setDataInceput] = useState(contract?.data_inceput ?? getTodayISO());
   const [durationMode, setDurationMode] = useState<DurationMode>(
     contract ? (contract.data_sfarsit ? "personalizat" : "nedeterminat") : "un_an"
   );
   const [dataSfarsitCustom, setDataSfarsitCustom] = useState(contract?.data_sfarsit ?? "");
-  const [stadiuContract, setStadiuContract] = useState(contract?.stadiu_contract ?? "");
-  const [statusContract, setStatusContract] = useState<ContractStatus>(
+  const [statusContract, setStatusContract] = useState<StatusContractCheltuiala>(
     contract?.status_contract ?? "Activ"
   );
-  const [modalitateFacturare, setModalitateFacturare] = useState(contract?.modalitate_facturare ?? "");
-  const [nrRate, setNrRate] = useState(String(contract?.nr_rate ?? 1));
   const [observatii, setObservatii] = useState(contract?.observatii ?? "");
   const [message, setMessage] = useState<string | null>(null);
 
-  const selectedClient = clienti.find((c) => c.id === partnerId);
-
   function handleSave() {
     setMessage(null);
-
-    if (!contract && !partnerId) {
-      setMessage("Trebuie sa alegi un client din lista.");
+    if (!incadrare || !clasa) {
+      setMessage("Incadrarea si clasa sunt obligatorii.");
       return;
     }
     if (!valoare || Number(valoare) <= 0) {
@@ -1091,25 +1000,24 @@ function ContractFormModal({
 
     startTransition(async () => {
       const fields = {
-        tip_venit: tipVenit,
-        produs: produs || null,
-        serviciu: serviciu || null,
+        furnizor: furnizor || null,
+        incadrare,
+        clasa,
+        detaliu: detaliu || null,
+        tip_cheltuiala: tipCheltuiala,
+        frecventa,
+        investitie,
+        repartizare,
         valoare_lunara: Number(valoare),
-        nr_rate: tipVenit === "Nerecurent" ? Math.max(1, Number(nrRate) || 1) : 1,
+        nr_rate: frecventa === "Nerecurenta" ? Math.max(1, Number(nrRate) || 1) : 1,
         data_inceput: dataInceput,
         data_sfarsit: dataSfarsit,
-        stadiu_contract: stadiuContract || null,
-        modalitate_facturare: modalitateFacturare || null,
         observatii: observatii || null,
       };
 
       const result = contract
-        ? await updateContractAction(contract.id, { ...fields, status_contract: statusContract })
-        : await createContractAction({
-            ...fields,
-            partner_id: partnerId,
-            nume_client: selectedClient?.nume ?? "",
-          });
+        ? await updateContractCheltuialaAction(contract.id, { ...fields, status_contract: statusContract })
+        : await createContractCheltuialaAction(fields);
 
       if (result.success) onClose();
       else setMessage(result.message ?? "Eroare la salvare.");
@@ -1124,7 +1032,7 @@ function ContractFormModal({
       >
         <div className="mb-4 flex items-start justify-between">
           <h2 className="text-lg font-heading text-white">
-            {contract ? "Editeaza contract" : "Contract nou"}
+            {contract ? "Editeaza contract cheltuiala" : "Contract cheltuiala nou"}
           </h2>
           <button onClick={onClose} className="text-slate-500 hover:text-white">
             <X size={18} />
@@ -1133,89 +1041,30 @@ function ContractFormModal({
 
         {contract && (
           <p className="mb-3 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2 text-[11px] text-slate-300">
-            La salvare, toate liniile de venit ale acestui contract se regenereaza dupa noile setari.
-            Realizatul deja inregistrat se pastreaza, acolo unde perioadele se suprapun.
+            La salvare, toate liniile acestui contract se regenereaza dupa noile setari. Realizatul
+            deja inregistrat se pastreaza, acolo unde perioadele se suprapun.
           </p>
         )}
 
         <div className="space-y-3">
           <div>
-            <label className={labelClass}>Client *</label>
-            {contract ? (
-              <p className="rounded-md border border-white/10 bg-white/[0.02] px-2.5 py-2 text-sm text-white">
-                {contract.nume_client}
-              </p>
-            ) : (
-              <select
-                value={partnerId}
-                onChange={(e) => setPartnerId(e.target.value)}
-                className={selectClass}
-              >
-                <option value="" style={{ backgroundColor: "#111535" }}>
-                  Alege clientul...
-                </option>
-                {clienti.map((c) => (
-                  <option key={c.id} value={c.id} style={{ backgroundColor: "#111535" }}>
-                    {c.nume}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {selectedClient && (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-md border border-white/5 bg-white/[0.02] px-3 py-2 text-[11px] text-slate-400">
-              <span>
-                Cod fiscal: <span className="text-slate-300">{selectedClient.cod_fiscal ?? "—"}</span>
-              </span>
-              <span>
-                Tip activitate:{" "}
-                <span className="text-slate-300">{selectedClient.domeniul_activitate ?? "—"}</span>
-              </span>
-              <span>
-                Judet: <span className="text-slate-300">{selectedClient.judet ?? "—"}</span>
-              </span>
-              <span>
-                Localitate: <span className="text-slate-300">{selectedClient.oras ?? "—"}</span>
-              </span>
-            </div>
-          )}
-
-          <div>
-            <label className={labelClass}>Tip venit *</label>
-            <select
-              value={tipVenit}
-              onChange={(e) => setTipVenit(e.target.value as TipVenit)}
-              className={selectClass}
-            >
-              <option value="Recurent" style={{ backgroundColor: "#111535" }}>
-                Recurent
-              </option>
-              <option value="Nerecurent" style={{ backgroundColor: "#111535" }}>
-                Nerecurent
-              </option>
-            </select>
+            <label className={labelClass}>Furnizor</label>
+            <input value={furnizor} onChange={(e) => setFurnizor(e.target.value)} className={inputClass} />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className={labelClass}>Produs</label>
-              <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
-                <option value="" style={{ backgroundColor: "#111535" }}>
-                  —
-                </option>
-                {produseOptions.map((n) => (
+              <label className={labelClass}>Incadrare *</label>
+              <select value={incadrare} onChange={(e) => setIncadrare(e.target.value)} className={selectClass}>
+                {incadrareOptions.map((n) => (
                   <NomOption key={n.id} n={n} />
                 ))}
               </select>
             </div>
             <div>
-              <label className={labelClass}>Serviciu</label>
-              <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
-                <option value="" style={{ backgroundColor: "#111535" }}>
-                  —
-                </option>
-                {serviciiOptions.map((n) => (
+              <label className={labelClass}>Clasa *</label>
+              <select value={clasa} onChange={(e) => setClasa(e.target.value)} className={selectClass}>
+                {clasaOptions.map((n) => (
                   <NomOption key={n.id} n={n} />
                 ))}
               </select>
@@ -1223,8 +1072,67 @@ function ContractFormModal({
           </div>
 
           <div>
+            <label className={labelClass}>Detaliu</label>
+            <input value={detaliu} onChange={(e) => setDetaliu(e.target.value)} className={inputClass} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className={labelClass}>Tip cheltuiala</label>
+              <select
+                value={tipCheltuiala}
+                onChange={(e) => setTipCheltuiala(e.target.value as TipCheltuiala)}
+                className={selectClass}
+              >
+                <option value="Fixe" style={{ backgroundColor: "#111535" }}>
+                  Fixe
+                </option>
+                <option value="Variabile" style={{ backgroundColor: "#111535" }}>
+                  Variabile
+                </option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Frecventa</label>
+              <select
+                value={frecventa}
+                onChange={(e) => setFrecventa(e.target.value as FrecventaCheltuiala)}
+                className={selectClass}
+              >
+                <option value="Recurenta" style={{ backgroundColor: "#111535" }}>
+                  Recurenta
+                </option>
+                <option value="Nerecurenta" style={{ backgroundColor: "#111535" }}>
+                  Nerecurenta
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-1.5 text-xs text-slate-400">
+              <input
+                type="checkbox"
+                checked={investitie}
+                onChange={(e) => setInvestitie(e.target.checked)}
+                className="h-3.5 w-3.5"
+              />
+              Investitie
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-slate-400">
+              <input
+                type="checkbox"
+                checked={repartizare}
+                onChange={(e) => setRepartizare(e.target.checked)}
+                className="h-3.5 w-3.5"
+              />
+              Repartizare
+            </label>
+          </div>
+
+          <div>
             <label className={labelClass}>
-              {tipVenit === "Recurent" ? "Valoare lunara (EUR, fara TVA)" : "Valoare (EUR, fara TVA)"}
+              {frecventa === "Recurenta" ? "Valoare lunara (EUR, fara TVA)" : "Valoare (EUR, fara TVA)"}
             </label>
             <input
               type="number"
@@ -1245,7 +1153,7 @@ function ContractFormModal({
             />
           </div>
 
-          {tipVenit === "Recurent" && (
+          {frecventa === "Recurenta" ? (
             <div>
               <label className={labelClass}>Durata</label>
               <div className="flex flex-wrap gap-2">
@@ -1284,62 +1192,7 @@ function ContractFormModal({
                 </p>
               )}
             </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className={labelClass}>Stadiu contract</label>
-              <select
-                value={stadiuContract}
-                onChange={(e) => setStadiuContract(e.target.value)}
-                className={selectClass}
-              >
-                <option value="" style={{ backgroundColor: "#111535" }}>
-                  —
-                </option>
-                {stadiiOptions.map((n) => (
-                  <NomOption key={n.id} n={n} />
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Status contract</label>
-              <select
-                value={statusContract}
-                onChange={(e) => setStatusContract(e.target.value as ContractStatus)}
-                className={selectClass}
-              >
-                <option value="Activ" style={{ backgroundColor: "#111535" }}>
-                  Activ
-                </option>
-                <option value="Inactiv" style={{ backgroundColor: "#111535" }}>
-                  Inactiv
-                </option>
-              </select>
-            </div>
-          </div>
-          <p className="text-[11px] text-slate-500">
-            Un contract &quot;Inactiv&quot; nu genereaza linii de venit - util pentru contracte introduse
-            in avans, inainte sa se activeze.
-          </p>
-
-          <div>
-            <label className={labelClass}>Modalitate facturare</label>
-            <select
-              value={modalitateFacturare}
-              onChange={(e) => setModalitateFacturare(e.target.value)}
-              className={selectClass}
-            >
-              <option value="" style={{ backgroundColor: "#111535" }}>
-                —
-              </option>
-              {modalitatiOptions.map((n) => (
-                <NomOption key={n.id} n={n} />
-              ))}
-            </select>
-          </div>
-
-          {tipVenit === "Nerecurent" && (
+          ) : (
             <div>
               <label className={labelClass}>Numar rate</label>
               <input
@@ -1351,11 +1204,27 @@ function ContractFormModal({
                 className={inputClass}
               />
               <p className="mt-1 text-[11px] text-slate-500">
-                Se genereaza {nrRate || 1} {Number(nrRate) > 1 ? "linii lunare" : "linie"}, incepand cu
-                data de inceput, cu valoarea impartita egal ({formatEur(Number(valoare || 0) / Math.max(1, Number(nrRate) || 1))} fiecare).
-                Editezi apoi individual, pe fiecare linie, daca ratele nu sunt egale sau au alte date.
-                Pentru Integral, lasa 1 rata.
+                Se genereaza {nrRate || 1} {Number(nrRate) > 1 ? "linii lunare" : "linie"}, cu valoarea
+                impartita egal ({formatEur(Number(valoare || 0) / Math.max(1, Number(nrRate) || 1))} fiecare).
               </p>
+            </div>
+          )}
+
+          {contract && (
+            <div>
+              <label className={labelClass}>Status contract</label>
+              <select
+                value={statusContract}
+                onChange={(e) => setStatusContract(e.target.value as StatusContractCheltuiala)}
+                className={selectClass}
+              >
+                <option value="Activ" style={{ backgroundColor: "#111535" }}>
+                  Activ
+                </option>
+                <option value="Inactiv" style={{ backgroundColor: "#111535" }}>
+                  Inactiv
+                </option>
+              </select>
             </div>
           )}
 
@@ -1384,43 +1253,40 @@ function ContractFormModal({
   );
 }
 
-function ManualVenitFormModal({
-  clienti,
-  produseOptions,
-  serviciiOptions,
+function ManualCheltuialaFormModal({
+  incadrareOptions,
+  clasaOptions,
   onClose,
 }: {
-  clienti: ClientOption[];
-  produseOptions: Nomenclator[];
-  serviciiOptions: Nomenclator[];
+  incadrareOptions: Nomenclator[];
+  clasaOptions: Nomenclator[];
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [partnerId, setPartnerId] = useState("");
-  const [tipVenit, setTipVenit] = useState<TipVenit>("Nerecurent");
-  const [produs, setProdus] = useState("");
-  const [serviciu, setServiciu] = useState("");
-  const [venitEstimat, setVenitEstimat] = useState("");
+  const [furnizor, setFurnizor] = useState("");
+  const [incadrare, setIncadrare] = useState(incadrareOptions[0]?.valoare ?? "");
+  const [clasa, setClasa] = useState(clasaOptions[0]?.valoare ?? "");
+  const [detaliu, setDetaliu] = useState("");
+  const [frecventa, setFrecventa] = useState<FrecventaCheltuiala>("Nerecurenta");
+  const [valoarePrognozata, setValoarePrognozata] = useState("");
   const [luna, setLuna] = useState(getTodayISO().slice(0, 7));
   const [observatii, setObservatii] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
-  const selectedClient = clienti.find((c) => c.id === partnerId);
-
   function handleSave() {
     setMessage(null);
-    if (!partnerId) {
-      setMessage("Trebuie sa alegi un client din lista.");
+    if (!incadrare || !clasa) {
+      setMessage("Incadrarea si clasa sunt obligatorii.");
       return;
     }
     startTransition(async () => {
-      const result = await addVenitLinieManualAction({
-        partner_id: partnerId,
-        nume_client: selectedClient?.nume ?? "",
-        tip_venit: tipVenit,
-        produs: produs || null,
-        serviciu: serviciu || null,
-        venit_estimat: Number(venitEstimat),
+      const result = await addCheltuialaLinieManualAction({
+        furnizor: furnizor || null,
+        incadrare,
+        clasa,
+        detaliu: detaliu || null,
+        frecventa,
+        valoare_prognozata: Number(valoarePrognozata),
         luna: `${luna}-01`,
         observatii: observatii || null,
       });
@@ -1436,72 +1302,53 @@ function ManualVenitFormModal({
         className="w-full max-w-md rounded-xl border border-white/10 bg-[#111535] p-5"
       >
         <div className="mb-4 flex items-start justify-between">
-          <h2 className="text-lg font-heading text-white">Venit manual</h2>
+          <h2 className="text-lg font-heading text-white">Cheltuiala manuala</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-white">
             <X size={18} />
           </button>
         </div>
-        <p className="mb-3 text-[11px] text-slate-500">
-          O singura linie, independenta - util pentru o rata sau o etapa dintr-un contract cu
-          facturare pe Rate/Etape, sau orice venit care nu se preteaza la generare automata.
-        </p>
 
         <div className="space-y-3">
           <div>
-            <label className={labelClass}>Client *</label>
-            <select
-              value={partnerId}
-              onChange={(e) => setPartnerId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="" style={{ backgroundColor: "#111535" }}>
-                Alege clientul...
-              </option>
-              {clienti.map((c) => (
-                <option key={c.id} value={c.id} style={{ backgroundColor: "#111535" }}>
-                  {c.nume}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className={labelClass}>Tip venit</label>
-            <select
-              value={tipVenit}
-              onChange={(e) => setTipVenit(e.target.value as TipVenit)}
-              className={selectClass}
-            >
-              <option value="Recurent" style={{ backgroundColor: "#111535" }}>
-                Recurent
-              </option>
-              <option value="Nerecurent" style={{ backgroundColor: "#111535" }}>
-                Nerecurent
-              </option>
-            </select>
+            <label className={labelClass}>Furnizor</label>
+            <input value={furnizor} onChange={(e) => setFurnizor(e.target.value)} className={inputClass} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className={labelClass}>Produs</label>
-              <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
-                <option value="" style={{ backgroundColor: "#111535" }}>
-                  —
-                </option>
-                {produseOptions.map((n) => (
+              <label className={labelClass}>Incadrare *</label>
+              <select value={incadrare} onChange={(e) => setIncadrare(e.target.value)} className={selectClass}>
+                {incadrareOptions.map((n) => (
                   <NomOption key={n.id} n={n} />
                 ))}
               </select>
             </div>
             <div>
-              <label className={labelClass}>Serviciu</label>
-              <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
-                <option value="" style={{ backgroundColor: "#111535" }}>
-                  —
-                </option>
-                {serviciiOptions.map((n) => (
+              <label className={labelClass}>Clasa *</label>
+              <select value={clasa} onChange={(e) => setClasa(e.target.value)} className={selectClass}>
+                {clasaOptions.map((n) => (
                   <NomOption key={n.id} n={n} />
                 ))}
               </select>
             </div>
+          </div>
+          <div>
+            <label className={labelClass}>Detaliu</label>
+            <input value={detaliu} onChange={(e) => setDetaliu(e.target.value)} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Frecventa</label>
+            <select
+              value={frecventa}
+              onChange={(e) => setFrecventa(e.target.value as FrecventaCheltuiala)}
+              className={selectClass}
+            >
+              <option value="Recurenta" style={{ backgroundColor: "#111535" }}>
+                Recurenta
+              </option>
+              <option value="Nerecurenta" style={{ backgroundColor: "#111535" }}>
+                Nerecurenta
+              </option>
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -1509,19 +1356,14 @@ function ManualVenitFormModal({
               <input
                 type="number"
                 step="0.01"
-                value={venitEstimat}
-                onChange={(e) => setVenitEstimat(e.target.value)}
+                value={valoarePrognozata}
+                onChange={(e) => setValoarePrognozata(e.target.value)}
                 className={inputClass}
               />
             </div>
             <div>
               <label className={labelClass}>Luna</label>
-              <input
-                type="month"
-                value={luna}
-                onChange={(e) => setLuna(e.target.value)}
-                className={inputClass}
-              />
+              <input type="month" value={luna} onChange={(e) => setLuna(e.target.value)} className={inputClass} />
             </div>
           </div>
           <div>

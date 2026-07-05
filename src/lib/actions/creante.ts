@@ -362,6 +362,8 @@ export async function updateCreantaTrackingAction(
     serviciu_facturat?: string | null;
     observatii?: string | null;
     valoare_propusa_spre_incasare?: number | null;
+    data_promisa?: string | null;
+    suma_promisa?: number | null;
   }
 ): Promise<{ success: boolean; message?: string }> {
   const { supabase, isAdmin } = await requireAdmin();

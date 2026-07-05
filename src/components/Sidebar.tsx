@@ -24,6 +24,8 @@ import {
   TrendingUp,
   ChevronDown,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from "lucide-react";
 import type { ModuleKey } from "@/lib/modules";
@@ -79,6 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/venituri-cheltuieli", label: "Venituri", icon: TrendingUp },
       { href: "/venituri-cheltuieli/dashboard", label: "Dashboard Venituri", icon: FileBarChart },
+      { href: "/venituri-cheltuieli/cheltuieli", label: "Cheltuieli", icon: Wallet },
     ],
   },
 ];
@@ -111,6 +114,7 @@ export function Sidebar({
   const supabase = createClient();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSheetGroupId, setMobileSheetGroupId] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   const visibleGroups = NAV_GROUPS.filter((g) => isAdmin || moduleAccess.includes(g.moduleKey));
   const activeGroupId = findActiveGroupId(pathname, visibleGroups) ?? visibleGroups[0]?.id ?? null;
@@ -127,8 +131,10 @@ export function Sidebar({
 
   return (
     <>
-      {/* Header mobil (sub md) - logo + utilizator + logout, navigarea e in bottom bar */}
-      <header className="flex items-center justify-between border-b border-white/10 bg-[#111535] px-4 py-3 md:hidden">
+      {/* Header mobil (sub lg) - logo + utilizator + logout, navigarea e in bottom bar.
+          Pragul e lg (1024px), nu md (768px) - multe telefoane mari, culcate,
+          trec de 768px latime si "sareau" gresit pe layout-ul de desktop. */}
+      <header className="flex items-center justify-between border-b border-white/10 bg-[#111535] px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <Image
             src="/icon-192.png"
@@ -164,21 +170,46 @@ export function Sidebar({
         </div>
       </header>
 
-      {/* Sidebar desktop (md+) - 3 grupe mari, fiecare expandabila */}
-      <aside className="hidden h-screen w-60 flex-col border-r border-white/10 bg-[#111535] px-3 py-4 md:flex">
-        <div className="mb-6 flex items-center gap-2 px-2">
-          <Image
-            src="/icon-192.png"
-            alt="NovaSales"
-            width={32}
-            height={32}
-            className="rounded-lg"
-            priority
-          />
-          <div>
-            <p className="font-heading text-sm leading-tight text-white">NovaSales</p>
-            <p className="text-[11px] leading-tight text-slate-500">Novasoft CRM</p>
+      {collapsed && (
+        <button
+          onClick={() => setCollapsed(false)}
+          title="Deschide meniul"
+          className="fixed left-2 top-3 z-40 hidden rounded-md border border-white/10 bg-[#111535] p-2 text-slate-400 shadow-lg transition hover:text-white lg:block"
+        >
+          <PanelLeftOpen size={16} />
+        </button>
+      )}
+
+      {/* Sidebar desktop/tableta (lg+) - 3 grupe mari, fiecare expandabila.
+          Se poate restrange complet (butonul din antet) - util pe tablete
+          in landscape sau daca vrei mai mult spatiu pentru continut. */}
+      <aside
+        className={`hidden h-screen flex-col border-r border-white/10 bg-[#111535] py-4 transition-all duration-200 lg:flex ${
+          collapsed ? "w-0 overflow-hidden px-0" : "w-60 px-3"
+        }`}
+      >
+        <div className="mb-6 flex items-center justify-between gap-2 px-2">
+          <div className="flex items-center gap-2">
+            <Image
+              src="/icon-192.png"
+              alt="NovaSales"
+              width={32}
+              height={32}
+              className="rounded-lg"
+              priority
+            />
+            <div>
+              <p className="font-heading text-sm leading-tight text-white">NovaSales</p>
+              <p className="text-[11px] leading-tight text-slate-500">Novasoft CRM</p>
+            </div>
           </div>
+          <button
+            onClick={() => setCollapsed(true)}
+            title="Restrange meniul"
+            className="shrink-0 rounded-md p-1.5 text-slate-500 transition hover:bg-white/5 hover:text-slate-200"
+          >
+            <PanelLeftClose size={16} />
+          </button>
         </div>
 
         <Link
@@ -316,11 +347,12 @@ export function Sidebar({
           {deployVersion && (
             <p className="mt-1 px-2 text-[10px] text-slate-600">Versiunea {deployVersion}</p>
           )}
+          <p className="px-2 text-[10px] text-slate-600">Creat de Adrian Boncica</p>
         </div>
       </aside>
 
       {/* Bottom nav mobil (sub md) - 3 categorii mari; tap deschide submeniul categoriei */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-[#111535] pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-[#111535] pb-[env(safe-area-inset-bottom)] lg:hidden">
         {visibleGroups.map((group) => {
           const GroupIcon = group.icon;
           const isActive = group.id === activeGroupId;
@@ -342,7 +374,7 @@ export function Sidebar({
       {/* Sheet mobil cu paginile categoriei selectate */}
       {mobileSheetGroup && (
         <div
-          className="fixed inset-0 z-40 flex items-end bg-black/60 md:hidden"
+          className="fixed inset-0 z-40 flex items-end bg-black/60 lg:hidden"
           onClick={() => setMobileSheetGroupId(null)}
         >
           <div

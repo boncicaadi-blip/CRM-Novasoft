@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
-import { generateRaportComercialInsightAction } from "@/lib/actions/financial-ai";
+import { generateRaportComercialInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { formatEurCompact } from "@/lib/format";
 import type { PipelineReportKpis } from "@/lib/analytics";
@@ -69,7 +69,11 @@ export function RaportComercialClient({
       </div>
 
       <div className="mb-6">
-        <AiInsightCard title="Interpretare AI (Claude)" generateAction={generateRaportComercialInsightAction} />
+        <AiInsightCard
+          title="Interpretare AI (Claude)"
+          generateAction={generateRaportComercialInsightAction}
+          historyAction={() => getAiInsightHistoryAction("raport_comercial_insight")}
+        />
       </div>
 
       <Section title="Volum" dotColor="#0070F3" description="Cat business ai in lucru chiar acum.">

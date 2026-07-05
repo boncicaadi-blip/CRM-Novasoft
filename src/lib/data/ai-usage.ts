@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { estimateCostUsd } from "@/lib/ai/pricing";
+import { FEATURE_LABELS } from "@/lib/ai/feature-labels";
 
 export interface AiUsageRow {
   id: string;
@@ -38,14 +39,6 @@ export interface AiUsageSummary {
   byFeature: { feature: string; calls: number; costUsd: number }[];
   byDay: { day: string; calls: number; costUsd: number }[];
 }
-
-const FEATURE_LABELS: Record<string, string> = {
-  creante_insight: "Dashboard Creante",
-  venituri_insight: "Dashboard Venituri",
-  crm_insight: "Dashboard CRM",
-  raport_comercial_insight: "Raport Comercial",
-  opportunity_summary: "Rezumat oportunitate",
-};
 
 export function summarizeAiUsage(rows: AiUsageRow[]): AiUsageSummary {
   const now = new Date();
@@ -99,5 +92,3 @@ export function summarizeAiUsage(rows: AiUsageRow[]): AiUsageSummary {
       .slice(0, 30),
   };
 }
-
-export { FEATURE_LABELS };

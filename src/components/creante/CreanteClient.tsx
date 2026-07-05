@@ -17,6 +17,7 @@ import {
   X,
   Users,
   Link2,
+  CalendarClock,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { CreanteImportForm } from "./CreanteImportForm";
@@ -766,7 +767,17 @@ export function CreanteClient({
                     className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
                     onClick={() => setSelected(c)}
                   >
-                    {c.nr_factura}
+                    <span className="flex items-center gap-1">
+                      {c.nr_factura}
+                      {c.data_promisa && (
+                        <span
+                          className="shrink-0"
+                          title={`Promisiune: ${formatRon(c.suma_promisa ?? c.sold)} pe ${new Date(c.data_promisa).toLocaleDateString("ro-RO")}`}
+                        >
+                          <CalendarClock size={12} className="text-amber-400" />
+                        </span>
+                      )}
+                    </span>
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-slate-400"

@@ -35,6 +35,54 @@ async function requireAdmin() {
   return { supabase, isAdmin: profile?.role === "admin" };
 }
 
+/** Salveaza o interpretare reusita in istoric - nu blocam raspunsul catre
+ * utilizator daca scrierea in istoric esueaza. */
+async function saveInsightToHistory(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  feature: string,
+  result: FinancialInsightResult
+): Promise<void> {
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from("ai_insights_history").insert({
+      feature,
+      rezumat: result.rezumat,
+      riscuri: result.riscuri,
+      recomandari: result.recomandari,
+      creat_de: userData?.user?.id ?? null,
+    });
+  } catch (err) {
+    console.error("Nu am putut salva interpretarea in istoric:", err);
+  }
+}
+
+export interface AiInsightHistoryRow {
+  id: string;
+  rezumat: string;
+  riscuri: string;
+  recomandari: string;
+  creat_la: string;
+}
+
+/** Ultimele interpretari salvate pentru un anumit feature (dashboard). */
+export async function getAiInsightHistoryAction(
+  feature: string,
+  limit = 10
+): Promise<{ success: boolean; message?: string; data?: AiInsightHistoryRow[] }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot vedea istoricul." };
+
+  const { data, error } = await supabase
+    .from("ai_insights_history")
+    .select("id, rezumat, riscuri, recomandari, creat_la")
+    .eq("feature", feature)
+    .order("creat_la", { ascending: false })
+    .limit(limit);
+
+  if (error) return { success: false, message: error.message };
+  return { success: true, data: data ?? [] };
+}
+
 function handleAiError(err: unknown): { success: false; message: string } {
   if (err instanceof AiConfigError) return { success: false, message: err.message };
   if (err instanceof AiRequestError) return { success: false, message: err.message };
@@ -185,7 +233,9 @@ export async function generateCrmInsightAction(): Promise<{
       maxTokens: 4000,
       onUsage: (usage) => logAiUsage(supabase, "crm_insight", usage),
     });
-    return { success: true, data: parseFinancialInsightResponse(raw) };
+    const parsed = parseFinancialInsightResponse(raw);
+    await saveInsightToHistory(supabase, "crm_insight", parsed);
+    return { success: true, data: parsed };
   } catch (err) {
     return handleAiError(err);
   }
@@ -207,7 +257,9 @@ export async function generateRaportComercialInsightAction(): Promise<{
       maxTokens: 4000,
       onUsage: (usage) => logAiUsage(supabase, "raport_comercial_insight", usage),
     });
-    return { success: true, data: parseFinancialInsightResponse(raw) };
+    const parsed = parseFinancialInsightResponse(raw);
+    await saveInsightToHistory(supabase, "raport_comercial_insight", parsed);
+    return { success: true, data: parsed };
   } catch (err) {
     return handleAiError(err);
   }
@@ -229,7 +281,9 @@ export async function generateCreanteInsightAction(): Promise<{
       maxTokens: 4000,
       onUsage: (usage) => logAiUsage(supabase, "creante_insight", usage),
     });
-    return { success: true, data: parseFinancialInsightResponse(raw) };
+    const parsed = parseFinancialInsightResponse(raw);
+    await saveInsightToHistory(supabase, "creante_insight", parsed);
+    return { success: true, data: parsed };
   } catch (err) {
     return handleAiError(err);
   }
@@ -251,7 +305,9 @@ export async function generateVenituriInsightAction(): Promise<{
       maxTokens: 4000,
       onUsage: (usage) => logAiUsage(supabase, "venituri_insight", usage),
     });
-    return { success: true, data: parseFinancialInsightResponse(raw) };
+    const parsed = parseFinancialInsightResponse(raw);
+    await saveInsightToHistory(supabase, "venituri_insight", parsed);
+    return { success: true, data: parsed };
   } catch (err) {
     return handleAiError(err);
   }

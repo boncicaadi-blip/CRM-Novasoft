@@ -18,6 +18,7 @@ import {
 import { formatEur } from "@/lib/format";
 import { RiskZone } from "@/components/dashboard/RiskZone";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { StageChart } from "@/components/dashboard/StageChart";
 import { StatusChart } from "@/components/dashboard/StatusChart";
 import { TimeSeriesChart } from "@/components/dashboard/TimeSeriesChart";
@@ -26,7 +27,7 @@ import { ActionsList } from "@/components/dashboard/ActionsList";
 import { FilteredOpportunitiesList } from "@/components/dashboard/FilteredOpportunitiesList";
 import { DashboardFilterBar } from "@/components/dashboard/DashboardFilterBar";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
-import { generateCrmInsightAction } from "@/lib/actions/financial-ai";
+import { generateCrmInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import type { Opportunity, OpportunityHistoryRow } from "@/types/opportunity";
 
 function toggleInArray(arr: string[], value: string): string[] {
@@ -140,12 +141,14 @@ export function DashboardClient({
           value={formatEur(kpis.totalArr)}
           sublabel={`${kpis.activeCount} oportunitati active`}
           icon={<TrendingUp size={16} />}
+          definition={KPI_DEFINITIONS.crmArrActiv}
         />
         <KpiCard
           label="Forecast ponderat"
           value={formatEur(kpis.weightedForecast)}
           sublabel="ARR x Probability"
           icon={<Target size={16} />}
+          definition={KPI_DEFINITIONS.crmForecastPonderat}
         />
         <KpiCard
           label="Forecast Implementare"
@@ -153,6 +156,7 @@ export function DashboardClient({
           sublabel="Implementare x Probability"
           icon={<Wrench size={16} />}
           accent="#0070F3"
+          definition={KPI_DEFINITIONS.crmForecastImplementare}
         />
         <KpiCard
           label="Castigate"
@@ -160,6 +164,7 @@ export function DashboardClient({
           sublabel={`Win rate: ${(kpis.winRate * 100).toFixed(0)}%`}
           icon={<Trophy size={16} />}
           accent="#22C55E"
+          definition={KPI_DEFINITIONS.crmCastigate}
         />
         <KpiCard
           label="Pierdute"
@@ -167,6 +172,7 @@ export function DashboardClient({
           sublabel={`din ${kpis.totalOpportunities} total`}
           icon={<XCircle size={16} />}
           accent="#EF4444"
+          definition={KPI_DEFINITIONS.crmPierdute}
         />
         <KpiCard
           label="Fara next step"
@@ -175,6 +181,7 @@ export function DashboardClient({
           icon={<AlertTriangle size={16} />}
           accent="#F59E0B"
           href="/actiuni"
+          definition={KPI_DEFINITIONS.crmFaraNextStep}
         />
       </div>
 
@@ -232,7 +239,11 @@ export function DashboardClient({
         </div>
 
         <div className="space-y-4">
-          <AiInsightCard title="Interpretare AI (Claude)" generateAction={generateCrmInsightAction} />
+          <AiInsightCard
+            title="Interpretare AI (Claude)"
+            generateAction={generateCrmInsightAction}
+            historyAction={() => getAiInsightHistoryAction("crm_insight")}
+          />
           <RiskZone
             ofertareFaraFollowUp={riskLists.ofertareFaraFollowUp}
             negociereStagnanta={riskLists.negociereStagnanta}

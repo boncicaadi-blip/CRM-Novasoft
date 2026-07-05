@@ -1,6 +1,11 @@
 import type { KpiDefinition } from "@/lib/kpi-definitions";
 
 export const CREANTE_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
+  totalFacturat: {
+    descriere: "Suma totala a tuturor facturilor emise catre acest client, indiferent daca sunt incasate sau nu.",
+    formula: "Suma Total factura, pentru toate facturile clientului",
+    cumAnalizezi: "Volumul total de business facturat pana acum catre acest client.",
+  },
   soldRestant: {
     descriere:
       "Suma soldurilor facturilor cu scadenta depasita. NU include facturile neincasate care inca nu au ajuns la scadenta (acelea sunt \"la zi\").",

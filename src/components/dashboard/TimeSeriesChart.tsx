@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { formatEur, formatEurCompact } from "@/lib/format";
 import { ChartTooltipBox } from "./ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 
 interface TimeSeriesDatum {
   month: string;
@@ -68,7 +70,10 @@ export function TimeSeriesChart({
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">Evolutie ARR in timp (din istoric)</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+          Evolutie ARR in timp (din istoric)
+          <InfoTooltip title="Evolutie ARR in timp" definition={KPI_DEFINITIONS.crmEvolutieArrChart} />
+        </p>
         {selectedRange && onSelectRange && (
           <button
             onClick={() => onSelectRange(null)}

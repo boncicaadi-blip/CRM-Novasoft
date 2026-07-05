@@ -1,5 +1,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import type { KpiDefinition } from "@/lib/kpi-definitions";
 
 export function KpiCard({
   label,
@@ -8,6 +10,7 @@ export function KpiCard({
   icon,
   accent,
   href,
+  definition,
 }: {
   label: string;
   value: string;
@@ -16,11 +19,20 @@ export function KpiCard({
   accent?: string;
   /** Daca e dat, cardul devine clickable si duce la lista detaliata (drill-down). */
   href?: string;
+  /** Daca e dat, apare un buton "i" langa eticheta, cu definitia si formula. */
+  definition?: KpiDefinition;
 }) {
   const content = (
     <>
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs text-slate-500">{label}</p>
+        <p className="flex items-center gap-1 text-xs text-slate-500">
+          {label}
+          {definition && (
+            <span onClick={(e) => e.preventDefault()}>
+              <InfoTooltip title={label} definition={definition} />
+            </span>
+          )}
+        </p>
         {icon && (
           <span style={{ color: accent ?? "#E8007A" }} className="opacity-70">
             {icon}

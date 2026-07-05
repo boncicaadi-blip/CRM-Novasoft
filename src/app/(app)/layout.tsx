@@ -46,7 +46,7 @@ export default async function AppLayout({
   const deployVersion = commitSha ? `${appVersion} · ${commitSha}` : appVersion;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden md:flex-row">
+    <div className="flex h-screen flex-col overflow-hidden lg:flex-row">
       <ThemeSync dbTheme={profile?.theme ?? "dark"} />
       <DailySummaryPopup opportunities={todayOpportunities} />
       <Sidebar
@@ -55,7 +55,7 @@ export default async function AppLayout({
         moduleAccess={profile?.module_access ?? ["crm"]}
         deployVersion={deployVersion}
       />
-      <main className="flex-1 overflow-y-auto pb-14 md:pb-0">{children}</main>
+      <main className="flex-1 overflow-y-auto pb-14 lg:pb-0">{children}</main>
     </div>
   );
 }

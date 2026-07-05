@@ -21,7 +21,9 @@ const AGING_COLORS: Record<AgingBucket, string> = {
   sold0_30: "#22C55E",
   sold31_60: "#FBBF24",
   sold61_90: "#F97316",
-  sold90Plus: "#EF4444",
+  sold91_180: "#EF4444",
+  sold181_365: "#B91C1C",
+  sold365Plus: "#7F1D1D",
 };
 
 export function CreanteAgingChart({

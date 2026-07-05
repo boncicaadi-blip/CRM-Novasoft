@@ -7,6 +7,7 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ObligatieDetailModal } from "./ObligatieDetailModal";
 import { formatRon } from "@/lib/format";
 import { getObligatieStatus, getZileDepasireObligatie } from "@/lib/obligatii-analytics";
+import { OBLIGATII_KPI_DEFINITIONS } from "@/lib/obligatii-kpi-definitions";
 import type { Obligatie, ObligatiePlata } from "@/types/obligatii";
 import type { PartnerCrossLinks } from "@/lib/data/partners";
 
@@ -78,24 +79,28 @@ export function FisaFurnizorClient({
           value={formatRon(summary.totalFacturat)}
           icon={<FileText size={16} />}
           accent="#0070F3"
+          definition={OBLIGATII_KPI_DEFINITIONS.totalFacturat}
         />
         <KpiCard
           label="Total platit"
           value={formatRon(summary.totalPlatit)}
           icon={<Wallet size={16} />}
           accent="#22C55E"
+          definition={OBLIGATII_KPI_DEFINITIONS.totalPlatit}
         />
         <KpiCard
           label="Sold restant"
           value={formatRon(summary.soldTotal)}
           icon={<Wallet size={16} />}
           accent="#F59E0B"
+          definition={OBLIGATII_KPI_DEFINITIONS.soldRestant}
         />
         <KpiCard
           label="Facturi restante"
           value={String(summary.nrRestante)}
           icon={<AlertTriangle size={16} />}
           accent="#EF4444"
+          definition={OBLIGATII_KPI_DEFINITIONS.facturiRestante}
         />
       </div>
 

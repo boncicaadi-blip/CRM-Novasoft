@@ -2,8 +2,10 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { formatEur } from "@/lib/format";
 import type { GrupareDatum } from "@/lib/venituri-dashboard-analytics";
+import type { KpiDefinition } from "@/lib/kpi-definitions";
 
 const CULORI = ["#E8007A", "#0070F3", "#22C55E", "#FBBF24", "#F97316", "#A855F7", "#06B6D4", "#94A3B8", "#EC4899"];
 
@@ -12,18 +14,23 @@ export function VenituriPieChart({
   data,
   onSelect,
   selected,
+  definition,
 }: {
   title: string;
   data: GrupareDatum[];
   onSelect?: (cheie: string | null) => void;
   selected?: string | null;
+  definition?: KpiDefinition;
 }) {
   const total = data.reduce((s, d) => s + d.realizat, 0);
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">{title}</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+          {title}
+          {definition && <InfoTooltip title={title} definition={definition} />}
+        </p>
         {selected && onSelect && (
           <button onClick={() => onSelect(null)} className="text-[11px] text-[#E8007A] hover:text-[#FF4FAA]">
             Sterge filtrul

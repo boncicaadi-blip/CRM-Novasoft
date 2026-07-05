@@ -26,6 +26,10 @@ export function CreantaDetailModal({
   const [valoarePropusa, setValoarePropusa] = useState(
     String(creanta.valoare_propusa_spre_incasare ?? creanta.sold)
   );
+  const [dataPromisa, setDataPromisa] = useState(creanta.data_promisa ?? "");
+  const [sumaPromisa, setSumaPromisa] = useState(
+    creanta.suma_promisa !== null ? String(creanta.suma_promisa) : ""
+  );
 
   const [valoareIncasare, setValoareIncasare] = useState(String(creanta.sold));
   const [dataIncasare, setDataIncasare] = useState(getTodayISO());
@@ -44,6 +48,8 @@ export function CreantaDetailModal({
         tip_vanzare: tipVanzare === "" ? null : tipVanzare,
         serviciu_facturat: serviciu || null,
         observatii: observatii || null,
+        data_promisa: dataPromisa || null,
+        suma_promisa: sumaPromisa === "" ? null : Number(sumaPromisa),
         ...(creanta.propus_spre_incasare
           ? { valoare_propusa_spre_incasare: Number(valoarePropusa) }
           : {}),
@@ -257,6 +263,36 @@ export function CreantaDetailModal({
               className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
             />
           </div>
+
+          {status === "restanta" && (
+            <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-2.5">
+              <label className="mb-1.5 block text-[11px] font-medium text-amber-400">
+                Promisiune de plata
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-[10px] text-slate-500">Data promisa</label>
+                  <input
+                    type="date"
+                    value={dataPromisa}
+                    onChange={(e) => setDataPromisa(e.target.value)}
+                    className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] text-slate-500">Suma promisa</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={sumaPromisa}
+                    onChange={(e) => setSumaPromisa(e.target.value)}
+                    placeholder={String(creanta.sold)}
+                    className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="mb-1 block text-[11px] text-slate-500">Observatii</label>

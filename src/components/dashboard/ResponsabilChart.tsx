@@ -3,6 +3,8 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { formatEur, formatEurCompact } from "@/lib/format";
 import { ChartTooltipBox } from "./ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 
 interface ResponsabilDatum {
   name: string;
@@ -22,7 +24,10 @@ export function ResponsabilChart({
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">ARR pe Responsabil vanzare</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+          ARR pe Responsabil vanzare
+          <InfoTooltip title="ARR pe Responsabil vanzare" definition={KPI_DEFINITIONS.crmResponsabilChart} />
+        </p>
         {selected && onSelect && (
           <button
             onClick={() => onSelect(null)}

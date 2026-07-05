@@ -133,6 +133,7 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
+        <p className="mt-4 text-center text-[11px] text-slate-600">Creat de Adrian Boncica</p>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { CreantaDetailModal } from "./CreantaDetailModal";
 import { formatRon } from "@/lib/format";
 import { getCreantaStatus, getZileDepasire } from "@/lib/creante-analytics";
+import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import type { Creanta, CreantaIncasare } from "@/types/creante";
 import type { PartnerCrossLinks } from "@/lib/data/partners";
 
@@ -28,14 +29,46 @@ export function FisaClientClient({
     let totalIncasat = 0;
     let soldTotal = 0;
     let nrRestante = 0;
+    let nrPromisiuniActive = 0;
+
+    let sumaZileIntarziere = 0;
+    let nrFacturiIncasateCuScadenta = 0;
+
     for (const c of creante) {
       totalFacturat += c.total_factura;
       totalIncasat += c.valoare_incasata;
       soldTotal += c.sold;
       if (c.sold > 0 && getCreantaStatus(c) === "restanta") nrRestante += 1;
+      if (c.sold > 0 && c.data_promisa) nrPromisiuniActive += 1;
+
+      // Comportament de plata: pentru facturile deja incasate integral, cat
+      // de tarziu fata de scadenta a venit ULTIMA incasare care le-a inchis.
+      if (c.sold <= 0 && c.data_scadenta) {
+        const platiFactura = incasari[c.id] ?? [];
+        if (platiFactura.length > 0) {
+          const ultimaIncasare = platiFactura.reduce((max, p) => (p.data_incasare > max ? p.data_incasare : max), platiFactura[0].data_incasare);
+          const scadenta = new Date(`${c.data_scadenta.slice(0, 10)}T00:00:00Z`);
+          const incasat = new Date(`${ultimaIncasare.slice(0, 10)}T00:00:00Z`);
+          const zile = Math.round((incasat.getTime() - scadenta.getTime()) / 86_400_000);
+          sumaZileIntarziere += zile;
+          nrFacturiIncasateCuScadenta += 1;
+        }
+      }
     }
-    return { totalFacturat, totalIncasat, soldTotal, nrRestante };
-  }, [creante]);
+
+    const mediePlataZile =
+      nrFacturiIncasateCuScadenta > 0 ? Math.round(sumaZileIntarziere / nrFacturiIncasateCuScadenta) : null;
+
+    return {
+      totalFacturat,
+      totalIncasat,
+      soldTotal,
+      nrRestante,
+      nrPromisiuniActive,
+      mediePlataZile,
+      nrFacturiIncasateCuScadenta,
+    };
+  }, [creante, incasari]);
 
   return (
     <div>
@@ -78,26 +111,57 @@ export function FisaClientClient({
           value={formatRon(summary.totalFacturat)}
           icon={<FileText size={16} />}
           accent="#0070F3"
+          definition={CREANTE_KPI_DEFINITIONS.totalFacturat}
         />
         <KpiCard
           label="Total incasat"
           value={formatRon(summary.totalIncasat)}
           icon={<Wallet size={16} />}
           accent="#22C55E"
+          definition={CREANTE_KPI_DEFINITIONS.totalIncasat}
         />
         <KpiCard
           label="Sold restant"
           value={formatRon(summary.soldTotal)}
           icon={<Wallet size={16} />}
           accent="#F59E0B"
+          definition={CREANTE_KPI_DEFINITIONS.soldRestant}
         />
         <KpiCard
           label="Facturi restante"
           value={String(summary.nrRestante)}
           icon={<AlertTriangle size={16} />}
           accent="#EF4444"
+          definition={CREANTE_KPI_DEFINITIONS.facturiRestante}
         />
       </div>
+
+      {(summary.mediePlataZile !== null || summary.nrPromisiuniActive > 0) && (
+        <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Comportament de plata
+          </p>
+          {summary.mediePlataZile !== null && (
+            <span className="text-slate-300">
+              In medie plateste{" "}
+              <span
+                className={`font-mono font-medium ${summary.mediePlataZile <= 0 ? "text-green-400" : "text-amber-400"}`}
+              >
+                {summary.mediePlataZile <= 0
+                  ? `cu ${Math.abs(summary.mediePlataZile)} zile inainte de scadenta`
+                  : `cu ${summary.mediePlataZile} zile dupa scadenta`}
+              </span>{" "}
+              <span className="text-slate-500">({summary.nrFacturiIncasateCuScadenta} facturi incasate)</span>
+            </span>
+          )}
+          {summary.nrPromisiuniActive > 0 && (
+            <span className="flex items-center gap-1.5 text-amber-400">
+              {summary.nrPromisiuniActive} promisiune{summary.nrPromisiuniActive > 1 ? "i" : ""} de plata activa
+              {summary.nrPromisiuniActive > 1 ? "e" : ""}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="overflow-x-auto rounded-xl border border-white/10">
         <table className="w-full text-sm">

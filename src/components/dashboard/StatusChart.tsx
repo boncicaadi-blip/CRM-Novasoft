@@ -3,6 +3,8 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { STATUS_COLORS } from "@/lib/constants";
 import { ChartTooltipBox } from "./ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 
 interface StatusDatum {
   status: string;
@@ -23,7 +25,10 @@ export function StatusChart({
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">Distributie Status</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+          Distributie Status
+          <InfoTooltip title="Distributie Status" definition={KPI_DEFINITIONS.crmStatusChart} />
+        </p>
         {selected && onSelect && (
           <button
             onClick={() => onSelect(null)}

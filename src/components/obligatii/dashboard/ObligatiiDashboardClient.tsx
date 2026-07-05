@@ -120,6 +120,15 @@ export function ObligatiiDashboardClient({
   const currentMonthKey = getTodayISO().slice(0, 7);
   const currentMonthGrt = grtSeries.find((g) => g.monthKey === currentMonthKey);
 
+  const furnizorOptions = useMemo(
+    () => Array.from(new Set(obligatii.map((o) => o.nume_furnizor))).sort(),
+    [obligatii]
+  );
+  const tipAchizitieOptions = useMemo(
+    () => Array.from(new Set(obligatii.map((o) => o.tip_achizitie ?? "Necunoscut"))).sort(),
+    [obligatii]
+  );
+
   const hasFilter = filters.status || filters.aging || filters.tipAchizitie || filters.furnizor;
 
   return (
@@ -160,6 +169,60 @@ export function ObligatiiDashboardClient({
                 className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
               />
             </>
+          )}
+          <select
+            value={filters.furnizor ?? ""}
+            onChange={(e) => setFilters((f) => ({ ...f, furnizor: e.target.value || null }))}
+            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          >
+            <option value="" style={{ backgroundColor: "#111535" }}>
+              Toti furnizorii
+            </option>
+            {furnizorOptions.map((f) => (
+              <option key={f} value={f} style={{ backgroundColor: "#111535" }}>
+                {f}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filters.tipAchizitie ?? ""}
+            onChange={(e) => setFilters((f) => ({ ...f, tipAchizitie: e.target.value || null }))}
+            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          >
+            <option value="" style={{ backgroundColor: "#111535" }}>
+              Toate tipurile
+            </option>
+            {tipAchizitieOptions.map((t) => (
+              <option key={t} value={t} style={{ backgroundColor: "#111535" }}>
+                {t}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filters.status ?? ""}
+            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value || null }))}
+            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          >
+            <option value="" style={{ backgroundColor: "#111535" }}>
+              Toate statusurile
+            </option>
+            <option value="restanta" style={{ backgroundColor: "#111535" }}>
+              Restanta
+            </option>
+            <option value="la_zi" style={{ backgroundColor: "#111535" }}>
+              La zi
+            </option>
+            <option value="platita" style={{ backgroundColor: "#111535" }}>
+              Platita
+            </option>
+          </select>
+          {hasFilter && (
+            <button
+              onClick={() => setFilters(EMPTY_FILTERS)}
+              className="text-xs text-[#E8007A] hover:text-[#FF4FAA]"
+            >
+              Sterge filtrele
+            </button>
           )}
           <Link
             href="/obligatii"

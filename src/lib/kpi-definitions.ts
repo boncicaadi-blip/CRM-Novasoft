@@ -79,4 +79,49 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     formula: "Oportunitati castigate / (castigate + pierdute)",
     cumAnalizezi: "Cat de eficient converteste echipa pipeline-ul in vanzari reale?",
   },
+  crmArrActiv: {
+    descriere: "Valoarea anuala recurenta (ARR) a tuturor oportunitatilor active, neponderata cu probabilitatea.",
+    formula: "Suma ARR pentru oportunitatile cu status Activa (exclus Lead Pool)",
+    cumAnalizezi: "Cat business recurent potential ai in lucru chiar acum?",
+  },
+  crmForecastPonderat: {
+    descriere: "ARR-ul pipeline-ului, ajustat cu probabilitatea de castig a fiecarei oportunitati (dupa stage).",
+    formula: "Suma (ARR x Probabilitate stage), pentru oportunitatile active",
+    cumAnalizezi: "O estimare mai realista decat ARR brut - cat ai castiga probabil, nu tot ce ai in pipeline.",
+  },
+  crmForecastImplementare: {
+    descriere: "Valoarea estimata din implementari, ajustata cu probabilitatea de castig.",
+    formula: "Suma (Valoare implementare x Probabilitate stage), pentru oportunitatile active",
+    cumAnalizezi: "Cat venit din implementare (nerecurent) estimezi sa incasezi din pipeline-ul curent?",
+  },
+  crmCastigate: {
+    descriere: "Numarul de oportunitati marcate castigate (Client), din tot istoricul urmarit.",
+    cumAnalizezi: "Impreuna cu win rate-ul, arata cat de bine converteste pipeline-ul in clienti reali.",
+  },
+  crmPierdute: {
+    descriere: "Numarul de oportunitati marcate pierdute, din tot istoricul urmarit.",
+    cumAnalizezi: "Un numar mare de pierderi, comparat cu castigurile, poate semnala o problema de calificare sau de oferta.",
+  },
+  crmFaraNextStep: {
+    descriere: "Oportunitati active care nu au o urmatoare actiune programata - risca sa stagneze fara ca nimeni sa observe.",
+    cumAnalizezi: "Cu cat numarul e mai mare, cu atat mai mult pipeline scapa de sub control operational. Click pentru lista completa.",
+  },
+  crmStageChart: {
+    descriere: "Numarul si valoarea oportunitatilor active, grupate pe stage-ul curent din pipeline.",
+    formula: "Numarare + suma ARR, grupate dupa Stage (exclus Lead Pool)",
+    cumAnalizezi: "Unde se aglomereaza pipeline-ul? Un stage cu multe oportunitati blocate poate semnala o problema de proces.",
+  },
+  crmStatusChart: {
+    descriere: "Distributia oportunitatilor dupa status: Activa, Castigata, Pierduta, Amanata.",
+    cumAnalizezi: "O privire rapida asupra sanatatii generale a pipeline-ului.",
+  },
+  crmResponsabilChart: {
+    descriere: "ARR-ul insumat al oportunitatilor active, grupat pe responsabilul de vanzare.",
+    formula: "Suma ARR pentru oportunitatile active, grupata dupa Responsabil vanzare",
+    cumAnalizezi: "Cine are cel mai mult pipeline in lucru chiar acum - util pentru distribuirea echilibrata a leadurilor.",
+  },
+  crmEvolutieArrChart: {
+    descriere: "Evolutia ARR-ului activ in timp, pe baza istoricului de schimbari al oportunitatilor.",
+    cumAnalizezi: "Arata daca pipeline-ul creste sau scade in timp - un trend descendent sustinut merita investigat.",
+  },
 };

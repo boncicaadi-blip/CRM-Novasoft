@@ -2,6 +2,8 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { ChartTooltipBox } from "@/components/dashboard/ChartTooltipBox";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { VENITURI_KPI_DEFINITIONS } from "@/lib/venituri-kpi-definitions";
 import { formatEur } from "@/lib/format";
 import type { GrupareDatum } from "@/lib/venituri-dashboard-analytics";
 
@@ -26,7 +28,10 @@ export function VenituriTopClientiChart({
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-medium text-white">Top clienti dupa venit realizat</p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+          Top clienti dupa venit realizat
+          <InfoTooltip title="Top clienti dupa venit realizat" definition={VENITURI_KPI_DEFINITIONS.topClienti} />
+        </p>
         {selected && onSelect && (
           <button onClick={() => onSelect(null)} className="text-[11px] text-[#E8007A] hover:text-[#FF4FAA]">
             Sterge filtrul
