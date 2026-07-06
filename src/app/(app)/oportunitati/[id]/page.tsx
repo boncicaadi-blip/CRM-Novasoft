@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, History } from "lucide-react";
+import { History } from "lucide-react";
+import { BackLink } from "@/components/BackLink";
 import { getOpportunity, getProfiles } from "@/lib/data/opportunities";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { getTimeline } from "@/lib/data/timeline";
@@ -51,13 +52,7 @@ export default async function OpportunityOverviewPage({
     <div className="px-3 py-4 sm:px-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link
-            href="/pipeline"
-            className="mb-1 flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300"
-          >
-            <ArrowLeft size={13} />
-            Inapoi la pipeline
-          </Link>
+          <BackLink label="Inapoi" />
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-heading text-white">{o.nume_potential}</h1>
             <span className="font-mono text-xs text-slate-500">{o.opportunity_code}</span>

@@ -90,7 +90,10 @@ export function CreanteDashboardClient({
   // exact ca la Dashboard-ul din CRM.
   const filtered = useMemo(() => {
     return inPeriodList.filter((c) => {
-      if (filters.status.length > 0 && !filters.status.includes(getCreantaStatus(c))) return false;
+      if (filters.status.length > 0) {
+        const matches = filters.status.some((s) => (s === "neincasate" ? c.sold > 0 : getCreantaStatus(c) === s));
+        if (!matches) return false;
+      }
       if (filters.tipVanzare.length > 0 && !filters.tipVanzare.includes(c.tip_vanzare ?? "Necunoscut")) return false;
       if (filters.client.length > 0 && !filters.client.includes(c.nume_firma)) return false;
       if (filters.aging.length > 0 && !filters.aging.some((b) => matchesAgingBucket(c, b))) return false;
@@ -196,7 +199,7 @@ export function CreanteDashboardClient({
           />
           <MultiSelect
             label="Status"
-            options={["restanta", "la_zi", "incasata"]}
+            options={["restanta", "la_zi", "neincasate", "incasata"]}
             selected={filters.status}
             onChange={(status) => setFilters((f) => ({ ...f, status }))}
           />
@@ -217,7 +220,15 @@ export function CreanteDashboardClient({
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <KpiInfoCard
+          label="Total Creante (neincasate)"
+          value={formatRon(summary.totalSoldNeincasat)}
+          sublabel="indiferent de scadenta"
+          icon={<Wallet size={16} />}
+          accent="#0070F3"
+          definition={CREANTE_KPI_DEFINITIONS.totalNeincasat}
+        />
         <KpiInfoCard
           label="Sold total restant"
           value={formatRon(summary.totalSoldRestant)}

@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Trash2,
   Download,
+  Plus,
   ArrowUp,
   ArrowDown,
   ChevronLeft,
@@ -22,6 +23,7 @@ import {
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { CreanteImportForm } from "./CreanteImportForm";
 import { CreantaDetailModal } from "./CreantaDetailModal";
+import { ManualCreantaFormModal } from "./ManualCreantaFormModal";
 import { AgingBar } from "./AgingBar";
 import { formatRon } from "@/lib/format";
 import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
@@ -42,7 +44,7 @@ import { toggleProposSpreIncasareAction, deleteCreanteAction, deleteAllCreanteAc
 import { syncPartnersAction } from "@/lib/actions/partners";
 import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
 
-type StatusFilter = "toate" | "restanta" | "la_zi" | "incasata";
+type StatusFilter = "toate" | "restanta" | "la_zi" | "incasata" | "neincasate";
 type SortKey =
   | "firma"
   | "serviciu"
@@ -142,9 +144,10 @@ export function CreanteClient({
   const [proposOverrides, setProposOverrides] = useState<Record<string, boolean>>({});
   const [agingFilter, setAgingFilter] = useState<AgingBucket | null>(null);
   const [expandedKpi, setExpandedKpi] = useState<
-    "soldRestant" | "targetPropus" | "totalIncasat" | null
+    "totalNeincasat" | "soldRestant" | "targetPropus" | "totalIncasat" | null
   >(null);
   const [onlyPartial, setOnlyPartial] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
   const [viewMode, setViewMode] = useState<"facturi" | "client">("facturi");
 
   // Combinam datele venite de la server cu bifele "Propus" schimbate local,
@@ -181,6 +184,10 @@ export function CreanteClient({
     () => creanteEffective.filter((c) => getCreantaStatus(c) === "restanta"),
     [creanteEffective]
   );
+  const breakdownTotalNeincasat = useMemo(
+    () => creanteEffective.filter((c) => c.sold > 0),
+    [creanteEffective]
+  );
   const breakdownTargetPropus = useMemo(
     () => creanteEffective.filter((c) => c.propus_spre_incasare && c.sold > 0),
     [creanteEffective]
@@ -205,6 +212,7 @@ export function CreanteClient({
       if (agingFilter && !matchesAgingBucket(c, agingFilter)) return false;
       if (onlyPartial && !isPartialPropus(c)) return false;
       if (statusFilter === "toate") return true;
+      if (statusFilter === "neincasate") return c.sold > 0;
       return getCreantaStatus(c) === statusFilter;
     });
     if (sortKey) {
@@ -406,7 +414,17 @@ export function CreanteClient({
         </div>
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <KpiInfoCard
+          label="Total Creante (neincasate)"
+          value={formatRon(summary.totalSoldNeincasat)}
+          sublabel={`${breakdownTotalNeincasat.length} facturi — click pentru desfasurator`}
+          icon={<Wallet size={16} />}
+          accent="#0070F3"
+          definition={CREANTE_KPI_DEFINITIONS.totalNeincasat}
+          onClick={() => setExpandedKpi((k) => (k === "totalNeincasat" ? null : "totalNeincasat"))}
+          isActive={expandedKpi === "totalNeincasat"}
+        />
         <KpiInfoCard
           label="Sold total restant"
           value={formatRon(summary.totalSoldRestant)}
@@ -453,6 +471,7 @@ export function CreanteClient({
         <div className="mb-5 rounded-xl border border-[#E8007A]/20 bg-white/[0.02] p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-[#E8007A]">
+              {expandedKpi === "totalNeincasat" && "Desfasurator — toate facturile neincasate (indiferent de scadenta)"}
               {expandedKpi === "soldRestant" && "Desfasurator — facturi restante"}
               {expandedKpi === "targetPropus" && "Desfasurator — facturi propuse spre incasare"}
               {expandedKpi === "totalIncasat" && "Desfasurator — incasari in perioada selectata"}
@@ -479,7 +498,12 @@ export function CreanteClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {(expandedKpi === "soldRestant" ? breakdownSoldRestant : breakdownTargetPropus).map(
+                  {(expandedKpi === "totalNeincasat"
+                    ? breakdownTotalNeincasat
+                    : expandedKpi === "soldRestant"
+                      ? breakdownSoldRestant
+                      : breakdownTargetPropus
+                  ).map(
                     (c) => (
                       <tr
                         key={c.id}
@@ -587,7 +611,7 @@ export function CreanteClient({
           placeholder="Cauta firma, serviciu sau nr. factura..."
           className="w-56 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
         />
-        {(["restanta", "la_zi", "incasata", "toate"] as StatusFilter[]).map((s) => (
+        {(["restanta", "la_zi", "neincasate", "incasata", "toate"] as StatusFilter[]).map((s) => (
           <button
             key={s}
             onClick={() => {
@@ -604,9 +628,11 @@ export function CreanteClient({
               ? "Restante"
               : s === "la_zi"
                 ? "La zi"
-                : s === "incasata"
-                  ? "Incasate"
-                  : "Toate"}
+                : s === "neincasate"
+                  ? "Neincasate"
+                  : s === "incasata"
+                    ? "Incasate"
+                    : "Toate"}
           </button>
         ))}
         <button
@@ -640,6 +666,13 @@ export function CreanteClient({
             Pe client
           </button>
         </div>
+        <button
+          onClick={() => setShowManualForm(true)}
+          className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+        >
+          <Plus size={13} />
+          Adauga manual
+        </button>
         <button
           onClick={handleExport}
           className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
@@ -962,6 +995,7 @@ export function CreanteClient({
           onClose={() => setSelected(null)}
         />
       )}
+      {showManualForm && <ManualCreantaFormModal onClose={() => setShowManualForm(false)} />}
     </div>
   );
 }

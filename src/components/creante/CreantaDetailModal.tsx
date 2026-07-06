@@ -199,12 +199,18 @@ export function CreantaDetailModal({
           </div>
         )}
 
-        {creanta.sold > 0 && (
+        {creanta.sold !== 0 && (
           <div className="mb-4 rounded-lg border border-green-500/20 bg-green-500/5 p-3">
             <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-green-400">
               <CheckCircle2 size={13} />
-              Marcheaza incasat
+              {creanta.sold > 0 ? "Marcheaza incasat" : "Corecteaza sold (factura de stornare)"}
             </p>
+            {creanta.sold < 0 && (
+              <p className="mb-2 text-[11px] text-slate-500">
+                Soldul e negativ (factura de stornare/credit) - valoarea implicita de mai jos e
+                negativa, ca sa aduca soldul la 0.
+              </p>
+            )}
             <div className="flex flex-wrap items-end gap-2">
               <div>
                 <label className="mb-1 block text-[11px] text-slate-500">Valoare (lei)</label>

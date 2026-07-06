@@ -221,13 +221,14 @@ export async function importCreanteAction(
       const restIncasareRaw = toNumber(r["Rest Incasare Fact"]);
       // Default sigur: daca lipseste coloana, presupunem NEIN CASAT (nu
       // incasat integral) - o subestimare e mult mai sigura decat o
-      // supraestimare a banilor deja incasati. Clamp intre 0 si total,
-      // ca sa nu putem obtine niciodata un sold negativ, indiferent de
-      // conventia de semn din sursa (s-a vazut real cu facturi vechi).
-      const restIncasare = Math.min(
-        Math.max(restIncasareRaw ?? totalFactura, 0),
-        totalFactura
-      );
+      // supraestimare a banilor deja incasati. Clamp intre 0 si total, dar
+      // ATENTIE - la facturile de stornare (Total Fact negativ, credit
+      // note), 0 e de fapt CAPATUL SUPERIOR al intervalului, nu cel
+      // inferior. Un clamp fix (0, totalFactura) ar forta gresit soldul
+      // sa ramana mereu egal cu totalul, indiferent ce spune sursa.
+      const loSold = Math.min(0, totalFactura);
+      const hiSold = Math.max(0, totalFactura);
+      const restIncasare = Math.min(Math.max(restIncasareRaw ?? totalFactura, loSold), hiSold);
       const opportunityId = opportunityByName.get(normalizeName(numeFirma)) ?? null;
 
       const rawFields: Record<string, unknown> = {
@@ -251,8 +252,13 @@ export async function importCreanteAction(
         toUpdate.push({ nrFactura, payload: rawFields });
       } else {
         toInsert.push({ nr_factura: nrFactura, ...rawFields });
-        const seed = Math.max(0, totalFactura - restIncasare);
-        if (seed > 0) {
+        // La facturi normale (total pozitiv), seed pozitiv = bani deja
+        // incasati. La facturi de stornare (total negativ), seed negativ =
+        // creditul deja "consumat"/aplicat - altfel soldul ramane gresit
+        // egal cu totalul intreg, chiar daca sursa arata clar ca s-a
+        // rezolvat (Rest Incasare Fact = 0).
+        const seed = totalFactura - restIncasare;
+        if (seed !== 0) {
           seedIncasari.push({
             nrFactura,
             valoare: seed,
@@ -431,8 +437,11 @@ export async function marcheazaIncasatAction(
   const { supabase, userId, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot marca incasari." };
 
-  if (params.valoare <= 0) {
-    return { success: false, message: "Valoarea incasata trebuie sa fie pozitiva." };
+  // Valoarea poate fi si negativa - la facturile de stornare (total
+  // negativ), o corectie inseamna sa scazi sold-ul negativ inapoi spre 0,
+  // ceea ce necesita o inregistrare tot negativa. Ramane interzis doar 0.
+  if (params.valoare === 0) {
+    return { success: false, message: "Valoarea nu poate fi zero." };
   }
 
   const { error } = await supabase.from("creante_incasari").insert({
@@ -488,6 +497,73 @@ export async function deleteAllCreanteAction(): Promise<{ success: boolean; mess
     .not("id", "is", null);
   if (error) return { success: false, message: error.message };
 
+  revalidatePath("/creante");
+  return { success: true };
+}
+
+/**
+ * Adauga o singura factura manual - pentru cazul in care nu vrei sa astepti
+ * urmatorul import de fisier, ci ai o factura noua chiar acum. Respecta
+ * aceeasi regula ca la import: nu se dubleaza daca Nr. factura exista deja.
+ */
+export async function addCreantaManualAction(fields: {
+  nr_factura: string;
+  nume_firma: string;
+  data_factura?: string | null;
+  data_scadenta?: string | null;
+  total_factura: number;
+  produs?: string | null;
+  serviciu_facturat?: string | null;
+  tip_vanzare?: TipVanzare | null;
+  termen_incasare_zile?: number | null;
+  observatii?: string | null;
+}): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot adauga facturi." };
+
+  const nrFactura = fields.nr_factura.trim();
+  if (!nrFactura) return { success: false, message: "Numarul facturii este obligatoriu." };
+  if (!fields.nume_firma.trim()) return { success: false, message: "Numele firmei este obligatoriu." };
+  if (!Number.isFinite(fields.total_factura) || fields.total_factura === 0) {
+    return { success: false, message: "Totalul facturii trebuie sa fie un numar diferit de 0." };
+  }
+
+  const { data: existing } = await supabase
+    .from("creante")
+    .select("id")
+    .eq("nr_factura", nrFactura)
+    .maybeSingle();
+  if (existing) {
+    return { success: false, message: `Factura ${nrFactura} exista deja - nu se dubleaza.` };
+  }
+
+  const numeFirma = fields.nume_firma.trim();
+  const { data: opportunities } = await supabase
+    .from("opportunities")
+    .select("id, nume_potential, nume_grup");
+  const opportunityByName = new Map<string, string>();
+  for (const o of opportunities ?? []) {
+    opportunityByName.set(normalizeName(o.nume_potential), o.id);
+    if (o.nume_grup) opportunityByName.set(normalizeName(o.nume_grup), o.id);
+  }
+
+  const { error } = await supabase.from("creante").insert({
+    nr_factura: nrFactura,
+    nume_firma: numeFirma,
+    opportunity_id: opportunityByName.get(normalizeName(numeFirma)) ?? null,
+    data_factura: fields.data_factura || null,
+    data_scadenta: fields.data_scadenta || null,
+    produs: fields.produs || null,
+    serviciu_facturat: fields.serviciu_facturat || null,
+    tip_vanzare: fields.tip_vanzare || null,
+    termen_incasare_zile: fields.termen_incasare_zile ?? null,
+    total_factura: fields.total_factura,
+    observatii: fields.observatii || null,
+  });
+
+  if (error) return { success: false, message: error.message };
+
+  await syncPartnersAction();
   revalidatePath("/creante");
   return { success: true };
 }

@@ -6,6 +6,13 @@ export const CREANTE_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     formula: "Suma Total factura, pentru toate facturile clientului",
     cumAnalizezi: "Volumul total de business facturat pana acum catre acest client.",
   },
+  totalNeincasat: {
+    descriere:
+      "Suma soldurilor TUTUROR facturilor neincasate, indiferent daca scadenta e deja depasita sau nu - include atat facturile restante, cat si cele inca la zi.",
+    formula: "Suma (Total factura - Valoare incasata), pentru toate facturile cu Sold > 0",
+    cumAnalizezi:
+      "Cat ai in total de incasat de la clienti, la data curenta - o privire mai larga decat doar soldul restant (care exclude facturile inca la zi).",
+  },
   soldRestant: {
     descriere:
       "Suma soldurilor facturilor cu scadenta depasita. NU include facturile neincasate care inca nu au ajuns la scadenta (acelea sunt \"la zi\").",
