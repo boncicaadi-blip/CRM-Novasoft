@@ -171,11 +171,14 @@ export function dateMatchesPeriod(
   return true;
 }
 
+/**
+ * Filtrare pe perioada, strict dupa data facturii - vezi explicatia din
+ * creante-analytics.ts (acelasi fix acolo si aici).
+ */
 export function inPeriodObligatie(
   o: Obligatie,
   period: PeriodFilter,
   customRange?: { from: string; to: string }
 ): boolean {
-  if (o.sold > 0) return true;
   return dateMatchesPeriod(o.data_factura, period, customRange);
 }

@@ -3,8 +3,10 @@ import {
   getCreantaStatus,
   getZileDepasire,
   matchesAgingBucket,
+  dateMatchesPeriod,
   type AgingBucket,
   type CreantaStatus,
+  type PeriodFilter,
 } from "@/lib/creante-analytics";
 
 export interface StatusDatum {
@@ -212,4 +214,34 @@ export function topRiscCreante(creante: Creanta[], n = 5): Creanta[] {
       return scoreB - scoreA;
     })
     .slice(0, n);
+}
+
+export interface ZiLunaDatum {
+  zi: number;
+  suma: number;
+  trend: number;
+}
+
+/** Grupare pe ziua din luna (1-31), agregata pe TOATA perioada selectata,
+ * indiferent de an/luna - ca sa vezi in ce zile din luna intra de obicei
+ * banii, pe baza istoricului. Trend = medie mobila pe 3 zile, ca sa se
+ * vada forma generala, nu doar zgomotul zilnic. */
+export function groupByZiuaLunii(
+  incasari: CreantaIncasare[],
+  period: PeriodFilter,
+  customRange?: { from: string; to: string }
+): ZiLunaDatum[] {
+  const sume = Array.from({ length: 31 }, () => 0);
+  for (const inc of incasari) {
+    if (!dateMatchesPeriod(inc.data_incasare, period, customRange)) continue;
+    const d = new Date(inc.data_incasare);
+    const zi = d.getDate();
+    if (zi >= 1 && zi <= 31) sume[zi - 1] += inc.valoare;
+  }
+
+  return sume.map((suma, i) => {
+    const vecini = [sume[i - 1], suma, sume[i + 1]].filter((v) => v !== undefined);
+    const trend = vecini.reduce((s, v) => s + v, 0) / vecini.length;
+    return { zi: i + 1, suma, trend };
+  });
 }

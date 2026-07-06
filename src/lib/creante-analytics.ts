@@ -194,15 +194,17 @@ export function dateMatchesPeriod(
 }
 
 /**
- * Filtrare pe perioada PENTRU LISTA DE FACTURI (nu pentru sumar): o factura
- * e vizibila daca are sold restant (indiferent de vechime - trebuie
- * urmarita oricum), SAU daca data facturii cade in perioada selectata.
+ * Filtrare pe perioada PENTRU LISTA DE FACTURI - filtrare stricta dupa data
+ * facturii, ca la orice alt filtru de perioada din aplicatie. Daca vrei sa
+ * vezi toate facturile neincasate indiferent de cand au fost emise, alege
+ * perioada "Tot istoricul" - nu se mai face un bypass automat aici (facea
+ * ca alte filtre de perioada sa para ca nu functioneaza, aratand facturi
+ * din alti ani).
  */
 export function inPeriod(
   c: Creanta,
   period: PeriodFilter,
   customRange?: { from: string; to: string }
 ): boolean {
-  if (c.sold > 0) return true;
   return dateMatchesPeriod(c.data_factura, period, customRange);
 }

@@ -6,6 +6,11 @@ export const CREANTE_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     formula: "Suma Total factura, pentru toate facturile clientului",
     cumAnalizezi: "Volumul total de business facturat pana acum catre acest client.",
   },
+  ziuaLunii: {
+    descriere: "Suma incasarilor, agregata pe ziua din luna (1-31), pe toata perioada selectata sus - indiferent de an sau luna calendaristica.",
+    formula: "Suma Valoare incasare, grupata dupa ziua din data incasarii",
+    cumAnalizezi: "In ce zile din luna intra de obicei banii de la clienti - util pentru a-ti planifica propriile plati in jurul acestor date.",
+  },
   totalNeincasat: {
     descriere:
       "Suma soldurilor TUTUROR facturilor neincasate, indiferent daca scadenta e deja depasita sau nu - include atat facturile restante, cat si cele inca la zi.",

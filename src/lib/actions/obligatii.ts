@@ -107,9 +107,31 @@ export async function importObligatiiAction(
     };
   }
 
-  const [{ data: existingRows }] = await Promise.all([
-    supabase.from("obligatii").select("id, nr_factura"),
-  ]);
+  // Paginat explicit - vezi explicatia din actions/creante.ts (acelasi bug
+  // real, gasit acolo: fara paginare, Supabase limiteaza implicit la 1000
+  // de randuri).
+  async function fetchAllObligatiiIds(): Promise<{ id: string; nr_factura: string }[]> {
+    const pageSize = 1000;
+    let all: { id: string; nr_factura: string }[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("obligatii")
+        .select("id, nr_factura")
+        .range(from, from + pageSize - 1);
+      if (error) {
+        console.error("fetchAllObligatiiIds error:", error.message);
+        break;
+      }
+      if (!data || data.length === 0) break;
+      all = all.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    return all;
+  }
+
+  const existingRows = await fetchAllObligatiiIds();
 
   const existingByNrFactura = new Map((existingRows ?? []).map((r) => [r.nr_factura, r.id]));
 

@@ -5,15 +5,16 @@ import { X } from "lucide-react";
 import { addCreantaManualAction } from "@/lib/actions/creante";
 import { getTodayISO } from "@/lib/date";
 import type { TipVanzare } from "@/types/creante";
+import type { ClientOption } from "@/lib/data/venituri";
 
 const inputClass =
   "w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]";
 const labelClass = "mb-1 block text-[11px] text-slate-500";
 
-export function ManualCreantaFormModal({ onClose }: { onClose: () => void }) {
+export function ManualCreantaFormModal({ clienti, onClose }: { clienti: ClientOption[]; onClose: () => void }) {
   const [isPending, startTransition] = useTransition();
   const [nrFactura, setNrFactura] = useState("");
-  const [numeFirma, setNumeFirma] = useState("");
+  const [clientId, setClientId] = useState("");
   const [dataFactura, setDataFactura] = useState(getTodayISO());
   const [dataScadenta, setDataScadenta] = useState("");
   const [totalFactura, setTotalFactura] = useState("");
@@ -26,14 +27,16 @@ export function ManualCreantaFormModal({ onClose }: { onClose: () => void }) {
 
   function handleSave() {
     setMessage(null);
-    if (!nrFactura.trim() || !numeFirma.trim() || !totalFactura) {
+    const client = clienti.find((c) => c.id === clientId);
+    if (!nrFactura.trim() || !client || !totalFactura) {
       setMessage("Nr. factura, Client si Total factura sunt obligatorii.");
       return;
     }
     startTransition(async () => {
       const result = await addCreantaManualAction({
         nr_factura: nrFactura,
-        nume_firma: numeFirma,
+        nume_firma: client.nume,
+        opportunity_id: client.opportunity_id,
         data_factura: dataFactura || null,
         data_scadenta: dataScadenta || null,
         total_factura: Number(totalFactura),
@@ -81,7 +84,19 @@ export function ManualCreantaFormModal({ onClose }: { onClose: () => void }) {
 
           <div>
             <label className={labelClass}>Client *</label>
-            <input value={numeFirma} onChange={(e) => setNumeFirma(e.target.value)} className={inputClass} />
+            <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={inputClass}>
+              <option value="" style={{ backgroundColor: "#111535" }}>
+                Alege clientul...
+              </option>
+              {clienti.map((c) => (
+                <option key={c.id} value={c.id} style={{ backgroundColor: "#111535" }}>
+                  {c.nume}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[10px] text-slate-600">
+              Lista vine din fisa Facturabil (Financiar → Venituri → Clienti facturabili).
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-2">

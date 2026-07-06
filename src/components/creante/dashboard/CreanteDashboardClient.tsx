@@ -11,6 +11,7 @@ import { CreanteStatusChart } from "./CreanteStatusChart";
 import { CreanteTipVanzareChart } from "./CreanteTipVanzareChart";
 import { CreanteAgingChart } from "./CreanteAgingChart";
 import { CreanteIncasariTimeSeriesChart } from "./CreanteIncasariTimeSeriesChart";
+import { CreanteZiuaLuniiChart } from "./CreanteZiuaLuniiChart";
 import { CreanteTopClientiChart } from "./CreanteTopClientiChart";
 import { CreanteRiscZone } from "./CreanteRiscZone";
 import { CreanteComponentaList } from "./CreanteComponentaList";
@@ -40,6 +41,7 @@ import {
   buildFacturatTimeSeries,
   buildGrtSeries,
   topRiscCreante,
+  groupByZiuaLunii,
 } from "@/lib/creante-dashboard-analytics";
 import type { Creanta, CreantaIncasare } from "@/types/creante";
 
@@ -120,6 +122,10 @@ export function CreanteDashboardClient({
   // tot istoricul de target importat (decembrie 2024 - prezent).
   const grtSeries = useMemo(() => buildGrtSeries(incasariFlat, targets, 18), [incasariFlat, targets]);
   const incasariSeries = useMemo(() => buildIncasariTimeSeries(incasariFlat, 11), [incasariFlat]);
+  const ziuaLuniiData = useMemo(
+    () => groupByZiuaLunii(incasariFlat, period, { from: customFrom, to: customTo }),
+    [incasariFlat, period, customFrom, customTo]
+  );
   const facturatSeries = useMemo(() => buildFacturatTimeSeries(creante, 11), [creante]);
   const dinamicaData = useMemo(
     () =>
@@ -159,7 +165,17 @@ export function CreanteDashboardClient({
         <div className="flex items-center gap-2">
           <select
             value={period}
-            onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+            onChange={(e) => {
+              const next = e.target.value as PeriodFilter;
+              setPeriod(next);
+              if (next === "custom" && (!customFrom || !customTo)) {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                setCustomFrom(start.toISOString().slice(0, 10));
+                setCustomTo(end.toISOString().slice(0, 10));
+              }
+            }}
             className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
           >
             {PERIOD_OPTIONS.map((p) => (
@@ -170,6 +186,32 @@ export function CreanteDashboardClient({
           </select>
           {period === "custom" && (
             <>
+              <select
+                value=""
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  const [y, m] = e.target.value.split("-").map(Number);
+                  setCustomFrom(new Date(y, m - 1, 1).toISOString().slice(0, 10));
+                  setCustomTo(new Date(y, m, 0).toISOString().slice(0, 10));
+                }}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              >
+                <option value="" style={{ backgroundColor: "#111535" }}>
+                  Alege rapid o luna...
+                </option>
+                {Array.from({ length: 24 }, (_, i) => {
+                  const d = new Date();
+                  d.setDate(1);
+                  d.setMonth(d.getMonth() - i);
+                  const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                  const label = d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+                  return (
+                    <option key={value} value={value} style={{ backgroundColor: "#111535" }}>
+                      {label}
+                    </option>
+                  );
+                })}
+              </select>
               <input
                 type="date"
                 value={customFrom}
@@ -309,6 +351,10 @@ export function CreanteDashboardClient({
 
           <ExpandableChart>
             <CreanteIncasariTimeSeriesChart data={incasariSeries} />
+          </ExpandableChart>
+
+          <ExpandableChart>
+            <CreanteZiuaLuniiChart data={ziuaLuniiData} />
           </ExpandableChart>
         </div>
 

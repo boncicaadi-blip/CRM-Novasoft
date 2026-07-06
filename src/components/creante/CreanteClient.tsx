@@ -29,7 +29,6 @@ import { formatRon } from "@/lib/format";
 import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
 import {
   computeCreanteSummary,
-  computeTotalIncasatInPeriod,
   dateMatchesPeriod,
   getCreantaStatus,
   getZileDepasire,
@@ -43,6 +42,7 @@ import {
 import { toggleProposSpreIncasareAction, deleteCreanteAction, deleteAllCreanteAction } from "@/lib/actions/creante";
 import { syncPartnersAction } from "@/lib/actions/partners";
 import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
+import type { ClientOption } from "@/lib/data/venituri";
 
 type StatusFilter = "toate" | "restanta" | "la_zi" | "incasata" | "neincasate";
 type SortKey =
@@ -119,10 +119,12 @@ export function CreanteClient({
   creante,
   lastBatch,
   incasari,
+  clienti,
 }: {
   creante: Creanta[];
   lastBatch: CreanteImportBatch | null;
   incasari: Record<string, CreantaIncasare[]>;
+  clienti: ClientOption[];
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
@@ -147,6 +149,7 @@ export function CreanteClient({
     "totalNeincasat" | "soldRestant" | "targetPropus" | "totalIncasat" | null
   >(null);
   const [onlyPartial, setOnlyPartial] = useState(false);
+  const [onlyPropuse, setOnlyPropuse] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
   const [viewMode, setViewMode] = useState<"facturi" | "client">("facturi");
 
@@ -165,39 +168,6 @@ export function CreanteClient({
     [creanteEffective, period, customFrom, customTo]
   );
 
-  // Sold restant, facturi restante si target sunt stari CURENTE, nu legate
-  // de perioada - se calculeaza pe toate facturile, indiferent de filtrul
-  // de mai jos (vezi definitia din card pentru detalii).
-  const summary = useMemo(() => computeCreanteSummary(creanteEffective), [creanteEffective]);
-
-  // Total incasat E legat de perioada, dar dupa data incasarii (din jurnal),
-  // nu dupa data facturii.
-  const incasariFlat = useMemo(() => Object.values(incasari).flat(), [incasari]);
-  const totalIncasatInPeriod = useMemo(
-    () => computeTotalIncasatInPeriod(incasariFlat, period, { from: customFrom, to: customTo }),
-    [incasariFlat, period, customFrom, customTo]
-  );
-
-  // Desfasuratoare pentru fiecare KPI clicabil.
-  const creantaById = useMemo(() => new Map(creanteEffective.map((c) => [c.id, c])), [creanteEffective]);
-  const breakdownSoldRestant = useMemo(
-    () => creanteEffective.filter((c) => getCreantaStatus(c) === "restanta"),
-    [creanteEffective]
-  );
-  const breakdownTotalNeincasat = useMemo(
-    () => creanteEffective.filter((c) => c.sold > 0),
-    [creanteEffective]
-  );
-  const breakdownTargetPropus = useMemo(
-    () => creanteEffective.filter((c) => c.propus_spre_incasare && c.sold > 0),
-    [creanteEffective]
-  );
-  const breakdownTotalIncasat = useMemo(
-    () =>
-      incasariFlat.filter((i) => dateMatchesPeriod(i.data_incasare, period, { from: customFrom, to: customTo })),
-    [incasariFlat, period, customFrom, customTo]
-  );
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let rows = inPeriodList.filter((c) => {
@@ -211,6 +181,7 @@ export function CreanteClient({
       }
       if (agingFilter && !matchesAgingBucket(c, agingFilter)) return false;
       if (onlyPartial && !isPartialPropus(c)) return false;
+      if (onlyPropuse && !(c.propus_spre_incasare && c.sold > 0)) return false;
       if (statusFilter === "toate") return true;
       if (statusFilter === "neincasate") return c.sold > 0;
       return getCreantaStatus(c) === statusFilter;
@@ -224,7 +195,47 @@ export function CreanteClient({
       });
     }
     return rows;
-  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter, onlyPartial]);
+  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter, onlyPartial, onlyPropuse]);
+
+  // Totalurile de mai sus reflecta ACUM toate filtrele active (perioada,
+  // status, cautare, aging, propuse) - la cerere explicita. Anterior erau
+  // calculate pe toata baza, indiferent de filtre; asta insemna ca titlul
+  // "click pentru desfasurator" al KPI-urilor si continutul lui erau
+  // usor inconsistente cu ce alegeai mai jos.
+  const summary = useMemo(() => computeCreanteSummary(filtered), [filtered]);
+
+  const incasariFlat = useMemo(() => Object.values(incasari).flat(), [incasari]);
+  // Total incasat: suma incasarilor DIN PERIOADA (dupa data incasarii, nu
+  // dupa data facturii), dar DOAR pentru facturile care trec si de
+  // celelalte filtre active (status, cautare, aging, propuse) - altfel
+  // "Total incasat" nu ar respecta filtrele de mai jos, desi toate
+  // celelalte KPI-uri o fac acum.
+  const filteredIds = useMemo(() => new Set(filtered.map((c) => c.id)), [filtered]);
+  const breakdownTotalIncasat = useMemo(
+    () =>
+      incasariFlat.filter(
+        (i) =>
+          filteredIds.has(i.creanta_id) &&
+          dateMatchesPeriod(i.data_incasare, period, { from: customFrom, to: customTo })
+      ),
+    [incasariFlat, filteredIds, period, customFrom, customTo]
+  );
+  const totalIncasatInPeriod = useMemo(
+    () => breakdownTotalIncasat.reduce((sum, i) => sum + i.valoare, 0),
+    [breakdownTotalIncasat]
+  );
+
+  // Desfasuratoare pentru fiecare KPI clicabil - tot pe baza filtrata.
+  const creantaById = useMemo(() => new Map(creanteEffective.map((c) => [c.id, c])), [creanteEffective]);
+  const breakdownSoldRestant = useMemo(
+    () => filtered.filter((c) => getCreantaStatus(c) === "restanta"),
+    [filtered]
+  );
+  const breakdownTotalNeincasat = useMemo(() => filtered.filter((c) => c.sold > 0), [filtered]);
+  const breakdownTargetPropus = useMemo(
+    () => filtered.filter((c) => c.propus_spre_incasare && c.sold > 0),
+    [filtered]
+  );
 
   // Grupare pe client - respecta toate filtrele active (perioada, status,
   // cautare, aging, propuneri partiale), doar reorganizata pe firma.
@@ -568,8 +579,20 @@ export function CreanteClient({
         <select
           value={period}
           onChange={(e) => {
-            setPeriod(e.target.value as PeriodFilter);
+            const next = e.target.value as PeriodFilter;
+            setPeriod(next);
             setPage(1);
+            // Daca alegi "personalizata" si nu ai completat inca ambele
+            // capete, precompletam luna curenta - altfel un capat gol
+            // lasa filtrul nelimitat pe acea parte (bug real raportat:
+            // "arata facturi din 2025" cand doar un capat era setat).
+            if (next === "custom" && (!customFrom || !customTo)) {
+              const now = new Date();
+              const start = new Date(now.getFullYear(), now.getMonth(), 1);
+              const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+              setCustomFrom(start.toISOString().slice(0, 10));
+              setCustomTo(end.toISOString().slice(0, 10));
+            }
           }}
           className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
         >
@@ -581,6 +604,35 @@ export function CreanteClient({
         </select>
         {period === "custom" && (
           <>
+            <select
+              value=""
+              onChange={(e) => {
+                if (!e.target.value) return;
+                const [y, m] = e.target.value.split("-").map(Number);
+                const start = new Date(y, m - 1, 1);
+                const end = new Date(y, m, 0);
+                setCustomFrom(start.toISOString().slice(0, 10));
+                setCustomTo(end.toISOString().slice(0, 10));
+                setPage(1);
+              }}
+              className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+            >
+              <option value="" style={{ backgroundColor: "#111535" }}>
+                Alege rapid o luna...
+              </option>
+              {Array.from({ length: 24 }, (_, i) => {
+                const d = new Date();
+                d.setDate(1);
+                d.setMonth(d.getMonth() - i);
+                const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                const label = d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+                return (
+                  <option key={value} value={value} style={{ backgroundColor: "#111535" }}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
             <input
               type="date"
               value={customFrom}
@@ -635,6 +687,18 @@ export function CreanteClient({
                     : "Toate"}
           </button>
         ))}
+        <button
+          onClick={() => setOnlyPropuse((v) => !v)}
+          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+            onlyPropuse
+              ? "bg-[#E8007A] text-[#0B0D1A]"
+              : "border border-white/10 text-slate-400 hover:bg-white/5"
+          }`}
+          title="Toate facturile bifate 'Propus spre incasare' (partial sau integral)"
+        >
+          <Target size={13} />
+          Propuse spre incasare
+        </button>
         <button
           onClick={() => setOnlyPartial((v) => !v)}
           className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
@@ -995,7 +1059,7 @@ export function CreanteClient({
           onClose={() => setSelected(null)}
         />
       )}
-      {showManualForm && <ManualCreantaFormModal onClose={() => setShowManualForm(false)} />}
+      {showManualForm && <ManualCreantaFormModal clienti={clienti} onClose={() => setShowManualForm(false)} />}
     </div>
   );
 }

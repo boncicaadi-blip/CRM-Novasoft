@@ -125,8 +125,34 @@ export async function importCreanteAction(
 
   const isUnificat = "Nume firma" in rows[0];
 
-  const [{ data: existingRows }, { data: opportunities }] = await Promise.all([
-    supabase.from("creante").select("id, nr_factura"),
+  // Paginat explicit - fara asta, Supabase limiteaza implicit la 1000 de
+  // randuri, iar cu peste 1500 de creante deja existente, facturile de
+  // dincolo de randul 1000 "dispareau" din verificarea de duplicate, ceea
+  // ce facea ca reimportul lor sa loveasca direct constrangerea unica din
+  // baza de date (eroarea raportata).
+  async function fetchAllCreanteIds(): Promise<{ id: string; nr_factura: string }[]> {
+    const pageSize = 1000;
+    let all: { id: string; nr_factura: string }[] = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("creante")
+        .select("id, nr_factura")
+        .range(from, from + pageSize - 1);
+      if (error) {
+        console.error("fetchAllCreanteIds error:", error.message);
+        break;
+      }
+      if (!data || data.length === 0) break;
+      all = all.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    return all;
+  }
+
+  const [existingRows, { data: opportunities }] = await Promise.all([
+    fetchAllCreanteIds(),
     supabase.from("opportunities").select("id, nume_potential, nume_grup"),
   ]);
 
@@ -276,13 +302,30 @@ export async function importCreanteAction(
   }
 
   if (toInsert.length > 0) {
+    // Upsert, nu insert brut - o plasa de siguranta impotriva exact acestei
+    // erori ("duplicate key... creante_nr_factura_key"): daca din orice
+    // motiv o factura e considerata "noua" desi exista deja (de exemplu,
+    // a fost adaugata manual sau printr-un import concurent chiar inainte),
+    // upsert-ul o actualizeaza in loc sa arunce toata importarea.
     const { data: inserted, error } = await supabase
       .from("creante")
-      .insert(toInsert)
+      .upsert(toInsert, { onConflict: "nr_factura" })
       .select("id, nr_factura");
     if (error) return { success: false, message: `Eroare la inserare: ${error.message}` };
 
     const idByNrFactura = new Map((inserted ?? []).map((r) => [r.nr_factura, r.id]));
+
+    // Nu semanam incasari pentru facturi care AU DEJA incasari inregistrate
+    // - upsert-ul de mai sus poate "prinde" si o factura care de fapt
+    // exista deja (vezi comentariul de mai sus), iar acolo istoricul
+    // trebuie pastrat neatins, nu dublat cu o incasare noua.
+    const idsCuSeed = seedIncasari.map((s) => idByNrFactura.get(s.nrFactura)).filter(Boolean);
+    const { data: incasariExistente } =
+      idsCuSeed.length > 0
+        ? await supabase.from("creante_incasari").select("creanta_id").in("creanta_id", idsCuSeed)
+        : { data: [] };
+    const idsCuIncasareExistenta = new Set((incasariExistente ?? []).map((r) => r.creanta_id));
+
     const seedRows = seedIncasari
       .map((s) => ({
         creanta_id: idByNrFactura.get(s.nrFactura),
@@ -290,7 +333,7 @@ export async function importCreanteAction(
         data_incasare: s.data,
         observatie: s.observatie,
       }))
-      .filter((r) => r.creanta_id);
+      .filter((r) => r.creanta_id && !idsCuIncasareExistenta.has(r.creanta_id));
 
     if (seedRows.length > 0) {
       const { error: seedError } = await supabase.from("creante_incasari").insert(seedRows);
@@ -509,6 +552,7 @@ export async function deleteAllCreanteAction(): Promise<{ success: boolean; mess
 export async function addCreantaManualAction(fields: {
   nr_factura: string;
   nume_firma: string;
+  opportunity_id?: string | null;
   data_factura?: string | null;
   data_scadenta?: string | null;
   total_factura: number;
@@ -537,20 +581,10 @@ export async function addCreantaManualAction(fields: {
     return { success: false, message: `Factura ${nrFactura} exista deja - nu se dubleaza.` };
   }
 
-  const numeFirma = fields.nume_firma.trim();
-  const { data: opportunities } = await supabase
-    .from("opportunities")
-    .select("id, nume_potential, nume_grup");
-  const opportunityByName = new Map<string, string>();
-  for (const o of opportunities ?? []) {
-    opportunityByName.set(normalizeName(o.nume_potential), o.id);
-    if (o.nume_grup) opportunityByName.set(normalizeName(o.nume_grup), o.id);
-  }
-
   const { error } = await supabase.from("creante").insert({
     nr_factura: nrFactura,
-    nume_firma: numeFirma,
-    opportunity_id: opportunityByName.get(normalizeName(numeFirma)) ?? null,
+    nume_firma: fields.nume_firma.trim(),
+    opportunity_id: fields.opportunity_id ?? null,
     data_factura: fields.data_factura || null,
     data_scadenta: fields.data_scadenta || null,
     produs: fields.produs || null,
@@ -563,7 +597,6 @@ export async function addCreantaManualAction(fields: {
 
   if (error) return { success: false, message: error.message };
 
-  await syncPartnersAction();
   revalidatePath("/creante");
   return { success: true };
 }
