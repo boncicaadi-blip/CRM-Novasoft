@@ -5,10 +5,21 @@ import { X } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { normalizeJudetName } from "@/lib/geo";
 import { groupByJudetVenituri } from "@/lib/venituri-dashboard-analytics";
+import { useTableSort } from "@/lib/useTableSort";
+import { SortableTh } from "@/components/ui/SortableTh";
 import { RomaniaMap } from "@/components/dashboard/map/RomaniaMap";
 import type { VenitLinie } from "@/types/venituri";
 import type { PartnerGrupInfo } from "@/lib/data/venituri";
 import type { FeatureCollection, Geometry } from "geojson";
+
+interface ClientRand {
+  partnerId: string;
+  nume: string;
+  grup: string;
+  judet: string;
+  realizat: number;
+  estimat: number;
+}
 
 export function VenituriMapClient({
   geoData,
@@ -23,8 +34,8 @@ export function VenituriMapClient({
   const [selectedJudete, setSelectedJudete] = useState<string[]>([]);
   const [search, setSearch] = useState("");
 
-  const partnerJudetById = useMemo(
-    () => new Map(partnersGrup.map((p) => [p.id, p.judet])),
+  const partnerInfoById = useMemo(
+    () => new Map(partnersGrup.map((p) => [p.id, p])),
     [partnersGrup]
   );
 
@@ -34,30 +45,61 @@ export function VenituriMapClient({
     return venituriLinii.filter((l) => l.nume_client.toLowerCase().includes(q));
   }, [venituriLinii, search]);
 
-  const data = useMemo(() => groupByJudetVenituri(filteredLinii, partnerJudetById), [filteredLinii, partnerJudetById]);
+  const judetData = useMemo(() => {
+    const lookup = new Map(partnersGrup.map((p) => [p.id, p.judet]));
+    return groupByJudetVenituri(filteredLinii, lookup);
+  }, [filteredLinii, partnersGrup]);
 
-  const sorted = [...data].sort((a, b) => (metric === "count" ? b.count - a.count : b.arr - a.arr));
+  const sortedJudete = [...judetData].sort((a, b) => (metric === "count" ? b.count - a.count : b.arr - a.arr));
 
   const selectedNormalized = useMemo(
     () => new Set(selectedJudete.map(normalizeJudetName)),
     [selectedJudete]
   );
 
-  // Clienti distincti (nu linii) din judetele selectate, cu venitul lor
-  // realizat insumat - mai util decat o lista lunga de linii individuale.
-  const clientiInSelectie = useMemo(() => {
-    if (selectedJudete.length === 0) return [];
-    const map = new Map<string, { nume: string; realizat: number; estimat: number }>();
+  // Toti clientii (Grup + Client + Judet + Venit) - randul complet, pentru
+  // tabelul de dedesubt. Filtrat de judetele selectate, cand exista o
+  // selectie pe harta.
+  const toateClienti = useMemo(() => {
+    const map = new Map<string, ClientRand>();
     for (const l of filteredLinii) {
-      const judet = l.partner_id ? partnerJudetById.get(l.partner_id) : null;
-      if (!judet || !selectedNormalized.has(normalizeJudetName(judet))) continue;
-      const cur = map.get(l.nume_client) ?? { nume: l.nume_client, realizat: 0, estimat: 0 };
+      const info = l.partner_id ? partnerInfoById.get(l.partner_id) : undefined;
+      const judet = info?.judet ?? "Necunoscut";
+      if (selectedJudete.length > 0 && !selectedNormalized.has(normalizeJudetName(judet))) continue;
+
+      const key = l.partner_id ?? l.nume_client;
+      const cur = map.get(key) ?? {
+        partnerId: key,
+        nume: l.nume_client,
+        grup: info?.nume_grup ?? "—",
+        judet,
+        realizat: 0,
+        estimat: 0,
+      };
       cur.realizat += l.venit_realizat ?? 0;
       cur.estimat += l.venit_estimat;
-      map.set(l.nume_client, cur);
+      map.set(key, cur);
     }
-    return Array.from(map.values()).sort((a, b) => b.realizat - a.realizat);
-  }, [filteredLinii, partnerJudetById, selectedNormalized, selectedJudete]);
+    return Array.from(map.values());
+  }, [filteredLinii, partnerInfoById, selectedNormalized, selectedJudete]);
+
+  const defaultOrdered = useMemo(() => [...toateClienti].sort((a, b) => b.realizat - a.realizat), [toateClienti]);
+  const { sorted: clientiSortati, sortKey, sortDir, requestSort } = useTableSort(defaultOrdered, (c, key) => {
+    switch (key) {
+      case "grup":
+        return c.grup;
+      case "client":
+        return c.nume;
+      case "judet":
+        return c.judet;
+      case "realizat":
+        return c.realizat;
+      case "estimat":
+        return c.estimat;
+      default:
+        return null;
+    }
+  });
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -66,37 +108,36 @@ export function VenituriMapClient({
           <h1 className="text-lg font-heading text-white">Distributie clienti pe harta</h1>
           <p className="text-sm text-slate-500">Venituri, distribuite geografic pe judete, Romania</p>
         </div>
-        <div className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
-          <button
-            onClick={() => setMetric("count")}
-            className={`rounded-md px-3 py-1.5 transition ${metric === "count" ? "bg-white/10 text-white" : "text-slate-500"}`}
-          >
-            Nr. linii
-          </button>
-          <button
-            onClick={() => setMetric("arr")}
-            className={`rounded-md px-3 py-1.5 transition ${metric === "arr" ? "bg-white/10 text-white" : "text-slate-500"}`}
-          >
-            Venit realizat
-          </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cauta client..."
+            className="rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          />
+          <div className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
+            <button
+              onClick={() => setMetric("count")}
+              className={`rounded-md px-3 py-1.5 transition ${metric === "count" ? "bg-white/10 text-white" : "text-slate-500"}`}
+            >
+              Nr. linii
+            </button>
+            <button
+              onClick={() => setMetric("arr")}
+              className={`rounded-md px-3 py-1.5 transition ${metric === "arr" ? "bg-white/10 text-white" : "text-slate-500"}`}
+            >
+              Venit realizat
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="mb-4">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cauta client..."
-          className="w-full max-w-xs rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
           <RomaniaMap
             geoData={geoData}
-            data={data}
+            data={judetData}
             metric={metric}
             selectedJudete={selectedJudete}
             onSelectionChange={setSelectedJudete}
@@ -104,52 +145,73 @@ export function VenituriMapClient({
         </div>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-medium text-white">
-              {selectedJudete.length > 0 ? `Clienti: ${selectedJudete.join(", ")}` : "Top judete"}
-            </p>
-            {selectedJudete.length > 0 && (
+          <p className="mb-3 text-sm font-medium text-white">Top judete</p>
+          <div className="space-y-2">
+            {sortedJudete.slice(0, 12).map((d) => (
               <button
-                onClick={() => setSelectedJudete([])}
-                className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-white"
-                title="Sterge selectia"
+                key={d.judet}
+                onClick={() => setSelectedJudete([d.judet])}
+                className="flex w-full items-center justify-between rounded-md px-1.5 py-1 text-sm transition hover:bg-white/5"
               >
-                <X size={14} />
+                <span className="text-slate-300">{d.judet}</span>
+                <span className="font-mono text-xs text-slate-400">
+                  {metric === "count" ? `${d.count} linii` : formatEur(d.arr)}
+                </span>
               </button>
-            )}
+            ))}
+            {sortedJudete.length === 0 && <p className="text-xs text-slate-500">Niciun venit cu judet completat.</p>}
           </div>
+        </div>
+      </div>
 
-          {selectedJudete.length > 0 ? (
-            <div className="max-h-[360px] space-y-1.5 overflow-y-auto">
-              {clientiInSelectie.map((c) => (
-                <div key={c.nume} className="rounded-lg border border-white/5 bg-white/[0.02] p-2">
-                  <p className="truncate text-sm text-white">{c.nume}</p>
-                  <p className="mt-0.5 font-mono text-[11px] text-slate-400">
-                    {formatEur(c.realizat)} realizat · {formatEur(c.estimat)} estimat
-                  </p>
-                </div>
-              ))}
-              {clientiInSelectie.length === 0 && (
-                <p className="text-xs text-slate-500">Niciun client cu venit in judetele selectate.</p>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {sorted.slice(0, 12).map((d) => (
-                <button
-                  key={d.judet}
-                  onClick={() => setSelectedJudete([d.judet])}
-                  className="flex w-full items-center justify-between rounded-md px-1.5 py-1 text-sm transition hover:bg-white/5"
-                >
-                  <span className="text-slate-300">{d.judet}</span>
-                  <span className="font-mono text-xs text-slate-400">
-                    {metric === "count" ? `${d.count} linii` : formatEur(d.arr)}
-                  </span>
-                </button>
-              ))}
-              {sorted.length === 0 && <p className="text-xs text-slate-500">Niciun venit cu judet completat.</p>}
-            </div>
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-medium text-white">
+            {selectedJudete.length > 0 ? `Clienti in: ${selectedJudete.join(", ")}` : "Toti clientii"}
+            <span className="ml-2 text-xs text-slate-500">({clientiSortati.length})</span>
+          </p>
+          {selectedJudete.length > 0 && (
+            <button
+              onClick={() => setSelectedJudete([])}
+              className="flex items-center gap-1 rounded-md p-1 text-xs text-slate-500 transition hover:bg-white/5 hover:text-white"
+              title="Sterge selectia de judete"
+            >
+              <X size={13} />
+              Sterge filtrul de judet
+            </button>
           )}
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed text-sm">
+            <thead>
+              <tr className="border-b border-white/10 text-left text-[10px] uppercase text-slate-500">
+                <SortableTh label="Grup" sortKey="grup" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={200} />
+                <SortableTh label="Client" sortKey="client" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={260} />
+                <SortableTh label="Judet" sortKey="judet" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={120} />
+                <SortableTh label="Venit ARR (realizat)" sortKey="realizat" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="right" />
+                <SortableTh label="Venit estimat" sortKey="estimat" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="right" />
+              </tr>
+            </thead>
+            <tbody>
+              {clientiSortati.map((c) => (
+                <tr key={c.partnerId} className="border-b border-white/5 hover:bg-white/[0.03]">
+                  <td className="truncate px-3 py-2 text-slate-400">{c.grup}</td>
+                  <td className="truncate px-3 py-2 text-white">{c.nume}</td>
+                  <td className="px-3 py-2 text-slate-400">{c.judet}</td>
+                  <td className="px-3 py-2 text-right font-mono text-white">{formatEur(c.realizat)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-slate-400">{formatEur(c.estimat)}</td>
+                </tr>
+              ))}
+              {clientiSortati.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">
+                    Niciun client pentru filtrul curent.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

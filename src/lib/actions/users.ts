@@ -44,14 +44,15 @@ export async function updateUserAction(
   userId: string,
   fullName: string,
   role: "admin" | "user",
-  moduleAccess: string[]
+  moduleAccess: string[],
+  submoduleAccess: string[] = []
 ): Promise<{ success: boolean; message?: string }> {
   try {
     const supabase = await assertAdmin();
 
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: fullName, role, module_access: moduleAccess })
+      .update({ full_name: fullName, role, module_access: moduleAccess, submodule_access: submoduleAccess })
       .eq("id", userId);
 
     if (error) return { success: false, message: error.message };

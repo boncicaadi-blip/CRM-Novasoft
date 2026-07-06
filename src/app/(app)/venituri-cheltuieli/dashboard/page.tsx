@@ -4,7 +4,7 @@ import { BackButton } from "@/components/BackButton";
 import { VenituriDashboardClient } from "@/components/venituri/dashboard/VenituriDashboardClient";
 
 export default async function VenituriDashboardPage() {
-  await requireModuleAccess("venituri_cheltuieli");
+  await requireModuleAccess("venituri_cheltuieli", "venituri_dashboard");
 
   const [venituriLinii, contracte, partnersGrup] = await Promise.all([
     getVenituriLinii(),

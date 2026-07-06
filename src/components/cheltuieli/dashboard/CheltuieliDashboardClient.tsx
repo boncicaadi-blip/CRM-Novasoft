@@ -64,6 +64,7 @@ export function CheltuieliDashboardClient({
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [showComponenta, setShowComponenta] = useState(false);
 
   const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
 
@@ -171,23 +172,32 @@ export function CheltuieliDashboardClient({
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <PiggyBank size={13} />
             Prognozat (tot ce e in perioada)
             <InfoTooltip title="Prognozat" definition={CHELTUIELI_KPI_DEFINITIONS.prognozat} />
           </p>
           <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.prognozat)}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <TrendingDown size={13} />
             Realizat
             <InfoTooltip title="Realizat" definition={CHELTUIELI_KPI_DEFINITIONS.realizat} />
           </p>
           <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.realizat)}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             Diferenta (pana in luna curenta)
             <InfoTooltip title="Diferenta (YTD)" definition={CHELTUIELI_KPI_DEFINITIONS.diferentaYtd} />
@@ -199,8 +209,11 @@ export function CheltuieliDashboardClient({
           <p className="mt-0.5 text-[10px] text-slate-600">
             Fata de prognozat {formatEur(summary.prognozatPanaAcum)} — nu include lunile viitoare
           </p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <Target size={13} />
             Grad realizare (pana acum)
@@ -208,8 +221,9 @@ export function CheltuieliDashboardClient({
           <p className="font-mono text-2xl font-medium text-white">
             {summary.grt !== null ? `${Math.round(summary.grt)}%` : "—"}
           </p>
-        </div>
+        </button>
       </div>
+      <p className="-mt-2 mb-4 text-[11px] text-slate-600">Click pe orice KPI de mai sus arata din ce e compus.</p>
 
       <VenituriEvolutieChart data={evolutieData} />
 
@@ -242,7 +256,7 @@ export function CheltuieliDashboardClient({
         />
       </div>
 
-      {hasFilter && (
+      {(hasFilter || showComponenta) && (
         <div className="mt-4">
           <CheltuieliComponentaList linii={filtered} />
         </div>

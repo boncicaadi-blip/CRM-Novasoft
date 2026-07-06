@@ -6,7 +6,7 @@ import type { FeatureCollection, Geometry } from "geojson";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function VenituriHartaPage() {
-  await requireModuleAccess("venituri_cheltuieli");
+  await requireModuleAccess("venituri_cheltuieli", "venituri_harta");
 
   const [venituriLinii, partnersGrup, geoJsonRaw] = await Promise.all([
     getVenituriLinii(),

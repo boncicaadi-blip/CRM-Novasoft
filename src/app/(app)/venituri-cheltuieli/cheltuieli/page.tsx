@@ -5,7 +5,9 @@ import { runCheltuieliLiniiSync } from "@/lib/cheltuieli-sync";
 import { CheltuieliClient } from "@/components/cheltuieli/CheltuieliClient";
 
 export default async function CheltuieliPage() {
-  const { supabase, isAdmin } = await requireModuleAccess("venituri_cheltuieli");
+  const { supabase, isAdmin } = await requireModuleAccess("venituri_cheltuieli", "cheltuieli");
+
+  const nomenclatoarePromise = getNomenclatoare();
 
   if (isAdmin) {
     await runCheltuieliLiniiSync(supabase);
@@ -14,7 +16,7 @@ export default async function CheltuieliPage() {
   const [contracte, cheltuieliLinii, nomenclatoare] = await Promise.all([
     getContracteCheltuieli(),
     getCheltuieliLinii(),
-    getNomenclatoare(),
+    nomenclatoarePromise,
   ]);
 
   return (

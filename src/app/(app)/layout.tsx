@@ -23,7 +23,7 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, theme, approved, module_access")
+    .select("full_name, role, theme, approved, module_access, submodule_access")
     .eq("id", data.user.id)
     .single();
 
@@ -53,6 +53,7 @@ export default async function AppLayout({
         userName={profile?.full_name ?? data.user.email ?? "Utilizator"}
         isAdmin={profile?.role === "admin"}
         moduleAccess={profile?.module_access ?? ["crm"]}
+        submoduleAccess={profile?.submodule_access ?? []}
         deployVersion={deployVersion}
       />
       <main className="flex-1 overflow-y-auto pb-14 lg:pb-0">{children}</main>

@@ -172,6 +172,7 @@ export interface Profile {
   theme: "light" | "dark" | "system";
   approved: boolean;
   module_access: string[];
+  submodule_access: string[];
   created_at: string;
 }
 

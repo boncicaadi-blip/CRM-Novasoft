@@ -8,6 +8,7 @@ import { MANAGEMENT_KPI_DEFINITIONS } from "@/lib/management-kpi-definitions";
 import { buildManagementMonthly, computeManagementSummary } from "@/lib/management-analytics";
 import { VenituriEvolutieChart } from "@/components/venituri/dashboard/VenituriEvolutieChart";
 import { ManagementLineChart } from "./ManagementLineChart";
+import { ManagementComponentaList } from "./ManagementComponentaList";
 import type { VenitLinie } from "@/types/venituri";
 import type { CheltuialaLinie } from "@/types/cheltuieli";
 import type { AngajatiLunarRow } from "@/lib/data/angajati";
@@ -38,6 +39,7 @@ export function ManagementDashboardClient({
   const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [showComponenta, setShowComponenta] = useState(false);
 
   const angajatiLookup = useMemo(() => {
     const map = new Map<string, number>();
@@ -149,7 +151,10 @@ export function ManagementDashboardClient({
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <TrendingUp size={13} />
             Venit realizat
@@ -157,8 +162,11 @@ export function ManagementDashboardClient({
           </p>
           <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.venitRealizat)}</p>
           <p className="mt-0.5 text-[10px] text-slate-600">Estimat: {formatEur(summary.venitEstimat)}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <TrendingDown size={13} />
             Cheltuieli realizate
@@ -166,8 +174,11 @@ export function ManagementDashboardClient({
           </p>
           <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.cheltuieliRealizat)}</p>
           <p className="mt-0.5 text-[10px] text-slate-600">Estimat: {formatEur(summary.cheltuieliEstimat)}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <Wallet size={13} />
             Profit NET
@@ -180,8 +191,11 @@ export function ManagementDashboardClient({
             Estimat: {formatEur(summary.profitEstimat)} ({diferentaEstimatVsRealizatProfit >= 0 ? "+" : ""}
             {formatEur(diferentaEstimatVsRealizatProfit)})
           </p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <Target size={13} />
             Profit BRUT
@@ -191,16 +205,37 @@ export function ManagementDashboardClient({
             {formatEur(summary.profitRealizat)}
           </p>
           <p className="mt-0.5 text-[10px] text-slate-600">Identic cu Profit NET (simplificat)</p>
-        </div>
+        </button>
       </div>
+      <p className="-mt-2 mb-4 text-[11px] text-slate-600">Click pe orice KPI de mai sus arata compozitia pe luni.</p>
+      {showComponenta && (
+        <div className="mb-4">
+          <ManagementComponentaList months={monthly} />
+        </div>
+      )}
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <VenituriEvolutieChart title="Evolutie Venit (Estimat vs. Realizat)" data={venitChartData} />
-        <VenituriEvolutieChart title="Evolutie Cheltuieli (Estimat vs. Realizat)" data={cheltuieliChartData} />
+        <VenituriEvolutieChart
+          title="Evolutie Venit (Estimat vs. Realizat)"
+          data={venitChartData}
+          color="#22C55E"
+          gradientId="mgmtVenit"
+        />
+        <VenituriEvolutieChart
+          title="Evolutie Cheltuieli (Estimat vs. Realizat)"
+          data={cheltuieliChartData}
+          color="#F97316"
+          gradientId="mgmtCheltuieli"
+        />
       </div>
 
       <div className="mb-4">
-        <VenituriEvolutieChart title="Evolutie Profit (Estimat vs. Realizat)" data={profitChartData} />
+        <VenituriEvolutieChart
+          title="Evolutie Profit (Estimat vs. Realizat)"
+          data={profitChartData}
+          color="#A855F7"
+          gradientId="mgmtProfit"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

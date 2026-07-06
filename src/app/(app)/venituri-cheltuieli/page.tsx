@@ -5,13 +5,18 @@ import { runVenituriLiniiSync } from "@/lib/venituri-sync";
 import { VenituriCheltuieliClient } from "@/components/venituri/VenituriCheltuieliClient";
 
 export default async function VenituriCheltuieliPage() {
-  const { supabase, isAdmin } = await requireModuleAccess("venituri_cheltuieli");
+  const { supabase, isAdmin } = await requireModuleAccess("venituri_cheltuieli", "venituri");
 
-  // La fiecare vizitare, generam liniile lunare lipsa pentru contractele
-  // active - functie "pura", fara revalidatePath (interzis in timpul
-  // randarii unei pagini). Doar admin poate scrie, dar sincronizarea aici
-  // e sigura de incercat oricum - RLS oricum ar bloca scrierea daca nu are
-  // drept, deci pentru non-admin pur si simplu nu se intampla nimic.
+  // Nomenclatoarele si lista de clienti nu depind de sincronizare - le
+  // pornim imediat, in paralel, in loc sa astepte dupa runVenituriLiniiSync.
+  const clientiPromise = getClientOptions();
+  const nomenclatoarePromise = getNomenclatoare();
+
+  // Contracte/linii TREBUIE sa astepte sincronizarea, ca sa reflecte liniile
+  // proaspat generate - functie "pura", fara revalidatePath (interzis in
+  // timpul randarii unei pagini). Doar admin poate scrie, dar sincronizarea
+  // aici e sigura de incercat oricum - RLS oricum ar bloca scrierea daca nu
+  // are drept, deci pentru non-admin pur si simplu nu se intampla nimic.
   if (isAdmin) {
     await runVenituriLiniiSync(supabase);
   }
@@ -19,8 +24,8 @@ export default async function VenituriCheltuieliPage() {
   const [contracte, venituriLinii, clienti, nomenclatoare] = await Promise.all([
     getContracte(),
     getVenituriLinii(),
-    getClientOptions(),
-    getNomenclatoare(),
+    clientiPromise,
+    nomenclatoarePromise,
   ]);
 
   return (

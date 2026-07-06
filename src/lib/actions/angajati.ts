@@ -41,3 +41,51 @@ export async function upsertAngajatiLunarAction(
   revalidatePath("/management");
   return { success: true };
 }
+
+/** Salveaza dintr-o data numarul de angajati pentru toate lunile unui an -
+ * un singur apel, nu unul per luna (UX si performanta mai buna decat 12
+ * butoane separate de "Salveaza"). */
+export async function upsertAngajatiAnAction(
+  an: number,
+  luni: { luna: number; nrAngajati: number }[]
+): Promise<{ success: boolean; message?: string }> {
+  if (!Number.isInteger(an) || an < 2000 || an > 2100) {
+    return { success: false, message: "Anul nu este valid." };
+  }
+  for (const l of luni) {
+    if (!Number.isInteger(l.luna) || l.luna < 1 || l.luna > 12) {
+      return { success: false, message: `Luna ${l.luna} nu este valida.` };
+    }
+    if (!Number.isInteger(l.nrAngajati) || l.nrAngajati < 0) {
+      return { success: false, message: `Numarul de angajati pentru luna ${l.luna} trebuie sa fie un intreg pozitiv.` };
+    }
+  }
+
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userData?.user?.id ?? "")
+    .single();
+
+  if (profile?.role !== "admin") {
+    return { success: false, message: "Doar administratorii pot modifica numarul de angajati." };
+  }
+
+  const rows = luni.map((l) => ({
+    an,
+    luna: l.luna,
+    nr_angajati: l.nrAngajati,
+    actualizat_la: new Date().toISOString(),
+  }));
+
+  const { error } = await supabase.from("angajati_lunar").upsert(rows, { onConflict: "an,luna" });
+
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/setari/angajati");
+  revalidatePath("/management");
+  return { success: true };
+}

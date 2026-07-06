@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { upsertAngajatiLunarAction } from "@/lib/actions/angajati";
+import { upsertAngajatiAnAction } from "@/lib/actions/angajati";
 import type { AngajatiLunarRow } from "@/lib/data/angajati";
 
 const LUNI = [
@@ -9,56 +9,40 @@ const LUNI = [
   "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie",
 ];
 
-function LunaRow({ an, luna, initial }: { an: number; luna: number; initial: number }) {
-  const [value, setValue] = useState(String(initial));
-  const [isPending, startTransition] = useTransition();
-  const [saved, setSaved] = useState(false);
-
-  function handleSave() {
-    setSaved(false);
-    startTransition(async () => {
-      const result = await upsertAngajatiLunarAction(an, luna, Number(value));
-      if (result.success) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 1500);
-      }
-    });
-  }
-
-  return (
-    <div className="flex items-center gap-2 border-b border-white/5 py-1.5 last:border-0">
-      <span className="w-24 text-sm text-slate-400">{LUNI[luna - 1]}</span>
-      <input
-        type="number"
-        min={0}
-        step="1"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="w-20 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
-      />
-      <button
-        onClick={handleSave}
-        disabled={isPending}
-        className="rounded-md bg-[#E8007A] px-2.5 py-1 text-xs font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
-      >
-        {isPending ? "..." : "Salveaza"}
-      </button>
-      {saved && <span className="text-[11px] text-green-400">Salvat.</span>}
-    </div>
-  );
-}
-
 export function AngajatiForm({ rows }: { rows: AngajatiLunarRow[] }) {
   const anCurent = new Date().getFullYear();
   const [anSelectat, setAnSelectat] = useState(anCurent);
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
 
   const aniDisponibili = Array.from(new Set([...rows.map((r) => r.an), anCurent])).sort((a, b) => b - a);
-  const valueByLuna = new Map(rows.filter((r) => r.an === anSelectat).map((r) => [r.luna, r.nr_angajati]));
+
+  const initialValues = (an: number) => {
+    const map = new Map(rows.filter((r) => r.an === an).map((r) => [r.luna, r.nr_angajati]));
+    return Array.from({ length: 12 }, (_, i) => String(map.get(i + 1) ?? 0));
+  };
+
+  const [values, setValues] = useState<string[]>(() => initialValues(anSelectat));
+
+  function handleAnChange(an: number) {
+    setAnSelectat(an);
+    setValues(initialValues(an));
+    setMessage(null);
+  }
+
+  function handleSaveAll() {
+    setMessage(null);
+    startTransition(async () => {
+      const luni = values.map((v, i) => ({ luna: i + 1, nrAngajati: Number(v) || 0 }));
+      const result = await upsertAngajatiAnAction(anSelectat, luni);
+      setMessage(result.success ? `Salvat, tot anul ${anSelectat}.` : (result.message ?? "Eroare."));
+    });
+  }
 
   const mediePeAn = (() => {
-    const luniCompletate = Array.from(valueByLuna.values());
-    if (luniCompletate.length === 0) return null;
-    return luniCompletate.reduce((s, v) => s + v, 0) / luniCompletate.length;
+    const nums = values.map(Number).filter((v) => v > 0);
+    if (nums.length === 0) return null;
+    return nums.reduce((s, v) => s + v, 0) / nums.length;
   })();
 
   return (
@@ -67,7 +51,7 @@ export function AngajatiForm({ rows }: { rows: AngajatiLunarRow[] }) {
         <label className="text-xs text-slate-500">An:</label>
         <select
           value={anSelectat}
-          onChange={(e) => setAnSelectat(Number(e.target.value))}
+          onChange={(e) => handleAnChange(Number(e.target.value))}
           className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
         >
           {aniDisponibili.map((an) => (
@@ -77,7 +61,7 @@ export function AngajatiForm({ rows }: { rows: AngajatiLunarRow[] }) {
           ))}
         </select>
         <button
-          onClick={() => setAnSelectat((a) => a - 1)}
+          onClick={() => handleAnChange(anSelectat - 1)}
           className="ml-auto rounded-md border border-white/10 px-2 py-1 text-xs text-slate-400 hover:bg-white/5"
         >
           An anterior
@@ -91,10 +75,33 @@ export function AngajatiForm({ rows }: { rows: AngajatiLunarRow[] }) {
       )}
 
       <div>
-        {Array.from({ length: 12 }, (_, i) => i + 1).map((luna) => (
-          <LunaRow key={luna} an={anSelectat} luna={luna} initial={valueByLuna.get(luna) ?? 0} />
+        {LUNI.map((label, i) => (
+          <div key={i} className="flex items-center gap-2 border-b border-white/5 py-1.5 last:border-0">
+            <span className="w-24 text-sm text-slate-400">{label}</span>
+            <input
+              type="number"
+              min={0}
+              step="1"
+              value={values[i]}
+              onChange={(e) => {
+                const next = [...values];
+                next[i] = e.target.value;
+                setValues(next);
+              }}
+              className="w-20 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
+            />
+          </div>
         ))}
       </div>
+
+      <button
+        onClick={handleSaveAll}
+        disabled={isPending}
+        className="mt-4 w-full rounded-md bg-[#E8007A] py-2 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
+      >
+        {isPending ? "Se salveaza..." : `Salveaza tot anul ${anSelectat}`}
+      </button>
+      {message && <p className="mt-2 text-center text-xs text-slate-400">{message}</p>}
 
       <p className="mt-3 text-[11px] text-slate-500">
         Numarul mediu de angajati, per luna, se foloseste pentru productivitate (Venit / Angajat) si

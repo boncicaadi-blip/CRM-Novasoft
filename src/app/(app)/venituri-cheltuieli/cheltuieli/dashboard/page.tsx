@@ -4,7 +4,7 @@ import { BackButton } from "@/components/BackButton";
 import { CheltuieliDashboardClient } from "@/components/cheltuieli/dashboard/CheltuieliDashboardClient";
 
 export default async function CheltuieliDashboardPage() {
-  await requireModuleAccess("venituri_cheltuieli");
+  await requireModuleAccess("venituri_cheltuieli", "cheltuieli_dashboard");
 
   const [cheltuieliLinii, contracte] = await Promise.all([getCheltuieliLinii(), getContracteCheltuieli()]);
 

@@ -73,6 +73,7 @@ export function VenituriDashboardClient({
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [showComponenta, setShowComponenta] = useState(false);
 
   const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
   const grupByPartnerId = useMemo(
@@ -217,23 +218,32 @@ export function VenituriDashboardClient({
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <PiggyBank size={13} />
             Venit estimat (tot ce e in perioada)
             <InfoTooltip title="Venit estimat" definition={VENITURI_KPI_DEFINITIONS.venitEstimat} />
           </p>
           <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.estimat)}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <TrendingUp size={13} />
             Venit realizat
             <InfoTooltip title="Venit realizat" definition={VENITURI_KPI_DEFINITIONS.venitRealizat} />
           </p>
           <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.realizat)}</p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             Diferenta (pana in luna curenta)
             <InfoTooltip title="Diferenta (YTD)" definition={VENITURI_KPI_DEFINITIONS.diferentaYtd} />
@@ -245,8 +255,11 @@ export function VenituriDashboardClient({
           <p className="mt-0.5 text-[10px] text-slate-600">
             Fata de estimat {formatEur(summary.estimatPanaAcum)} — nu include lunile viitoare
           </p>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        </button>
+        <button
+          onClick={() => setShowComponenta((v) => !v)}
+          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+        >
           <p className="flex items-center gap-1.5 text-xs text-slate-500">
             <Target size={13} />
             Grad realizare (pana acum)
@@ -255,8 +268,9 @@ export function VenituriDashboardClient({
           <p className="font-mono text-2xl font-medium text-white">
             {summary.grt !== null ? `${Math.round(summary.grt)}%` : "—"}
           </p>
-        </div>
+        </button>
       </div>
+      <p className="-mt-2 mb-4 text-[11px] text-slate-600">Click pe orice KPI de mai sus arata din ce e compus.</p>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
@@ -302,7 +316,7 @@ export function VenituriDashboardClient({
             definition={VENITURI_KPI_DEFINITIONS.dupaGrup}
           />
 
-          {hasFilter && <VenituriComponentaList linii={filtered} />}
+          {(hasFilter || showComponenta) && <VenituriComponentaList linii={filtered} />}
         </div>
 
         <div className="space-y-4">

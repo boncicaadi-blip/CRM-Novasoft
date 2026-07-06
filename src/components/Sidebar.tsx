@@ -34,6 +34,9 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  /** Cheia de submodul (vezi SUBMODULES din lib/modules) - daca lipseste,
+   * itemul e vizibil doar cu acces la modulul intreg (fara granularitate). */
+  submodule?: string;
 }
 
 interface NavGroup {
@@ -79,11 +82,11 @@ const NAV_GROUPS: NavGroup[] = [
     icon: TrendingUp,
     moduleKey: "venituri_cheltuieli",
     items: [
-      { href: "/venituri-cheltuieli", label: "Venituri", icon: TrendingUp },
-      { href: "/venituri-cheltuieli/dashboard", label: "Dashboard Venituri", icon: FileBarChart },
-      { href: "/venituri-cheltuieli/harta", label: "Harta Venituri", icon: Map },
-      { href: "/venituri-cheltuieli/cheltuieli", label: "Cheltuieli", icon: Wallet },
-      { href: "/venituri-cheltuieli/cheltuieli/dashboard", label: "Dashboard Cheltuieli", icon: FileBarChart },
+      { href: "/venituri-cheltuieli", label: "Venituri", icon: TrendingUp, submodule: "venituri" },
+      { href: "/venituri-cheltuieli/dashboard", label: "Dashboard Venituri", icon: FileBarChart, submodule: "venituri_dashboard" },
+      { href: "/venituri-cheltuieli/harta", label: "Harta Venituri", icon: Map, submodule: "venituri_harta" },
+      { href: "/venituri-cheltuieli/cheltuieli", label: "Cheltuieli", icon: Wallet, submodule: "cheltuieli" },
+      { href: "/venituri-cheltuieli/cheltuieli/dashboard", label: "Dashboard Cheltuieli", icon: FileBarChart, submodule: "cheltuieli_dashboard" },
     ],
   },
   {
@@ -95,9 +98,11 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta. */
+/** Evita ca /dashboard sa apara "activ" si cand suntem pe /dashboard/harta -
+ * la fel pentru /venituri-cheltuieli, care e prefix pentru Dashboard/Harta/
+ * Cheltuieli (toate rute proprii, nu sub-pagini ale Venituri). */
 function isNavItemActive(pathname: string, href: string): boolean {
-  if (href === "/dashboard" || href === "/creante" || href === "/obligatii") {
+  if (href === "/dashboard" || href === "/creante" || href === "/obligatii" || href === "/venituri-cheltuieli") {
     return pathname === href;
   }
   return pathname.startsWith(href);
@@ -111,11 +116,13 @@ export function Sidebar({
   userName,
   isAdmin = false,
   moduleAccess = ["crm"],
+  submoduleAccess = [],
   deployVersion = null,
 }: {
   userName: string;
   isAdmin?: boolean;
   moduleAccess?: string[];
+  submoduleAccess?: string[];
   deployVersion?: string | null;
 }) {
   const pathname = usePathname();
@@ -125,7 +132,17 @@ export function Sidebar({
   const [mobileSheetGroupId, setMobileSheetGroupId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
 
-  const visibleGroups = NAV_GROUPS.filter((g) => isAdmin || moduleAccess.includes(g.moduleKey));
+  function itemVisible(group: NavGroup, item: NavItem): boolean {
+    if (isAdmin || moduleAccess.includes(group.moduleKey)) return true;
+    if (!item.submodule) return false;
+    return submoduleAccess.includes(`${group.moduleKey}.${item.submodule}`);
+  }
+
+  // Un grup e vizibil daca are acces la modulul intreg SAU la macar un
+  // submodul din el (itemii fara acces raman ascunsi individual mai jos).
+  const visibleGroups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => itemVisible(g, i)) })).filter(
+    (g) => isAdmin || moduleAccess.includes(g.moduleKey) || g.items.length > 0
+  );
   const activeGroupId = findActiveGroupId(pathname, visibleGroups) ?? visibleGroups[0]?.id ?? null;
   const [openGroupId, setOpenGroupId] = useState<string | null>(activeGroupId);
   const effectiveOpenGroupId = openGroupId ?? activeGroupId;
@@ -241,7 +258,7 @@ export function Sidebar({
                   className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
                     groupHasActive
                       ? "text-white font-medium"
-                      : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                      : "text-slate-400 hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
                   }`}
                 >
                   <GroupIcon size={17} />
@@ -263,7 +280,7 @@ export function Sidebar({
                           className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition ${
                             isActive
                               ? "bg-white/10 text-white font-medium"
-                              : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                              : "text-slate-400 hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
                           }`}
                         >
                           <Icon size={15} />
@@ -422,7 +439,7 @@ export function Sidebar({
                     className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition ${
                       isActive
                         ? "bg-white/10 text-white font-medium"
-                        : "text-slate-300 hover:bg-white/5"
+                        : "text-slate-300 hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
                     }`}
                   >
                     <Icon size={17} />

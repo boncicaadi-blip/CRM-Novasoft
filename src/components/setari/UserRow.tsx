@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Pencil, Check, X, UserCheck } from "lucide-react";
 import { updateUserAction, approveUserAction } from "@/lib/actions/users";
-import { ALL_MODULES, MODULE_LABELS, type ModuleKey } from "@/lib/modules";
+import { ALL_MODULES, MODULE_LABELS, SUBMODULES, submoduleFullKey, type ModuleKey } from "@/lib/modules";
 import type { Profile } from "@/types/opportunity";
 
 export function UserRow({ user }: { user: Profile }) {
@@ -11,6 +11,7 @@ export function UserRow({ user }: { user: Profile }) {
   const [fullName, setFullName] = useState(user.full_name);
   const [role, setRole] = useState<"admin" | "user">(user.role);
   const [moduleAccess, setModuleAccess] = useState<string[]>(user.module_access ?? ["crm"]);
+  const [submoduleAccess, setSubmoduleAccess] = useState<string[]>(user.submodule_access ?? []);
   const [isPending, startTransition] = useTransition();
   const [isApproving, startApproving] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -21,10 +22,17 @@ export function UserRow({ user }: { user: Profile }) {
     );
   }
 
+  function toggleSubmodule(module: ModuleKey, submodule: string) {
+    const fullKey = submoduleFullKey(module, submodule);
+    setSubmoduleAccess((prev) =>
+      prev.includes(fullKey) ? prev.filter((x) => x !== fullKey) : [...prev, fullKey]
+    );
+  }
+
   function handleSave() {
     setError(null);
     startTransition(async () => {
-      const result = await updateUserAction(user.id, fullName, role, moduleAccess);
+      const result = await updateUserAction(user.id, fullName, role, moduleAccess, submoduleAccess);
       if (result.success) {
         setEditing(false);
       } else {
@@ -43,6 +51,7 @@ export function UserRow({ user }: { user: Profile }) {
     setFullName(user.full_name);
     setRole(user.role);
     setModuleAccess(user.module_access ?? ["crm"]);
+    setSubmoduleAccess(user.submodule_access ?? []);
     setError(null);
     setEditing(false);
   }
@@ -89,6 +98,30 @@ export function UserRow({ user }: { user: Profile }) {
                 ))}
               </div>
             )}
+            {role === "user" &&
+              ALL_MODULES.map((m) => {
+                const submodules = SUBMODULES[m];
+                if (!submodules || moduleAccess.includes(m)) return null;
+                return (
+                  <div key={m} className="flex w-full flex-wrap items-center gap-2 pl-1">
+                    <span className="text-[11px] text-slate-500">Sau doar, din {MODULE_LABELS[m]}:</span>
+                    {submodules.map((s) => (
+                      <label
+                        key={s.key}
+                        className="flex items-center gap-1.5 rounded-md border border-white/10 px-2 py-1 text-xs text-slate-400"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={submoduleAccess.includes(submoduleFullKey(m, s.key))}
+                          onChange={() => toggleSubmodule(m, s.key)}
+                          className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                        />
+                        {s.label}
+                      </label>
+                    ))}
+                  </div>
+                );
+              })}
             {role === "admin" && (
               <span className="text-[11px] text-slate-500">
                 Adminii au acces automat la toate modulele.
@@ -133,8 +166,14 @@ export function UserRow({ user }: { user: Profile }) {
         </span>
         {user.role === "user" && (
           <span className="ml-2 text-[11px] text-slate-500">
-            {(user.module_access ?? []).map((m) => MODULE_LABELS[m as ModuleKey] ?? m).join(", ") ||
-              "fara module"}
+            {[
+              ...(user.module_access ?? []).map((m) => MODULE_LABELS[m as ModuleKey] ?? m),
+              ...(user.submodule_access ?? []).map((s) => {
+                const [mod, sub] = s.split(".");
+                const label = SUBMODULES[mod as ModuleKey]?.find((x) => x.key === sub)?.label ?? s;
+                return `${MODULE_LABELS[mod as ModuleKey] ?? mod} → ${label}`;
+              }),
+            ].join(", ") || "fara module"}
           </span>
         )}
       </td>
