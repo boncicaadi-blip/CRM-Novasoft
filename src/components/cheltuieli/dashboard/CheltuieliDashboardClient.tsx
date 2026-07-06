@@ -17,6 +17,7 @@ import {
 import { VenituriEvolutieChart } from "@/components/venituri/dashboard/VenituriEvolutieChart";
 import { VenituriPieChart } from "@/components/venituri/dashboard/VenituriPieChart";
 import { CheltuieliComponentaList } from "./CheltuieliComponentaList";
+import { TopClasaList } from "./TopClasaList";
 import type { ContractCheltuiala, CheltuialaLinie } from "@/types/cheltuieli";
 
 type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate";
@@ -220,7 +221,7 @@ export function CheltuieliDashboardClient({
           onToggle={(v) => setFilters((f) => ({ ...f, incadrare: toggleIn(f.incadrare, v) }))}
           definition={CHELTUIELI_KPI_DEFINITIONS.dupaIncadrare}
         />
-        <VenituriPieChart
+        <TopClasaList
           title="Dupa Clasa"
           data={clasaData}
           selected={filters.clasa}

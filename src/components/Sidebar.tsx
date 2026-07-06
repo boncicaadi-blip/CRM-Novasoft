@@ -63,7 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: "creante",
-    label: "Creante & Obligatii",
+    label: "Credit Control",
     icon: Wallet,
     moduleKey: "creante_obligatii",
     items: [
@@ -75,7 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     id: "venituri",
-    label: "Venituri & Cheltuieli",
+    label: "Financiar",
     icon: TrendingUp,
     moduleKey: "venituri_cheltuieli",
     items: [
@@ -90,8 +90,8 @@ const NAV_GROUPS: NavGroup[] = [
     id: "management",
     label: "Management",
     icon: LayoutDashboard,
-    moduleKey: "venituri_cheltuieli",
-    items: [{ href: "/management", label: "Management", icon: LayoutDashboard }],
+    moduleKey: "management",
+    items: [{ href: "/management", label: "Rapoarte generale", icon: LayoutDashboard }],
   },
 ];
 

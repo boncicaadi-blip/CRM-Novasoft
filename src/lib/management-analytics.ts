@@ -16,16 +16,17 @@ export function buildManagementMonthly(
   venituriLinii: VenitLinie[],
   cheltuieliLinii: CheltuialaLinie[],
   angajatiLookup: Map<string, number>,
-  luni = 12
+  from: Date,
+  to: Date
 ): ManagementMonthDatum[] {
-  const now = new Date();
   const buckets: ManagementMonthDatum[] = [];
-  for (let i = luni - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const cursor = new Date(from.getFullYear(), from.getMonth(), 1);
+  const end = new Date(to.getFullYear(), to.getMonth(), 1);
+  while (cursor <= end) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`;
     buckets.push({
       luna: key,
-      label: d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" }),
+      label: cursor.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" }),
       venitEstimat: 0,
       venitRealizat: 0,
       venitRecurentRealizat: 0,
@@ -33,6 +34,7 @@ export function buildManagementMonthly(
       cheltuieliRealizat: 0,
       nrAngajati: angajatiLookup.get(key) ?? null,
     });
+    cursor.setMonth(cursor.getMonth() + 1);
   }
   const byKey = new Map(buckets.map((b) => [b.luna, b]));
 

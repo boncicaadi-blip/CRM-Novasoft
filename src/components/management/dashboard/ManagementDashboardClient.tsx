@@ -12,6 +12,20 @@ import type { VenitLinie } from "@/types/venituri";
 import type { CheltuialaLinie } from "@/types/cheltuieli";
 import type { AngajatiLunarRow } from "@/lib/data/angajati";
 
+type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
+
+const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
+  { value: "luna_curenta", label: "Luna curenta" },
+  { value: "ultimele_3_luni", label: "Ultimele 3 luni" },
+  { value: "anul_curent", label: "Anul curent" },
+  { value: "toate", label: "Tot istoricul" },
+  { value: "custom", label: "Perioada personalizata" },
+];
+
+function firstOfMonth(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
 export function ManagementDashboardClient({
   venituriLinii,
   cheltuieliLinii,
@@ -21,7 +35,9 @@ export function ManagementDashboardClient({
   cheltuieliLinii: CheltuialaLinie[];
   angajati: AngajatiLunarRow[];
 }) {
-  const [luni, setLuni] = useState(12);
+  const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
 
   const angajatiLookup = useMemo(() => {
     const map = new Map<string, number>();
@@ -29,9 +45,33 @@ export function ManagementDashboardClient({
     return map;
   }, [angajati]);
 
+  const { from, to } = useMemo(() => {
+    const now = new Date();
+    if (period === "luna_curenta") {
+      const start = firstOfMonth(now);
+      return { from: start, to: start };
+    }
+    if (period === "ultimele_3_luni") {
+      return { from: new Date(now.getFullYear(), now.getMonth() - 2, 1), to: firstOfMonth(now) };
+    }
+    if (period === "anul_curent") {
+      return { from: new Date(now.getFullYear(), 0, 1), to: new Date(now.getFullYear(), 11, 1) };
+    }
+    if (period === "custom" && customFrom && customTo) {
+      return { from: firstOfMonth(new Date(customFrom)), to: firstOfMonth(new Date(customTo)) };
+    }
+    // "toate" (sau custom incomplet) - de la prima luna cu date, pana la ultima.
+    const toateLunile = [
+      ...venituriLinii.map((l) => l.luna),
+      ...cheltuieliLinii.map((l) => l.luna),
+    ].sort();
+    if (toateLunile.length === 0) return { from: firstOfMonth(now), to: firstOfMonth(now) };
+    return { from: firstOfMonth(new Date(toateLunile[0])), to: firstOfMonth(new Date(toateLunile[toateLunile.length - 1])) };
+  }, [period, customFrom, customTo, venituriLinii, cheltuieliLinii]);
+
   const monthly = useMemo(
-    () => buildManagementMonthly(venituriLinii, cheltuieliLinii, angajatiLookup, luni),
-    [venituriLinii, cheltuieliLinii, angajatiLookup, luni]
+    () => buildManagementMonthly(venituriLinii, cheltuieliLinii, angajatiLookup, from, to),
+    [venituriLinii, cheltuieliLinii, angajatiLookup, from, to]
   );
 
   const summary = useMemo(() => computeManagementSummary(monthly), [monthly]);
@@ -76,15 +116,36 @@ export function ManagementDashboardClient({
           <h1 className="text-lg font-heading text-white">Management — P&amp;L simplificat</h1>
           <p className="text-sm text-slate-500">Venituri, cheltuieli, profit si productivitate, combinate.</p>
         </div>
-        <select
-          value={luni}
-          onChange={(e) => setLuni(Number(e.target.value))}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
-        >
-          <option value={6} style={{ backgroundColor: "#111535" }}>Ultimele 6 luni</option>
-          <option value={12} style={{ backgroundColor: "#111535" }}>Ultimele 12 luni</option>
-          <option value={24} style={{ backgroundColor: "#111535" }}>Ultimele 24 luni</option>
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          >
+            {PERIOD_OPTIONS.map((p) => (
+              <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          {period === "custom" && (
+            <>
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              />
+              <span className="text-xs text-slate-500">-</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              />
+            </>
+          )}
+        </div>
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -134,12 +195,12 @@ export function ManagementDashboardClient({
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <VenituriEvolutieChart data={venitChartData} />
-        <VenituriEvolutieChart data={cheltuieliChartData} />
+        <VenituriEvolutieChart title="Evolutie Venit (Estimat vs. Realizat)" data={venitChartData} />
+        <VenituriEvolutieChart title="Evolutie Cheltuieli (Estimat vs. Realizat)" data={cheltuieliChartData} />
       </div>
 
       <div className="mb-4">
-        <VenituriEvolutieChart data={profitChartData} />
+        <VenituriEvolutieChart title="Evolutie Profit (Estimat vs. Realizat)" data={profitChartData} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
