@@ -21,9 +21,39 @@ type SortKey =
   | "data_actiune"
   | "score";
 
+const COLUMN_KEYS = [
+  "firma", "codFiscal", "domeniu", "stage", "status", "risc", "scor", "substatus",
+  "responsabil", "judet", "tipProiect", "actiune", "dataActiune", "canalIntrare",
+  "mrr", "arr", "forecast", "actualizat",
+] as const;
+
+const DEFAULT_WIDTHS: Record<string, number> = {
+  firma: 200, codFiscal: 110, domeniu: 140, stage: 120, status: 110, risc: 130, scor: 70,
+  substatus: 120, responsabil: 120, judet: 100, tipProiect: 110, actiune: 130,
+  dataActiune: 110, canalIntrare: 120, mrr: 100, arr: 100, forecast: 110, actualizat: 100,
+};
+
 export function PipelineTable({ opportunities }: { opportunities: Opportunity[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("updated_at");
   const [sortDir, setSortDir] = useState<1 | -1>(-1);
+  const [colWidths, setColWidths] = useState<Record<string, number>>(DEFAULT_WIDTHS);
+
+  function startResize(key: string, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startWidth = colWidths[key] ?? 120;
+    function onMove(ev: MouseEvent) {
+      const newWidth = Math.max(60, startWidth + (ev.clientX - startX));
+      setColWidths((prev) => ({ ...prev, [key]: newWidth }));
+    }
+    function onUp() {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
 
   const sorted = useMemo(() => {
     return [...opportunities].sort((a, b) => {
@@ -63,31 +93,39 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
   return (
     <div className="flex h-full flex-col px-3 py-4 sm:px-6">
       <div className="flex-1 overflow-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm">
+        <table className="w-full table-fixed text-sm">
+          <colgroup>
+            {COLUMN_KEYS.map((key) => (
+              <col key={key} style={{ width: colWidths[key] }} />
+            ))}
+          </colgroup>
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-white/10 bg-[#111535] text-left text-xs text-slate-500">
-              <Th label="Firma" onClick={() => toggleSort("nume_potential")} sticky />
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Cod fiscal</th>
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Domeniu</th>
-              <Th label="Stage" onClick={() => toggleSort("stage")} />
-              <Th label="Status" onClick={() => toggleSort("status")} />
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Risc</th>
-              <Th label="Scor" onClick={() => toggleSort("score")} />
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Substatus</th>
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Responsabil</th>
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Judet</th>
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Tip proiect</th>
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Actiune</th>
-              <Th label="Data actiune" onClick={() => toggleSort("data_actiune")} />
-              <th className="whitespace-nowrap px-3 py-2.5 font-medium">Canal intrare</th>
-              <Th label="MRR" onClick={() => toggleSort("mrr_synergo")} align="right" />
-              <Th label="ARR" onClick={() => toggleSort("arr_synergo")} align="right" />
+              <Th label="Firma" onClick={() => toggleSort("nume_potential")} sticky colKey="firma" width={colWidths.firma} onResize={startResize} />
+              <Th label="Cod fiscal" colKey="codFiscal" width={colWidths.codFiscal} onResize={startResize} />
+              <Th label="Domeniu" colKey="domeniu" width={colWidths.domeniu} onResize={startResize} />
+              <Th label="Stage" onClick={() => toggleSort("stage")} colKey="stage" width={colWidths.stage} onResize={startResize} />
+              <Th label="Status" onClick={() => toggleSort("status")} colKey="status" width={colWidths.status} onResize={startResize} />
+              <Th label="Risc" colKey="risc" width={colWidths.risc} onResize={startResize} />
+              <Th label="Scor" onClick={() => toggleSort("score")} colKey="scor" width={colWidths.scor} onResize={startResize} />
+              <Th label="Substatus" colKey="substatus" width={colWidths.substatus} onResize={startResize} />
+              <Th label="Responsabil" colKey="responsabil" width={colWidths.responsabil} onResize={startResize} />
+              <Th label="Judet" colKey="judet" width={colWidths.judet} onResize={startResize} />
+              <Th label="Tip proiect" colKey="tipProiect" width={colWidths.tipProiect} onResize={startResize} />
+              <Th label="Actiune" colKey="actiune" width={colWidths.actiune} onResize={startResize} />
+              <Th label="Data actiune" onClick={() => toggleSort("data_actiune")} colKey="dataActiune" width={colWidths.dataActiune} onResize={startResize} />
+              <Th label="Canal intrare" colKey="canalIntrare" width={colWidths.canalIntrare} onResize={startResize} />
+              <Th label="MRR" onClick={() => toggleSort("mrr_synergo")} align="right" colKey="mrr" width={colWidths.mrr} onResize={startResize} />
+              <Th label="ARR" onClick={() => toggleSort("arr_synergo")} align="right" colKey="arr" width={colWidths.arr} onResize={startResize} />
               <Th
                 label="Forecast"
                 onClick={() => toggleSort("forecast_total_saas")}
                 align="right"
+                colKey="forecast"
+                width={colWidths.forecast}
+                onResize={startResize}
               />
-              <Th label="Actualizat" onClick={() => toggleSort("updated_at")} align="right" />
+              <Th label="Actualizat" onClick={() => toggleSort("updated_at")} align="right" colKey="actualizat" width={colWidths.actualizat} onResize={startResize} />
             </tr>
           </thead>
           <tbody>
@@ -207,20 +245,33 @@ function Th({
   onClick,
   align = "left",
   sticky = false,
+  colKey,
+  width,
+  onResize,
 }: {
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
   align?: "left" | "right";
   sticky?: boolean;
+  colKey?: string;
+  width?: number;
+  onResize?: (key: string, e: React.MouseEvent) => void;
 }) {
   return (
     <th
       onClick={onClick}
-      className={`cursor-pointer whitespace-nowrap px-3 py-2.5 font-medium transition hover:text-slate-300 ${
-        align === "right" ? "text-right" : "text-left"
-      } ${sticky ? "sticky left-0 z-10 bg-[#111535]" : ""}`}
+      style={width ? { width, minWidth: width, maxWidth: width } : undefined}
+      className={`relative select-none whitespace-nowrap px-3 py-2.5 font-medium transition ${
+        onClick ? "cursor-pointer hover:text-slate-300" : ""
+      } ${align === "right" ? "text-right" : "text-left"} ${sticky ? "sticky left-0 z-10 bg-[#111535]" : ""}`}
     >
       {label}
+      {colKey && onResize && (
+        <div
+          onMouseDown={(e) => onResize(colKey, e)}
+          className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-[#E8007A]/50"
+        />
+      )}
     </th>
   );
 }

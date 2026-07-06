@@ -924,28 +924,54 @@ function ContracteTable({
   }
 
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(contracte.length / pageSize));
+  const { sorted, sortKey, sortDir, requestSort } = useTableSort(contracte, (c, key) => {
+    switch (key) {
+      case "client":
+        return c.nume_client;
+      case "tip":
+        return c.tip_venit;
+      case "produs":
+        return c.produs ?? "";
+      case "serviciu":
+        return c.serviciu ?? "";
+      case "modalitate":
+        return c.modalitate_facturare ?? "";
+      case "valoare":
+        return c.valoare_lunara;
+      case "inceput":
+        return c.data_inceput;
+      case "sfarsit":
+        return c.data_sfarsit ?? "";
+      case "stadiu":
+        return c.stadiu_contract ?? "";
+      case "status":
+        return c.status_contract;
+      default:
+        return null;
+    }
+  });
   const pagedRows = useMemo(() => {
-    if (pageSize === "toate") return contracte;
+    if (pageSize === "toate") return sorted;
     const start = (page - 1) * pageSize;
-    return contracte.slice(start, start + pageSize);
-  }, [contracte, page, pageSize]);
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, page, pageSize]);
 
   return (
     <div>
     <div className="overflow-x-auto rounded-xl border border-white/10">
-      <table className="w-full text-sm">
+      <table className="w-full table-fixed text-sm">
         <thead>
           <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
-            <th className="px-3 py-2">Client</th>
-            <th className="px-3 py-2">Tip venit</th>
-            <th className="px-3 py-2">Produs</th>
-            <th className="px-3 py-2">Serviciu</th>
-            <th className="px-3 py-2">Modalitate</th>
-            <th className="px-3 py-2 text-right">Valoare</th>
-            <th className="px-3 py-2">Inceput</th>
-            <th className="px-3 py-2">Sfarsit</th>
-            <th className="px-3 py-2">Stadiu</th>
-            <th className="px-3 py-2">Status</th>
+            <SortableTh label="Client" sortKey="client" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
+            <SortableTh label="Tip venit" sortKey="tip" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
+            <SortableTh label="Produs" sortKey="produs" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
+            <SortableTh label="Serviciu" sortKey="serviciu" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
+            <SortableTh label="Modalitate" sortKey="modalitate" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
+            <SortableTh label="Valoare" sortKey="valoare" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="right" />
+            <SortableTh label="Inceput" sortKey="inceput" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
+            <SortableTh label="Sfarsit" sortKey="sfarsit" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
+            <SortableTh label="Stadiu" sortKey="stadiu" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
+            <SortableTh label="Status" sortKey="status" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
             <th className="px-3 py-2"></th>
           </tr>
         </thead>

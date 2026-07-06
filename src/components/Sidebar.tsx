@@ -81,6 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/venituri-cheltuieli", label: "Venituri", icon: TrendingUp },
       { href: "/venituri-cheltuieli/dashboard", label: "Dashboard Venituri", icon: FileBarChart },
+      { href: "/venituri-cheltuieli/harta", label: "Harta Venituri", icon: Map },
       { href: "/venituri-cheltuieli/cheltuieli", label: "Cheltuieli", icon: Wallet },
       { href: "/venituri-cheltuieli/cheltuieli/dashboard", label: "Dashboard Cheltuieli", icon: FileBarChart },
     ],

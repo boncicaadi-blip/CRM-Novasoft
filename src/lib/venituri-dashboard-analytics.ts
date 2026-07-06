@@ -91,3 +91,29 @@ export function buildEvolutieLunara(linii: VenitLinie[], luni = 15): LunaDatum[]
   }
   return buckets;
 }
+
+export interface JudetVenitDatum {
+  judet: string;
+  count: number;
+  arr: number;
+  forecast: number;
+}
+
+/** Grupare pe judet, in formatul asteptat de RomaniaMap (acelasi shape ca la
+ * Pipeline - "arr" = venit realizat, "forecast" = venit estimat, refolosite
+ * ca nume de camp pentru compatibilitate directa cu harta existenta). */
+export function groupByJudetVenituri(
+  linii: VenitLinie[],
+  partnerJudetById: Map<string, string | null>
+): JudetVenitDatum[] {
+  const map = new Map<string, JudetVenitDatum>();
+  for (const l of linii) {
+    const judet = (l.partner_id ? partnerJudetById.get(l.partner_id) : null) ?? "Necunoscut";
+    const entry = map.get(judet) ?? { judet, count: 0, arr: 0, forecast: 0 };
+    entry.count += 1;
+    entry.arr += l.venit_realizat ?? 0;
+    entry.forecast += l.venit_estimat;
+    map.set(judet, entry);
+  }
+  return Array.from(map.values());
+}

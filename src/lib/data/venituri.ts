@@ -90,14 +90,16 @@ export async function getVenituriLinii(): Promise<VenitLinie[]> {
 export interface PartnerGrupInfo {
   id: string;
   nume_grup: string | null;
+  judet: string | null;
 }
 
-/** Lookup partener -> grup, pentru TOTI partenerii (nu doar cei facturabili) -
- * liniile de venit pot referi si parteneri istorici, deveniti between timp
- * nefacturabili. Folosit pe Dashboard Venituri pentru analiza pe grup. */
+/** Lookup partener -> grup + judet, pentru TOTI partenerii (nu doar cei
+ * facturabili) - liniile de venit pot referi si parteneri istorici, deveniti
+ * between timp nefacturabili. Folosit pe Dashboard Venituri (grup) si pe
+ * Harta Venituri (judet). */
 export async function getPartnersGrupLookup(): Promise<PartnerGrupInfo[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("partners").select("id, nume_grup");
+  const { data, error } = await supabase.from("partners").select("id, nume_grup, judet");
 
   if (error) {
     console.error("getPartnersGrupLookup error:", error.message);
