@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Wallet, AlertTriangle, Target, TrendingDown } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MultiSelect } from "@/components/ui/MultiSelect";
+import { ExpandableChart } from "@/components/ui/ExpandableChart";
+import { AiInsightCard } from "@/components/ui/AiInsightCard";
+import { generateObligatiiInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { ObligatieDetailModal } from "@/components/obligatii/ObligatieDetailModal";
 import { ObligatiiStatusChart } from "./ObligatiiStatusChart";
 import { ObligatiiTipAchizitieChart } from "./ObligatiiTipAchizitieChart";
@@ -247,48 +250,69 @@ export function ObligatiiDashboardClient({
       </div>
 
       <div className="mb-4">
-        <ObligatiiGrtCard
-          monthKey={currentMonthKey}
-          target={currentMonthGrt?.target ?? targets[currentMonthKey] ?? 0}
-          realizat={currentMonthGrt?.realizat ?? 0}
-        />
+        <ExpandableChart>
+          <ObligatiiGrtCard
+            monthKey={currentMonthKey}
+            target={currentMonthGrt?.target ?? targets[currentMonthKey] ?? 0}
+            realizat={currentMonthGrt?.realizat ?? 0}
+          />
+        </ExpandableChart>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <ObligatiiStatusChart
-              data={statusData}
-              selected={filters.status}
-              onToggle={(status) => setFilters((f) => ({ ...f, status: toggleIn(f.status, status) }))}
-            />
-            <ObligatiiTipAchizitieChart
-              data={tipAchizitieData}
-              selected={filters.tipAchizitie}
-              onToggle={(tip) => setFilters((f) => ({ ...f, tipAchizitie: toggleIn(f.tipAchizitie, tip) }))}
-            />
+            <ExpandableChart>
+              <ObligatiiStatusChart
+                data={statusData}
+                selected={filters.status}
+                onToggle={(status) => setFilters((f) => ({ ...f, status: toggleIn(f.status, status) }))}
+              />
+            </ExpandableChart>
+            <ExpandableChart>
+              <ObligatiiTipAchizitieChart
+                data={tipAchizitieData}
+                selected={filters.tipAchizitie}
+                onToggle={(tip) => setFilters((f) => ({ ...f, tipAchizitie: toggleIn(f.tipAchizitie, tip) }))}
+              />
+            </ExpandableChart>
           </div>
 
-          <ObligatiiAgingChart
-            data={agingData}
-            selected={filters.aging}
-            onToggle={(bucket) => setFilters((f) => ({ ...f, aging: toggleIn(f.aging, bucket) }))}
-          />
+          <ExpandableChart>
+            <ObligatiiAgingChart
+              data={agingData}
+              selected={filters.aging}
+              onToggle={(bucket) => setFilters((f) => ({ ...f, aging: toggleIn(f.aging, bucket) }))}
+            />
+          </ExpandableChart>
 
-          <ObligatiiGrtChart data={grtSeries} />
+          <ExpandableChart>
+            <ObligatiiGrtChart data={grtSeries} />
+          </ExpandableChart>
 
-          <ObligatiiDinamicaChart data={dinamicaData} />
+          <ExpandableChart>
+            <ObligatiiDinamicaChart data={dinamicaData} />
+          </ExpandableChart>
 
-          <ObligatiiPlatiTimeSeriesChart data={platiSeries} />
+          <ExpandableChart>
+            <ObligatiiPlatiTimeSeriesChart data={platiSeries} />
+          </ExpandableChart>
         </div>
 
         <div className="space-y-4">
-          <ObligatiiRiscZone facturi={riscData} onSelect={setSelected} />
-          <ObligatiiTopFurnizoriChart
-            data={furnizorData}
-            selected={filters.furnizor}
-            onToggle={(furnizor) => setFilters((f) => ({ ...f, furnizor: toggleIn(f.furnizor, furnizor) }))}
+          <AiInsightCard
+            title="Interpretare AI (Claude)"
+            generateAction={generateObligatiiInsightAction}
+            historyAction={() => getAiInsightHistoryAction("obligatii_insight")}
           />
+          <ObligatiiRiscZone facturi={riscData} onSelect={setSelected} />
+          <ExpandableChart>
+            <ObligatiiTopFurnizoriChart
+              data={furnizorData}
+              selected={filters.furnizor}
+              onToggle={(furnizor) => setFilters((f) => ({ ...f, furnizor: toggleIn(f.furnizor, furnizor) }))}
+            />
+          </ExpandableChart>
           {hasFilter && <ObligatiiComponentaList facturi={filtered} onSelect={setSelected} />}
         </div>
       </div>

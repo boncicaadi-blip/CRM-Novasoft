@@ -5,6 +5,9 @@ import Link from "next/link";
 import { TrendingDown, Target, PiggyBank } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { ExpandableChart } from "@/components/ui/ExpandableChart";
+import { AiInsightCard } from "@/components/ui/AiInsightCard";
+import { generateCheltuieliInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { MultiSelect } from "@/components/ui/MultiSelect";
 import { CHELTUIELI_KPI_DEFINITIONS } from "@/lib/cheltuieli-kpi-definitions";
 import {
@@ -225,35 +228,53 @@ export function CheltuieliDashboardClient({
       </div>
       <p className="-mt-2 mb-4 text-[11px] text-slate-600">Click pe orice KPI de mai sus arata din ce e compus.</p>
 
-      <VenituriEvolutieChart data={evolutieData} />
+      <div className="mb-4">
+        <AiInsightCard
+          title="Interpretare AI (Claude)"
+          generateAction={generateCheltuieliInsightAction}
+          historyAction={() => getAiInsightHistoryAction("cheltuieli_insight")}
+        />
+      </div>
+
+      <ExpandableChart>
+        <VenituriEvolutieChart data={evolutieData} />
+      </ExpandableChart>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <VenituriPieChart
-          title="Dupa Incadrare"
-          data={incadrareData}
-          selected={filters.incadrare}
-          onToggle={(v) => setFilters((f) => ({ ...f, incadrare: toggleIn(f.incadrare, v) }))}
-          definition={CHELTUIELI_KPI_DEFINITIONS.dupaIncadrare}
-        />
-        <TopClasaList
-          title="Dupa Clasa"
-          data={clasaData}
-          selected={filters.clasa}
-          onToggle={(v) => setFilters((f) => ({ ...f, clasa: toggleIn(f.clasa, v) }))}
-          definition={CHELTUIELI_KPI_DEFINITIONS.dupaClasa}
-        />
-        <VenituriPieChart
-          title="Recurenta vs. Nerecurenta"
-          data={frecventaData}
-          selected={filters.frecventa}
-          onToggle={(v) => setFilters((f) => ({ ...f, frecventa: toggleIn(f.frecventa, v) }))}
-          definition={CHELTUIELI_KPI_DEFINITIONS.fixeVsVariabile}
-        />
-        <VenituriPieChart
-          title="Dupa Status Contract"
-          data={statusData.map((s) => ({ cheie: s.status, count: s.count, estimat: s.valoare, realizat: s.valoare }))}
-          definition={CHELTUIELI_KPI_DEFINITIONS.dupaStatusContract}
-        />
+        <ExpandableChart>
+          <VenituriPieChart
+            title="Dupa Incadrare"
+            data={incadrareData}
+            selected={filters.incadrare}
+            onToggle={(v) => setFilters((f) => ({ ...f, incadrare: toggleIn(f.incadrare, v) }))}
+            definition={CHELTUIELI_KPI_DEFINITIONS.dupaIncadrare}
+          />
+        </ExpandableChart>
+        <ExpandableChart>
+          <TopClasaList
+            title="Dupa Clasa"
+            data={clasaData}
+            selected={filters.clasa}
+            onToggle={(v) => setFilters((f) => ({ ...f, clasa: toggleIn(f.clasa, v) }))}
+            definition={CHELTUIELI_KPI_DEFINITIONS.dupaClasa}
+          />
+        </ExpandableChart>
+        <ExpandableChart>
+          <VenituriPieChart
+            title="Recurenta vs. Nerecurenta"
+            data={frecventaData}
+            selected={filters.frecventa}
+            onToggle={(v) => setFilters((f) => ({ ...f, frecventa: toggleIn(f.frecventa, v) }))}
+            definition={CHELTUIELI_KPI_DEFINITIONS.fixeVsVariabile}
+          />
+        </ExpandableChart>
+        <ExpandableChart>
+          <VenituriPieChart
+            title="Dupa Status Contract"
+            data={statusData.map((s) => ({ cheie: s.status, count: s.count, estimat: s.valoare, realizat: s.valoare }))}
+            definition={CHELTUIELI_KPI_DEFINITIONS.dupaStatusContract}
+          />
+        </ExpandableChart>
       </div>
 
       {(hasFilter || showComponenta) && (

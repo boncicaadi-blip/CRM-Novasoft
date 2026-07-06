@@ -5,6 +5,7 @@ import Link from "next/link";
 import { TrendingUp, Target, PiggyBank } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { ExpandableChart } from "@/components/ui/ExpandableChart";
 import { MultiSelect } from "@/components/ui/MultiSelect";
 import { VENITURI_KPI_DEFINITIONS } from "@/lib/venituri-kpi-definitions";
 import {
@@ -274,47 +275,59 @@ export function VenituriDashboardClient({
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <VenituriEvolutieChart data={evolutieData} />
+          <ExpandableChart>
+            <VenituriEvolutieChart data={evolutieData} />
+          </ExpandableChart>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <VenituriTopClientiChart
-              title="Dupa Produs"
-              data={produsData}
-              selected={filters.produs}
-              onToggle={(v) => setFilters((f) => ({ ...f, produs: toggleIn(f.produs, v) }))}
-              definition={VENITURI_KPI_DEFINITIONS.dupaProdus}
-            />
-            <VenituriTopClientiChart
-              title="Dupa Serviciu"
-              data={serviciuData}
-              selected={filters.serviciu}
-              onToggle={(v) => setFilters((f) => ({ ...f, serviciu: toggleIn(f.serviciu, v) }))}
-              definition={VENITURI_KPI_DEFINITIONS.dupaServiciu}
-            />
+            <ExpandableChart>
+              <VenituriTopClientiChart
+                title="Dupa Produs"
+                data={produsData}
+                selected={filters.produs}
+                onToggle={(v) => setFilters((f) => ({ ...f, produs: toggleIn(f.produs, v) }))}
+                definition={VENITURI_KPI_DEFINITIONS.dupaProdus}
+              />
+            </ExpandableChart>
+            <ExpandableChart>
+              <VenituriTopClientiChart
+                title="Dupa Serviciu"
+                data={serviciuData}
+                selected={filters.serviciu}
+                onToggle={(v) => setFilters((f) => ({ ...f, serviciu: toggleIn(f.serviciu, v) }))}
+                definition={VENITURI_KPI_DEFINITIONS.dupaServiciu}
+              />
+            </ExpandableChart>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <VenituriPieChart
-              title="Recurent vs. Nerecurent"
-              data={tipVenitData}
-              selected={filters.tipVenit}
-              onToggle={(v) => setFilters((f) => ({ ...f, tipVenit: toggleIn(f.tipVenit, v) }))}
-              definition={VENITURI_KPI_DEFINITIONS.recurentVsNerecurent}
-            />
-            <VenituriPieChart
-              title="Dupa Status Contract"
-              data={statusData.map((s) => ({ cheie: s.status, count: s.count, estimat: s.valoare, realizat: s.valoare }))}
-              definition={VENITURI_KPI_DEFINITIONS.dupaStatusContract}
-            />
+            <ExpandableChart>
+              <VenituriPieChart
+                title="Recurent vs. Nerecurent"
+                data={tipVenitData}
+                selected={filters.tipVenit}
+                onToggle={(v) => setFilters((f) => ({ ...f, tipVenit: toggleIn(f.tipVenit, v) }))}
+                definition={VENITURI_KPI_DEFINITIONS.recurentVsNerecurent}
+              />
+            </ExpandableChart>
+            <ExpandableChart>
+              <VenituriPieChart
+                title="Dupa Status Contract"
+                data={statusData.map((s) => ({ cheie: s.status, count: s.count, estimat: s.valoare, realizat: s.valoare }))}
+                definition={VENITURI_KPI_DEFINITIONS.dupaStatusContract}
+              />
+            </ExpandableChart>
           </div>
 
-          <VenituriTopClientiChart
-            title="Dupa Grup"
-            data={grupData}
-            selected={filters.grup}
-            onToggle={(v) => setFilters((f) => ({ ...f, grup: toggleIn(f.grup, v) }))}
-            definition={VENITURI_KPI_DEFINITIONS.dupaGrup}
-          />
+          <ExpandableChart>
+            <VenituriTopClientiChart
+              title="Dupa Grup"
+              data={grupData}
+              selected={filters.grup}
+              onToggle={(v) => setFilters((f) => ({ ...f, grup: toggleIn(f.grup, v) }))}
+              definition={VENITURI_KPI_DEFINITIONS.dupaGrup}
+            />
+          </ExpandableChart>
 
           {(hasFilter || showComponenta) && <VenituriComponentaList linii={filtered} />}
         </div>
@@ -325,13 +338,15 @@ export function VenituriDashboardClient({
             generateAction={generateVenituriInsightAction}
             historyAction={() => getAiInsightHistoryAction("venituri_insight")}
           />
-          <VenituriTopClientiChart
-            title="Top clienti dupa venit realizat"
-            data={topClientiData}
-            selected={filters.client}
-            onToggle={(v) => setFilters((f) => ({ ...f, client: toggleIn(f.client, v) }))}
-            definition={VENITURI_KPI_DEFINITIONS.topClienti}
-          />
+          <ExpandableChart>
+            <VenituriTopClientiChart
+              title="Top clienti dupa venit realizat"
+              data={topClientiData}
+              selected={filters.client}
+              onToggle={(v) => setFilters((f) => ({ ...f, client: toggleIn(f.client, v) }))}
+              definition={VENITURI_KPI_DEFINITIONS.topClienti}
+            />
+          </ExpandableChart>
         </div>
       </div>
     </div>

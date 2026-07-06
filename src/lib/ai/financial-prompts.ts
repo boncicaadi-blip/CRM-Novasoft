@@ -26,6 +26,33 @@ export function buildCreanteInsightPrompt(sumar: string): string {
   return `Sumarul situatiei de Creante, la data curenta:\n\n${sumar}`;
 }
 
+export function buildObligatiiInsightSystemPrompt(): string {
+  return `Esti un asistent financiar intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar al situatiei de Obligatii (bani de platit catre furnizori) si trebuie sa produci o interpretare utila pentru administrator.
+${REGULI_COMUNE}`;
+}
+
+export function buildObligatiiInsightPrompt(sumar: string): string {
+  return `Sumarul situatiei de Obligatii, la data curenta:\n\n${sumar}`;
+}
+
+export function buildCheltuieliInsightSystemPrompt(): string {
+  return `Esti un asistent financiar intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar al situatiei de Cheltuieli (costuri operationale, prognozat vs. realizat) si trebuie sa produci o interpretare utila pentru administrator.
+${REGULI_COMUNE}`;
+}
+
+export function buildCheltuieliInsightPrompt(sumar: string): string {
+  return `Sumarul situatiei de Cheltuieli, la data curenta:\n\n${sumar}`;
+}
+
+export function buildManagementInsightSystemPrompt(): string {
+  return `Esti un asistent financiar intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar combinat de Venituri, Cheltuieli, Profit si productivitate (P&L simplificat) si trebuie sa produci o interpretare utila pentru administrator, la nivel de business, nu doar per modul.
+${REGULI_COMUNE}`;
+}
+
+export function buildManagementInsightPrompt(sumar: string): string {
+  return `Sumarul de Management (P&L simplificat), la data curenta:\n\n${sumar}`;
+}
+
 export function buildVenituriInsightSystemPrompt(): string {
   return `Esti un asistent financiar intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar al situatiei de Venituri (buget estimat vs. realizat, din contracte si vanzari) si trebuie sa produci o interpretare utila pentru administrator.
 ${REGULI_COMUNE}`;

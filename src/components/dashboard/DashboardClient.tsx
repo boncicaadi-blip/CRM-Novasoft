@@ -18,6 +18,7 @@ import {
 import { formatEur } from "@/lib/format";
 import { RiskZone } from "@/components/dashboard/RiskZone";
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { ExpandableChart } from "@/components/ui/ExpandableChart";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { StageChart } from "@/components/dashboard/StageChart";
 import { StatusChart } from "@/components/dashboard/StatusChart";
@@ -191,51 +192,59 @@ export function DashboardClient({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <StageChart
-              data={stageData}
-              selected={filters.stages[0] ?? null}
-              onSelect={(stage) =>
-                setFilters((f) => ({
-                  ...f,
-                  stages: stage ? toggleInArray(f.stages, stage) : [],
-                }))
-              }
-            />
-            <StatusChart
-              data={statusData}
-              selected={filters.statuses[0] ?? null}
-              onSelect={(status) =>
-                setFilters((f) => ({
-                  ...f,
-                  statuses: status ? toggleInArray(f.statuses, status) : [],
-                }))
-              }
-            />
+            <ExpandableChart>
+              <StageChart
+                data={stageData}
+                selected={filters.stages[0] ?? null}
+                onSelect={(stage) =>
+                  setFilters((f) => ({
+                    ...f,
+                    stages: stage ? toggleInArray(f.stages, stage) : [],
+                  }))
+                }
+              />
+            </ExpandableChart>
+            <ExpandableChart>
+              <StatusChart
+                data={statusData}
+                selected={filters.statuses[0] ?? null}
+                onSelect={(status) =>
+                  setFilters((f) => ({
+                    ...f,
+                    statuses: status ? toggleInArray(f.statuses, status) : [],
+                  }))
+                }
+              />
+            </ExpandableChart>
           </div>
 
-          <TimeSeriesChart
-            data={timeSeries}
-            selectedRange={selectedRange}
-            onSelectRange={(range) =>
-              setFilters((f) => ({
-                ...f,
-                dateFrom: range?.dateFrom ?? null,
-                dateTo: range?.dateTo ?? null,
-                periodPreset: range ? "custom" : null,
-              }))
-            }
-          />
+          <ExpandableChart>
+            <TimeSeriesChart
+              data={timeSeries}
+              selectedRange={selectedRange}
+              onSelectRange={(range) =>
+                setFilters((f) => ({
+                  ...f,
+                  dateFrom: range?.dateFrom ?? null,
+                  dateTo: range?.dateTo ?? null,
+                  periodPreset: range ? "custom" : null,
+                }))
+              }
+            />
+          </ExpandableChart>
 
-          <ResponsabilChart
-            data={responsabilData}
-            selected={filters.responsabili[0] ?? null}
-            onSelect={(responsabil) =>
-              setFilters((f) => ({
-                ...f,
-                responsabili: responsabil ? toggleInArray(f.responsabili, responsabil) : [],
-              }))
-            }
-          />
+          <ExpandableChart>
+            <ResponsabilChart
+              data={responsabilData}
+              selected={filters.responsabili[0] ?? null}
+              onSelect={(responsabil) =>
+                setFilters((f) => ({
+                  ...f,
+                  responsabili: responsabil ? toggleInArray(f.responsabili, responsabil) : [],
+                }))
+              }
+            />
+          </ExpandableChart>
         </div>
 
         <div className="space-y-4">

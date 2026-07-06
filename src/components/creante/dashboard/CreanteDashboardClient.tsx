@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Wallet, AlertTriangle, Target, TrendingUp } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MultiSelect } from "@/components/ui/MultiSelect";
+import { ExpandableChart } from "@/components/ui/ExpandableChart";
 import { CreantaDetailModal } from "@/components/creante/CreantaDetailModal";
 import { CreanteStatusChart } from "./CreanteStatusChart";
 import { CreanteTipVanzareChart } from "./CreanteTipVanzareChart";
@@ -251,39 +252,53 @@ export function CreanteDashboardClient({
       </div>
 
       <div className="mb-4">
-        <CreanteGrtCard
-          monthKey={currentMonthKey}
-          target={currentMonthGrt?.target ?? targets[currentMonthKey] ?? 0}
-          realizat={currentMonthGrt?.realizat ?? 0}
-        />
+        <ExpandableChart>
+          <CreanteGrtCard
+            monthKey={currentMonthKey}
+            target={currentMonthGrt?.target ?? targets[currentMonthKey] ?? 0}
+            realizat={currentMonthGrt?.realizat ?? 0}
+          />
+        </ExpandableChart>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <CreanteStatusChart
-              data={statusData}
-              selected={filters.status}
-              onToggle={(status) => setFilters((f) => ({ ...f, status: toggleIn(f.status, status) }))}
-            />
-            <CreanteTipVanzareChart
-              data={tipVanzareData}
-              selected={filters.tipVanzare}
-              onToggle={(tip) => setFilters((f) => ({ ...f, tipVanzare: toggleIn(f.tipVanzare, tip) }))}
-            />
+            <ExpandableChart>
+              <CreanteStatusChart
+                data={statusData}
+                selected={filters.status}
+                onToggle={(status) => setFilters((f) => ({ ...f, status: toggleIn(f.status, status) }))}
+              />
+            </ExpandableChart>
+            <ExpandableChart>
+              <CreanteTipVanzareChart
+                data={tipVanzareData}
+                selected={filters.tipVanzare}
+                onToggle={(tip) => setFilters((f) => ({ ...f, tipVanzare: toggleIn(f.tipVanzare, tip) }))}
+              />
+            </ExpandableChart>
           </div>
 
-          <CreanteAgingChart
-            data={agingData}
-            selected={filters.aging}
-            onToggle={(bucket) => setFilters((f) => ({ ...f, aging: toggleIn(f.aging, bucket) }))}
-          />
+          <ExpandableChart>
+            <CreanteAgingChart
+              data={agingData}
+              selected={filters.aging}
+              onToggle={(bucket) => setFilters((f) => ({ ...f, aging: toggleIn(f.aging, bucket) }))}
+            />
+          </ExpandableChart>
 
-          <CreanteGrtChart data={grtSeries} />
+          <ExpandableChart>
+            <CreanteGrtChart data={grtSeries} />
+          </ExpandableChart>
 
-          <CreanteDinamicaChart data={dinamicaData} />
+          <ExpandableChart>
+            <CreanteDinamicaChart data={dinamicaData} />
+          </ExpandableChart>
 
-          <CreanteIncasariTimeSeriesChart data={incasariSeries} />
+          <ExpandableChart>
+            <CreanteIncasariTimeSeriesChart data={incasariSeries} />
+          </ExpandableChart>
         </div>
 
         <div className="space-y-4">
@@ -293,11 +308,13 @@ export function CreanteDashboardClient({
             historyAction={() => getAiInsightHistoryAction("creante_insight")}
           />
           <CreanteRiscZone facturi={riscData} onSelect={setSelected} />
-          <CreanteTopClientiChart
-            data={clientData}
-            selected={filters.client}
-            onToggle={(client) => setFilters((f) => ({ ...f, client: toggleIn(f.client, client) }))}
-          />
+          <ExpandableChart>
+            <CreanteTopClientiChart
+              data={clientData}
+              selected={filters.client}
+              onToggle={(client) => setFilters((f) => ({ ...f, client: toggleIn(f.client, client) }))}
+            />
+          </ExpandableChart>
           {hasFilter && <CreanteComponentaList facturi={filtered} onSelect={setSelected} />}
         </div>
       </div>

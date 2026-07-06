@@ -6,18 +6,35 @@ import { logAiUsage } from "@/lib/ai/usage-log";
 import {
   buildCreanteInsightSystemPrompt,
   buildCreanteInsightPrompt,
+  buildObligatiiInsightSystemPrompt,
+  buildObligatiiInsightPrompt,
   buildVenituriInsightSystemPrompt,
   buildVenituriInsightPrompt,
   buildCrmInsightSystemPrompt,
   buildCrmInsightPrompt,
+  buildCheltuieliInsightSystemPrompt,
+  buildCheltuieliInsightPrompt,
+  buildManagementInsightSystemPrompt,
+  buildManagementInsightPrompt,
   parseFinancialInsightResponse,
   type FinancialInsightResult,
 } from "@/lib/ai/financial-prompts";
 import { getCreante, getCreanteIncasari, getCreanteTargetsLunare } from "@/lib/data/creante";
 import { computeCreanteSummary } from "@/lib/creante-analytics";
 import { groupByAgingCreante, topRiscCreante, buildGrtSeries } from "@/lib/creante-dashboard-analytics";
+import { getObligatii, getObligatiiPlati, getObligatiiTargetsLunare } from "@/lib/data/obligatii";
+import { computeObligatiiSummary } from "@/lib/obligatii-analytics";
+import {
+  groupByAgingObligatii,
+  topRiscObligatii,
+  buildGrtSeries as buildGrtSeriesObligatii,
+} from "@/lib/obligatii-dashboard-analytics";
 import { formatEur, formatRon } from "@/lib/format";
 import { getVenituriLinii, getContracte } from "@/lib/data/venituri";
+import { getCheltuieliLinii, getContracteCheltuieli } from "@/lib/data/cheltuieli";
+import { getAngajatiLunar } from "@/lib/data/angajati";
+import { groupByIncadrare, groupByClasa } from "@/lib/cheltuieli-dashboard-analytics";
+import { buildManagementMonthly, computeManagementSummary } from "@/lib/management-analytics";
 import {
   groupByProdus,
   groupByServiciu,
@@ -260,6 +277,170 @@ export async function generateRaportComercialInsightAction(): Promise<{
     const parsed = parseFinancialInsightResponse(raw);
     await saveInsightToHistory(supabase, "raport_comercial_insight", parsed);
     return { success: true, data: parsed };
+  } catch (err) {
+    return handleAiError(err);
+  }
+}
+
+async function buildCheltuieliSummaryText(): Promise<string> {
+  const [linii, contracte] = await Promise.all([getCheltuieliLinii(), getContracteCheltuieli()]);
+
+  const anulCurent = new Date().getFullYear();
+  const liniiAnCurent = linii.filter((l) => new Date(l.luna).getFullYear() === anulCurent);
+
+  const totalPrognozat = liniiAnCurent.reduce((s, l) => s + l.valoare_prognozata, 0);
+  const totalRealizat = liniiAnCurent.reduce((s, l) => s + (l.valoare_realizata ?? 0), 0);
+  const grtAnCurent = totalPrognozat > 0 ? Math.round((totalRealizat / totalPrognozat) * 100) : null;
+
+  const incadrare = groupByIncadrare(liniiAnCurent).slice(0, 5);
+  const clasa = groupByClasa(liniiAnCurent).slice(0, 8);
+
+  const nrActive = contracte.filter((c) => c.status_contract === "Activ").length;
+  const nrInactive = contracte.filter((c) => c.status_contract === "Inactiv").length;
+
+  const lines = [
+    `Anul curent (${anulCurent}): cheltuiala prognozata ${formatEur(totalPrognozat)}, realizata ${formatEur(totalRealizat)}, grad realizare ${grtAnCurent !== null ? grtAnCurent + "%" : "necunoscut"}`,
+    `Contracte de cheltuiala: ${nrActive} active, ${nrInactive} inactive`,
+    ``,
+    `Top 5 incadrari (dupa cheltuiala realizata):`,
+    ...incadrare.map((i) => `- ${i.cheie}: realizat ${formatEur(i.realizat)} din prognozat ${formatEur(i.estimat)}`),
+    ``,
+    `Top 8 clase (dupa cheltuiala realizata):`,
+    ...clasa.map((c) => `- ${c.cheie}: realizat ${formatEur(c.realizat)} din prognozat ${formatEur(c.estimat)}`),
+  ];
+
+  return lines.join("\n");
+}
+
+export async function generateCheltuieliInsightAction(): Promise<{
+  success: boolean;
+  message?: string;
+  data?: FinancialInsightResult;
+}> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
+
+  try {
+    const sumar = await buildCheltuieliSummaryText();
+    const raw = await askClaude({
+      system: buildCheltuieliInsightSystemPrompt(),
+      prompt: buildCheltuieliInsightPrompt(sumar),
+      maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "cheltuieli_insight", usage),
+    });
+    return { success: true, data: parseFinancialInsightResponse(raw) };
+  } catch (err) {
+    return handleAiError(err);
+  }
+}
+
+async function buildManagementSummaryText(): Promise<string> {
+  const [venituriLinii, cheltuieliLinii, angajati] = await Promise.all([
+    getVenituriLinii(),
+    getCheltuieliLinii(),
+    getAngajatiLunar(),
+  ]);
+
+  const angajatiLookup = new Map(angajati.map((a) => [`${a.an}-${String(a.luna).padStart(2, "0")}`, a.nr_angajati]));
+
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const monthly = buildManagementMonthly(venituriLinii, cheltuieliLinii, angajatiLookup, from, now);
+  const summary = computeManagementSummary(monthly);
+
+  const lines = [
+    `Ultimele 12 luni: venit realizat ${formatEur(summary.venitRealizat)} (estimat ${formatEur(summary.venitEstimat)})`,
+    `Cheltuieli realizate ${formatEur(summary.cheltuieliRealizat)} (estimat ${formatEur(summary.cheltuieliEstimat)})`,
+    `Profit realizat ${formatEur(summary.profitRealizat)} (estimat ${formatEur(summary.profitEstimat)})`,
+    summary.productivitateMedieRealizat !== null
+      ? `Productivitate medie: ${formatEur(summary.productivitateMedieRealizat)} venit / angajat / luna`
+      : `Productivitate: necunoscuta (nu e completat numarul de angajati)`,
+    summary.costPerAngajatMediuRealizat !== null
+      ? `Cost mediu per angajat: ${formatEur(summary.costPerAngajatMediuRealizat)} / luna`
+      : `Cost per angajat: necunoscut (nu e completat numarul de angajati)`,
+    ``,
+    `Evolutie lunara (Venit realizat / Cheltuieli realizate / Profit):`,
+    ...monthly.map(
+      (m) =>
+        `- ${m.label}: venit ${formatEur(m.venitRealizat)}, cheltuieli ${formatEur(m.cheltuieliRealizat)}, profit ${formatEur(m.venitRealizat - m.cheltuieliRealizat)}`
+    ),
+  ];
+
+  return lines.join("\n");
+}
+
+export async function generateManagementInsightAction(): Promise<{
+  success: boolean;
+  message?: string;
+  data?: FinancialInsightResult;
+}> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
+
+  try {
+    const sumar = await buildManagementSummaryText();
+    const raw = await askClaude({
+      system: buildManagementInsightSystemPrompt(),
+      prompt: buildManagementInsightPrompt(sumar),
+      maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "management_insight", usage),
+    });
+    return { success: true, data: parseFinancialInsightResponse(raw) };
+  } catch (err) {
+    return handleAiError(err);
+  }
+}
+
+async function buildObligatiiSummaryText(): Promise<string> {
+  const [obligatii, plati, targets] = await Promise.all([
+    getObligatii(),
+    getObligatiiPlati(),
+    getObligatiiTargetsLunare(),
+  ]);
+
+  const summary = computeObligatiiSummary(obligatii);
+  const aging = groupByAgingObligatii(obligatii);
+  const risc = topRiscObligatii(obligatii, 5);
+  const platiFlat = Object.values(plati).flat();
+  const grt = buildGrtSeriesObligatii(platiFlat, targets, 5);
+
+  const lines = [
+    `Sold total restant (de platit): ${formatRon(summary.totalSoldRestant)} (${summary.nrFacturiRestante} facturi)`,
+    `Target propus luna curenta: ${formatRon(summary.targetPropus)} (${summary.nrFacturiPropuse} facturi)`,
+    ``,
+    `Vechime sold restant (aging):`,
+    ...aging.map((a) => `- ${a.label}: ${formatRon(a.sold)} (${a.count} facturi)`),
+    ``,
+    `Top 5 facturi cu risc (sold x vechime):`,
+    ...risc.map((o) => `- ${o.nume_furnizor}: sold ${formatRon(o.sold)}, factura ${o.nr_factura}`),
+    ``,
+    `Grad Realizare Target (GRT) plati, ultimele ${grt.length} luni:`,
+    ...grt.map(
+      (g) =>
+        `- ${g.month}: target ${formatRon(g.target)}, platit ${formatRon(g.realizat)}, GRT ${g.grt !== null ? Math.round(g.grt) + "%" : "fara target"}`
+    ),
+  ];
+
+  return lines.join("\n");
+}
+
+export async function generateObligatiiInsightAction(): Promise<{
+  success: boolean;
+  message?: string;
+  data?: FinancialInsightResult;
+}> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
+
+  try {
+    const sumar = await buildObligatiiSummaryText();
+    const raw = await askClaude({
+      system: buildObligatiiInsightSystemPrompt(),
+      prompt: buildObligatiiInsightPrompt(sumar),
+      maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "obligatii_insight", usage),
+    });
+    return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {
     return handleAiError(err);
   }

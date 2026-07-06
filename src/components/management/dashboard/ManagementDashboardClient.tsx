@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import { TrendingUp, TrendingDown, Wallet, Target } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { ExpandableChart } from "@/components/ui/ExpandableChart";
+import { AiInsightCard } from "@/components/ui/AiInsightCard";
+import { generateManagementInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { MANAGEMENT_KPI_DEFINITIONS } from "@/lib/management-kpi-definitions";
 import { buildManagementMonthly, computeManagementSummary } from "@/lib/management-analytics";
 import { VenituriEvolutieChart } from "@/components/venituri/dashboard/VenituriEvolutieChart";
@@ -208,6 +211,14 @@ export function ManagementDashboardClient({
         </button>
       </div>
       <p className="-mt-2 mb-4 text-[11px] text-slate-600">Click pe orice KPI de mai sus arata compozitia pe luni.</p>
+
+      <div className="mb-4">
+        <AiInsightCard
+          title="Interpretare AI (Claude)"
+          generateAction={generateManagementInsightAction}
+          historyAction={() => getAiInsightHistoryAction("management_insight")}
+        />
+      </div>
       {showComponenta && (
         <div className="mb-4">
           <ManagementComponentaList months={monthly} />
@@ -215,51 +226,63 @@ export function ManagementDashboardClient({
       )}
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <VenituriEvolutieChart
-          title="Evolutie Venit (Estimat vs. Realizat)"
-          data={venitChartData}
-          color="#22C55E"
-          gradientId="mgmtVenit"
-        />
-        <VenituriEvolutieChart
-          title="Evolutie Cheltuieli (Estimat vs. Realizat)"
-          data={cheltuieliChartData}
-          color="#F97316"
-          gradientId="mgmtCheltuieli"
-        />
+        <ExpandableChart>
+          <VenituriEvolutieChart
+            title="Evolutie Venit (Estimat vs. Realizat)"
+            data={venitChartData}
+            color="#22C55E"
+            gradientId="mgmtVenit"
+          />
+        </ExpandableChart>
+        <ExpandableChart>
+          <VenituriEvolutieChart
+            title="Evolutie Cheltuieli (Estimat vs. Realizat)"
+            data={cheltuieliChartData}
+            color="#F97316"
+            gradientId="mgmtCheltuieli"
+          />
+        </ExpandableChart>
       </div>
 
       <div className="mb-4">
-        <VenituriEvolutieChart
-          title="Evolutie Profit (Estimat vs. Realizat)"
-          data={profitChartData}
-          color="#A855F7"
-          gradientId="mgmtProfit"
-        />
+        <ExpandableChart>
+          <VenituriEvolutieChart
+            title="Evolutie Profit (Estimat vs. Realizat)"
+            data={profitChartData}
+            color="#A855F7"
+            gradientId="mgmtProfit"
+          />
+        </ExpandableChart>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <ManagementLineChart
-          title="Productivitate angajat (Venit/Angajat)"
-          data={productivitateData}
-          formatValue={formatEur}
-          color="#22C55E"
-          definition={MANAGEMENT_KPI_DEFINITIONS.productivitateAngajat}
-        />
-        <ManagementLineChart
-          title="Cost per angajat"
-          data={costPerAngajatData}
-          formatValue={formatEur}
-          color="#F97316"
-          definition={MANAGEMENT_KPI_DEFINITIONS.costPerAngajat}
-        />
-        <ManagementLineChart
-          title="Pondere venit recurent"
-          data={ponderesRecurentData}
-          formatValue={(v) => `${Math.round(v)}%`}
-          color="#0070F3"
-          definition={MANAGEMENT_KPI_DEFINITIONS.ponderesVenitRecurent}
-        />
+        <ExpandableChart>
+          <ManagementLineChart
+            title="Productivitate angajat (Venit/Angajat)"
+            data={productivitateData}
+            formatValue={formatEur}
+            color="#22C55E"
+            definition={MANAGEMENT_KPI_DEFINITIONS.productivitateAngajat}
+          />
+        </ExpandableChart>
+        <ExpandableChart>
+          <ManagementLineChart
+            title="Cost per angajat"
+            data={costPerAngajatData}
+            formatValue={formatEur}
+            color="#F97316"
+            definition={MANAGEMENT_KPI_DEFINITIONS.costPerAngajat}
+          />
+        </ExpandableChart>
+        <ExpandableChart>
+          <ManagementLineChart
+            title="Pondere venit recurent"
+            data={ponderesRecurentData}
+            formatValue={(v) => `${Math.round(v)}%`}
+            color="#0070F3"
+            definition={MANAGEMENT_KPI_DEFINITIONS.ponderesVenitRecurent}
+          />
+        </ExpandableChart>
       </div>
 
       {angajati.length === 0 && (
