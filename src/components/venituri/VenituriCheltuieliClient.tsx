@@ -182,6 +182,7 @@ export function VenituriCheltuieliClient({
   const [filterProdus, setFilterProdus] = useState("");
   const [filterServiciu, setFilterServiciu] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterTipVenit, setFilterTipVenit] = useState("");
   const [filterStadiu, setFilterStadiu] = useState("");
   const [isPending, startTransition] = useTransition();
   const [showContractForm, setShowContractForm] = useState(false);
@@ -208,6 +209,7 @@ export function VenituriCheltuieliClient({
           (!filterProdus || l.produs === filterProdus) &&
           (!filterServiciu || l.serviciu === filterServiciu) &&
           (!filterStatus || contract?.status_contract === filterStatus) &&
+          (!filterTipVenit || l.tip_venit === filterTipVenit) &&
           (!filterStadiu || contract?.stadiu_contract === filterStadiu)
         );
       }),
@@ -221,6 +223,7 @@ export function VenituriCheltuieliClient({
       filterProdus,
       filterServiciu,
       filterStatus,
+      filterTipVenit,
       filterStadiu,
     ]
   );
@@ -233,9 +236,10 @@ export function VenituriCheltuieliClient({
           (!filterProdus || c.produs === filterProdus) &&
           (!filterServiciu || c.serviciu === filterServiciu) &&
           (!filterStatus || c.status_contract === filterStatus) &&
+          (!filterTipVenit || c.tip_venit === filterTipVenit) &&
           (!filterStadiu || c.stadiu_contract === filterStadiu)
       ),
-    [contracte, filterClient, filterProdus, filterServiciu, filterStatus, filterStadiu]
+    [contracte, filterClient, filterProdus, filterServiciu, filterStatus, filterTipVenit, filterStadiu]
   );
 
   const summary = useMemo(() => {
@@ -361,7 +365,17 @@ export function VenituriCheltuieliClient({
           <>
             <select
               value={period}
-              onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+              onChange={(e) => {
+                const next = e.target.value as PeriodFilter;
+                setPeriod(next);
+                if (next === "custom" && (!customFrom || !customTo)) {
+                  const now = new Date();
+                  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                  setCustomFrom(start.toISOString().slice(0, 10));
+                  setCustomTo(end.toISOString().slice(0, 10));
+                }
+              }}
               className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
             >
               {PERIOD_OPTIONS.map((p) => (
@@ -372,6 +386,32 @@ export function VenituriCheltuieliClient({
             </select>
             {period === "custom" && (
               <>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    const [y, m] = e.target.value.split("-").map(Number);
+                    setCustomFrom(new Date(y, m - 1, 1).toISOString().slice(0, 10));
+                    setCustomTo(new Date(y, m, 0).toISOString().slice(0, 10));
+                  }}
+                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                >
+                  <option value="" style={{ backgroundColor: "#111535" }}>
+                    Alege rapid o luna...
+                  </option>
+                  {Array.from({ length: 24 }, (_, i) => {
+                    const d = new Date();
+                    d.setDate(1);
+                    d.setMonth(d.getMonth() - i);
+                    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                    const label = d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+                    return (
+                      <option key={value} value={value} style={{ backgroundColor: "#111535" }}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
                 <input
                   type="date"
                   value={customFrom}
@@ -387,6 +427,21 @@ export function VenituriCheltuieliClient({
                 />
               </>
             )}
+            <select
+              value={filterTipVenit}
+              onChange={(e) => setFilterTipVenit(e.target.value)}
+              className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+            >
+              <option value="" style={{ backgroundColor: "#111535" }}>
+                Recurent + Nerecurent
+              </option>
+              <option value="Recurent" style={{ backgroundColor: "#111535" }}>
+                Recurent
+              </option>
+              <option value="Nerecurent" style={{ backgroundColor: "#111535" }}>
+                Nerecurent
+              </option>
+            </select>
           </>
         )}
         <select

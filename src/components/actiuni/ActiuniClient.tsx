@@ -24,12 +24,17 @@ const FILTERS: { key: ActionWorkItemFilter; label: string }[] = [
 export function ActiuniClient({
   opportunities,
   initialFilter,
+  profiles,
 }: {
   opportunities: Opportunity[];
   initialFilter?: ActionWorkItemFilter;
+  profiles: { id: string; full_name: string }[];
 }) {
   const [filter, setFilter] = useState<ActionWorkItemFilter>(initialFilter ?? "intarziate");
-  const items = buildActionWorkItems(opportunities, filter);
+  const [responsabilFilter, setResponsabilFilter] = useState("");
+  const items = buildActionWorkItems(opportunities, filter).filter(
+    (it) => !responsabilFilter || it.opportunity.responsabil_actiune_id === responsabilFilter
+  );
 
   const counts = {
     azi: buildActionWorkItems(opportunities, "azi").length,
@@ -46,7 +51,7 @@ export function ActiuniClient({
         Ce trebuie facut astazi, ce e intarziat si ce risca sa fie uitat.
       </p>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         {FILTERS.map((f) => (
           <button
             key={f.key}
@@ -61,6 +66,20 @@ export function ActiuniClient({
             <span className="rounded-full bg-white/10 px-1.5 text-[11px]">{counts[f.key]}</span>
           </button>
         ))}
+        <select
+          value={responsabilFilter}
+          onChange={(e) => setResponsabilFilter(e.target.value)}
+          className="ml-auto rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+        >
+          <option value="" style={{ backgroundColor: "#111535" }}>
+            Toti responsabilii
+          </option>
+          {profiles.map((p) => (
+            <option key={p.id} value={p.id} style={{ backgroundColor: "#111535" }}>
+              {p.full_name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="space-y-2">

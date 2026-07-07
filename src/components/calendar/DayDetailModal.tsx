@@ -14,12 +14,14 @@ function parseLocalDate(dateStr: string): Date {
 
 const STATUS_LABELS: Record<CalendarAction["status"], string> = {
   restanta: "Restanta",
+  azi: "Azi",
   viitoare: "Viitoare",
   finalizata: "Finalizata",
 };
 
 const STATUS_COLORS: Record<CalendarAction["status"], string> = {
   restanta: "#94A3B8",
+  azi: "#F59E0B",
   viitoare: "#0070F3",
   finalizata: "#22C55E",
 };

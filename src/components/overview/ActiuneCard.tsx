@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
-import { Pencil, Check, X, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { Pencil, Check, X, CheckCircle2, CalendarDays } from "lucide-react";
 import { InfoRow, LabeledInput } from "@/components/overview/InfoCard";
 import { TextInput, TextArea, Select } from "@/components/form/fields";
 import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
@@ -18,6 +19,7 @@ const FIELDS = [
   "data_actiune",
   "data_finalizare_actiune",
   "observatii_actiune",
+  "responsabil_actiune_id",
 ];
 
 function fmtDate(value: string | null) {
@@ -34,10 +36,14 @@ export function ActiuneCard({
   o,
   actiuni,
   statusActiune,
+  profiles,
+  currentUserId,
 }: {
   o: Opportunity;
   actiuni: string[];
   statusActiune: string[];
+  profiles: { id: string; full_name: string }[];
+  currentUserId: string;
 }) {
   const [mode, setMode] = useState<"view" | "edit" | "finalize">("view");
 
@@ -51,10 +57,14 @@ export function ActiuneCard({
         o={o}
         actiuni={actiuni}
         statusActiune={statusActiune}
+        profiles={profiles}
+        currentUserId={currentUserId}
         onDone={() => setMode("view")}
       />
     );
   }
+
+  const responsabilActiune = profiles.find((p) => p.id === o.responsabil_actiune_id);
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
@@ -62,18 +72,30 @@ export function ActiuneCard({
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
           Actiune curenta
         </p>
-        <button
-          onClick={() => setMode("edit")}
-          className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
-          title="Editeaza Actiune curenta"
-        >
-          <Pencil size={13} />
-        </button>
+        <div className="flex items-center gap-1">
+          {o.actiune && (
+            <Link
+              href="/calendar"
+              className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#0070F3]"
+              title="Vezi in calendar"
+            >
+              <CalendarDays size={13} />
+            </Link>
+          )}
+          <button
+            onClick={() => setMode("edit")}
+            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            title="Editeaza Actiune curenta"
+          >
+            <Pencil size={13} />
+          </button>
+        </div>
       </div>
       <div className="divide-y divide-white/5">
         <InfoRow label="Actiune" value={o.actiune} />
         <InfoRow label="Status actiune" value={o.status_actiune} />
         <InfoRow label="Data actiune" value={fmtDate(o.data_actiune)} />
+        <InfoRow label="Responsabil actiune" value={responsabilActiune?.full_name ?? null} />
         <InfoRow label="Data finalizare" value={fmtDate(o.data_finalizare_actiune)} />
         {o.observatii_actiune && (
           <div className="py-1.5">
@@ -104,11 +126,15 @@ function EditForm({
   o,
   actiuni,
   statusActiune,
+  profiles,
+  currentUserId,
   onDone,
 }: {
   o: Opportunity;
   actiuni: string[];
   statusActiune: string[];
+  profiles: { id: string; full_name: string }[];
+  currentUserId: string;
   onDone: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -147,6 +173,19 @@ function EditForm({
         </LabeledInput>
         <LabeledInput label="Data actiune">
           <TextInput type="date" name="data_actiune" defaultValue={toDateInputValue(o.data_actiune)} />
+        </LabeledInput>
+        <LabeledInput label="Responsabil actiune">
+          <select
+            name="responsabil_actiune_id"
+            defaultValue={o.responsabil_actiune_id ?? currentUserId}
+            className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          >
+            {profiles.map((p) => (
+              <option key={p.id} value={p.id} style={{ backgroundColor: "#111535" }}>
+                {p.full_name}
+              </option>
+            ))}
+          </select>
         </LabeledInput>
         <LabeledInput label="Data finalizare">
           <TextInput

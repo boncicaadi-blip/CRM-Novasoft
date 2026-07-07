@@ -1,4 +1,4 @@
-import { getOpportunities } from "@/lib/data/opportunities";
+import { getOpportunities, getProfiles } from "@/lib/data/opportunities";
 import { ActiuniClient } from "@/components/actiuni/ActiuniClient";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import type { ActionWorkItemFilter } from "@/lib/analytics";
@@ -18,11 +18,11 @@ export default async function ActiuniPage({
 }) {
   await requireModuleAccess("crm");
 
-  const opportunities = await getOpportunities();
+  const [opportunities, profiles] = await Promise.all([getOpportunities(), getProfiles()]);
   const { filter } = await searchParams;
   const initialFilter = VALID_FILTERS.includes(filter as ActionWorkItemFilter)
     ? (filter as ActionWorkItemFilter)
     : undefined;
 
-  return <ActiuniClient opportunities={opportunities} initialFilter={initialFilter} />;
+  return <ActiuniClient opportunities={opportunities} initialFilter={initialFilter} profiles={profiles} />;
 }

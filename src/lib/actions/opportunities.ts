@@ -140,6 +140,12 @@ export async function updateOpportunityAction(
   });
   if (errors.length > 0) return { success: false, message: errors.join(" ") };
 
+  // O oportunitate Pierduta sau Amanata nu mai are sens sa pastreze o
+  // probabilitate de castig manuala - se reseteaza automat la 0.
+  if (payload.status === "Pierduta" || payload.status === "Amanata") {
+    payload.probability = 0;
+  }
+
   await updateOpportunity(id, payload);
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
@@ -268,6 +274,12 @@ export async function updateOpportunitySectionAction(
   });
   if (errors.length > 0) return { success: false, message: errors.join(" ") };
 
+  // O oportunitate Pierduta sau Amanata nu mai are sens sa pastreze o
+  // probabilitate de castig manuala - se reseteaza automat la 0.
+  if (merged.status === "Pierduta" || merged.status === "Amanata") {
+    payload.probability = 0;
+  }
+
   await updateOpportunity(id, payload);
 
   // Daca s-a schimbat Facturabil, propagam catre partenerul corespunzator -
@@ -335,6 +347,8 @@ export async function finalizeActionAction(
   });
 
   if (nextStep) {
+    const supabase = await createSupabaseServerClient();
+    const { data: userData } = await supabase.auth.getUser();
     // Golim explicit observatii_actiune - altfel rezultatul actiunii tocmai
     // finalizate (scris mai sus, pe acelasi rand) ramane agatat si pe
     // actiunea noua programata, aparand gresit atat pe cardul Actiune
@@ -344,6 +358,7 @@ export async function finalizeActionAction(
       data_actiune: nextStep.dataActiune,
       status_actiune: "Planificata",
       observatii_actiune: null,
+      responsabil_actiune_id: userData?.user?.id ?? null,
     });
   } else {
     // Fara next step programat: golim TOATE campurile actiunii curente

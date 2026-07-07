@@ -30,7 +30,7 @@ export default async function OpportunityOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  await requireModuleAccess("crm");
+  const { userId } = await requireModuleAccess("crm");
   const [o, profiles, nomenclatoare] = await Promise.all([
     getOpportunity(id),
     getProfiles(),
@@ -118,6 +118,8 @@ export default async function OpportunityOverviewPage({
           o={o}
           actiuni={valori(nomenclatoare["actiune"])}
           statusActiune={valori(nomenclatoare["status_actiune"])}
+          profiles={profiles}
+          currentUserId={userId}
         />
         <PricingCard o={o} tipuriProiect={valori(nomenclatoare["tip_proiect"])} />
       </div>

@@ -589,7 +589,7 @@ export function countActionWorkItems(opportunities: Opportunity[]) {
   };
 }
 
-export type ActionCalendarStatus = "restanta" | "viitoare" | "finalizata";
+export type ActionCalendarStatus = "restanta" | "azi" | "viitoare" | "finalizata";
 
 export interface CalendarAction {
   id: string;
@@ -601,6 +601,7 @@ export interface CalendarAction {
   stage: string;
   date: string; // YYYY-MM-DD
   status: ActionCalendarStatus;
+  responsabilActiuneId: string | null;
 }
 
 /**
@@ -620,6 +621,8 @@ export function buildCalendarActions(opportunities: Opportunity[]): CalendarActi
         status = "finalizata";
       } else if (date < todayStr) {
         status = "restanta";
+      } else if (date === todayStr) {
+        status = "azi";
       } else {
         status = "viitoare";
       }
@@ -633,15 +636,34 @@ export function buildCalendarActions(opportunities: Opportunity[]): CalendarActi
         stage: o.stage,
         date,
         status,
+        responsabilActiuneId: o.responsabil_actiune_id,
       };
     });
 }
 
-export function calendarActionCounts(actions: CalendarAction[]) {
+/**
+ * Numerele de aici TREBUIE sa corespunda exact cu ce vezi dupa ce dai click
+ * pe cardul KPI si ajungi pe /actiuni?filter=... - de-asta refolosim exact
+ * aceeasi logica ca buildActionWorkItems (Planificata, fereastra de 7 zile
+ * pentru "viitoare"), in loc de o logica separata bazata pe CalendarAction,
+ * care nu era aliniata (numaram si actiuni Finalizate, si "viitoare" nu
+ * avea limita de 7 zile - de-asta pareau gresite fata de ce se vedea la
+ * click).
+ */
+export function calendarActionCounts(opportunities: Opportunity[]) {
   const todayStr = getTodayISO();
+  const today = new Date(`${todayStr}T00:00:00`);
+  const in7Days = new Date(today);
+  in7Days.setDate(in7Days.getDate() + 7);
+  const in7DaysStr = toRomaniaISO(in7Days);
+
+  const planificate = opportunities.filter((o) => o.data_actiune && o.status_actiune === "Planificata");
+
   return {
-    today: actions.filter((a) => a.date === todayStr).length,
-    overdue: actions.filter((a) => a.status === "restanta").length,
-    upcoming: actions.filter((a) => a.status === "viitoare").length,
+    today: planificate.filter((o) => o.data_actiune!.slice(0, 10) === todayStr).length,
+    overdue: planificate.filter((o) => o.data_actiune!.slice(0, 10) < todayStr).length,
+    upcoming: planificate.filter(
+      (o) => o.data_actiune!.slice(0, 10) >= todayStr && o.data_actiune!.slice(0, 10) <= in7DaysStr
+    ).length,
   };
 }

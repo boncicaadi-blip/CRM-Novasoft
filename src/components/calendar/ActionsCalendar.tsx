@@ -33,19 +33,27 @@ import { DayDetailModal } from "./DayDetailModal";
 
 const STATUS_COLORS: Record<CalendarAction["status"], string> = {
   restanta: "#94A3B8",
+  azi: "#F59E0B",
   viitoare: "#0070F3",
   finalizata: "#22C55E",
 };
 
 const STATUS_LABELS: Record<CalendarAction["status"], string> = {
   restanta: "Restanta",
+  azi: "Azi",
   viitoare: "Viitoare",
   finalizata: "Finalizata",
 };
 
 type ColorMode = "status" | "stage";
 
-export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAction[] }) {
+export function ActionsCalendar({
+  actions: baseActions,
+  profiles,
+}: {
+  actions: CalendarAction[];
+  profiles: { id: string; full_name: string }[];
+}) {
   const router = useRouter();
   // Override optimist doar pentru actiunile mutate manual, cat asteptam
   // confirmarea serverului - sursa de adevar e prop-ul `baseActions`.
@@ -55,16 +63,19 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
   const [colorMode, setColorMode] = useState<ColorMode>("status");
   const [selectedAction, setSelectedAction] = useState<CalendarAction | null>(null);
   const [openDay, setOpenDay] = useState<string | null>(null);
+  const [responsabilFilter, setResponsabilFilter] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  const actions = useMemo(
-    () =>
-      baseActions.map((a) => (dateOverrides[a.id] ? { ...a, date: dateOverrides[a.id] } : a)),
-    [baseActions, dateOverrides]
-  );
+  const actions = useMemo(() => {
+    const withOverrides = baseActions.map((a) =>
+      dateOverrides[a.id] ? { ...a, date: dateOverrides[a.id] } : a
+    );
+    if (!responsabilFilter) return withOverrides;
+    return withOverrides.filter((a) => a.responsabilActiuneId === responsabilFilter);
+  }, [baseActions, dateOverrides, responsabilFilter]);
 
   const activeAction = activeId ? actions.find((a) => a.id === activeId) ?? null : null;
 
@@ -169,7 +180,22 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
               </h2>
             </div>
 
-            <div className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
+            <div className="flex items-center gap-2">
+              <select
+                value={responsabilFilter}
+                onChange={(e) => setResponsabilFilter(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+              >
+                <option value="" style={{ backgroundColor: "#111535" }}>
+                  Toti responsabilii
+                </option>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id} style={{ backgroundColor: "#111535" }}>
+                    {p.full_name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
               <button
                 onClick={() => setColorMode("status")}
                 className={`rounded-md px-3 py-1.5 transition ${
@@ -186,6 +212,7 @@ export function ActionsCalendar({ actions: baseActions }: { actions: CalendarAct
               >
                 Culoare: Stage
               </button>
+              </div>
             </div>
           </div>
 

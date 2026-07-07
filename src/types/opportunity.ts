@@ -7,6 +7,7 @@ export interface Opportunity {
   nume_potential: string;
   cod_fiscal: string | null;
   responsabil_vanzare_id: string | null;
+  responsabil_actiune_id: string | null;
   domeniul_activitate: string | null;
   domeniul_activitate_id: string | null;
   judet: string | null;

@@ -169,7 +169,53 @@ export function OpportunityForm({
     }
   }
 
+  // Validare per pas - campurile obligatorii sunt verificate INAINTE sa poti
+  // trece la pasul urmator (sau la submit final), ca sa nu mai ajungi la
+  // ultimul pas si sa afli abia atunci, de la server, ca lipseste ceva de
+  // pe un pas anterior - trebuind sa te intorci manual sa il gasesti.
+  const [stepError, setStepError] = useState<string | null>(null);
+
+  function validateStep(index: number): string[] {
+    const errors: string[] = [];
+    if (index === 0) {
+      if (!numeGrup.trim()) errors.push("Nume grup");
+      if (!numePotential.trim()) errors.push("Nume potential (firma)");
+    }
+    if (index === 2) {
+      if (!stage) errors.push("Stage");
+      if (!status) errors.push("Status");
+    }
+    return errors;
+  }
+
+  function findFirstInvalidStep(): number | null {
+    for (let i = 0; i < STEPS.length; i++) {
+      if (validateStep(i).length > 0) return i;
+    }
+    return null;
+  }
+
+  function goToStep(next: number) {
+    const errors = validateStep(stepIndex);
+    if (errors.length > 0 && next > stepIndex) {
+      setStepError(`Completeaza campurile obligatorii de pe acest pas: ${errors.join(", ")}.`);
+      return;
+    }
+    setStepError(null);
+    setStepIndex(next);
+  }
+
   function handleSubmit(formData: FormData) {
+    const invalidStep = findFirstInvalidStep();
+    if (invalidStep !== null) {
+      const errors = validateStep(invalidStep);
+      setStepIndex(invalidStep);
+      setStepError(
+        `Pasul "${STEPS[invalidStep].label}" are campuri obligatorii necompletate: ${errors.join(", ")}.`
+      );
+      return;
+    }
+    setStepError(null);
     setSubmitError(null);
     startTransition(async () => {
       if (isEdit) {
@@ -204,15 +250,16 @@ export function OpportunityForm({
           const Icon = step.icon;
           const isActive = i === stepIndex;
           const isDone = i < stepIndex;
+          const hasMissingRequired = validateStep(i).length > 0;
           return (
             <button
               type="button"
               key={step.key}
-              onClick={() => setStepIndex(i)}
+              onClick={() => goToStep(i)}
               className="group flex flex-1 flex-col items-center gap-1.5"
             >
               <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full border text-sm transition ${
+                className={`relative flex h-9 w-9 items-center justify-center rounded-full border text-sm transition ${
                   isActive
                     ? "border-[#E8007A] bg-[#E8007A] text-[#0B0D1A]"
                     : isDone
@@ -221,6 +268,12 @@ export function OpportunityForm({
                 }`}
               >
                 {isDone ? <Check size={15} /> : <Icon size={15} />}
+                {hasMissingRequired && !isActive && (
+                  <span
+                    className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-[#0B0D1A] bg-red-500"
+                    title="Are campuri obligatorii necompletate"
+                  />
+                )}
               </div>
               <span
                 className={`hidden text-[11px] transition sm:inline ${
@@ -770,11 +823,18 @@ export function OpportunityForm({
         </p>
       )}
 
+      {stepError && (
+        <p className="mt-3 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-400">{stepError}</p>
+      )}
+
       {/* Navigare pasi */}
       <div className="mt-5 flex items-center justify-between">
         <button
           type="button"
-          onClick={() => setStepIndex((i) => Math.max(0, i - 1))}
+          onClick={() => {
+            setStepError(null);
+            setStepIndex((i) => Math.max(0, i - 1));
+          }}
           disabled={isFirstStep}
           className="flex items-center gap-1 rounded-md border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5 disabled:opacity-30"
         >
@@ -793,7 +853,7 @@ export function OpportunityForm({
         ) : (
           <button
             type="button"
-            onClick={() => setStepIndex((i) => Math.min(STEPS.length - 1, i + 1))}
+            onClick={() => goToStep(Math.min(STEPS.length - 1, stepIndex + 1))}
             className="flex items-center gap-1 rounded-md bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20"
           >
             Inainte

@@ -7,6 +7,7 @@ import { STAGE_COLORS } from "@/lib/constants";
 
 const STATUS_LABELS: Record<CalendarAction["status"], string> = {
   restanta: "Restanta",
+  azi: "Azi",
   viitoare: "Viitoare",
   finalizata: "Finalizata",
 };
