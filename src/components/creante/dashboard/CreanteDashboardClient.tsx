@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Wallet, AlertTriangle, Target, TrendingUp } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MultiSelect } from "@/components/ui/MultiSelect";
+import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { ExpandableChart } from "@/components/ui/ExpandableChart";
 import { CreantaDetailModal } from "@/components/creante/CreantaDetailModal";
 import { CreanteStatusChart } from "./CreanteStatusChart";
@@ -78,14 +79,15 @@ export function CreanteDashboardClient({
   const [period, setPeriod] = useState<PeriodFilter>("toate");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<Creanta | null>(null);
 
   const incasariFlat = useMemo(() => Object.values(incasari).flat(), [incasari]);
 
   const inPeriodList = useMemo(
-    () => creante.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo })),
-    [creante, period, customFrom, customTo]
+    () => creante.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo, months: customMonths })),
+    [creante, period, customFrom, customTo, customMonths]
   );
 
   // Filtrare incrucisata - fiecare grafic reflecta selectiile din celelalte,
@@ -111,8 +113,8 @@ export function CreanteDashboardClient({
   const riscData = useMemo(() => topRiscCreante(filtered, 5), [filtered]);
 
   const totalIncasatInPeriod = useMemo(
-    () => computeTotalIncasatInPeriod(incasariFlat, period, { from: customFrom, to: customTo }),
-    [incasariFlat, period, customFrom, customTo]
+    () => computeTotalIncasatInPeriod(incasariFlat, period, { from: customFrom, to: customTo, months: customMonths }),
+    [incasariFlat, period, customFrom, customTo, customMonths]
   );
 
   // GRT si dinamica raman mereu pe ultimele 12 luni calendaristice, indiferent
@@ -123,8 +125,8 @@ export function CreanteDashboardClient({
   const grtSeries = useMemo(() => buildGrtSeries(incasariFlat, targets, 18), [incasariFlat, targets]);
   const incasariSeries = useMemo(() => buildIncasariTimeSeries(incasariFlat, 11), [incasariFlat]);
   const ziuaLuniiData = useMemo(
-    () => groupByZiuaLunii(incasariFlat, period, { from: customFrom, to: customTo }),
-    [incasariFlat, period, customFrom, customTo]
+    () => groupByZiuaLunii(incasariFlat, period, { from: customFrom, to: customTo, months: customMonths }),
+    [incasariFlat, period, customFrom, customTo, customMonths]
   );
   const facturatSeries = useMemo(() => buildFacturatTimeSeries(creante, 11), [creante]);
   const dinamicaData = useMemo(
@@ -186,32 +188,8 @@ export function CreanteDashboardClient({
           </select>
           {period === "custom" && (
             <>
-              <select
-                value=""
-                onChange={(e) => {
-                  if (!e.target.value) return;
-                  const [y, m] = e.target.value.split("-").map(Number);
-                  setCustomFrom(new Date(y, m - 1, 1).toISOString().slice(0, 10));
-                  setCustomTo(new Date(y, m, 0).toISOString().slice(0, 10));
-                }}
-                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
-              >
-                <option value="" style={{ backgroundColor: "#111535" }}>
-                  Alege rapid o luna...
-                </option>
-                {Array.from({ length: 24 }, (_, i) => {
-                  const d = new Date();
-                  d.setDate(1);
-                  d.setMonth(d.getMonth() - i);
-                  const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                  const label = d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-                  return (
-                    <option key={value} value={value} style={{ backgroundColor: "#111535" }}>
-                      {label}
-                    </option>
-                  );
-                })}
-              </select>
+              <MonthMultiSelect selected={customMonths} onChange={setCustomMonths} />
+              <span className="text-[10px] text-slate-600">sau interval:</span>
               <input
                 type="date"
                 value={customFrom}

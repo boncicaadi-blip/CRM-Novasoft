@@ -29,6 +29,7 @@ import { formatEur } from "@/lib/format";
 import { useTableSort } from "@/lib/useTableSort";
 import { SortableTh } from "@/components/ui/SortableTh";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { CHELTUIELI_KPI_DEFINITIONS } from "@/lib/cheltuieli-kpi-definitions";
 import { getTodayISO } from "@/lib/date";
 import {
@@ -62,11 +63,18 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "custom", label: "Perioada personalizata" },
 ];
 
-function inPeriod(luna: string, period: PeriodFilter, customFrom: string, customTo: string): boolean {
+function inPeriod(
+  luna: string,
+  period: PeriodFilter,
+  customFrom: string,
+  customTo: string,
+  customMonths: string[] = []
+): boolean {
   if (period === "toate") return true;
   const d = new Date(luna);
   const now = new Date();
   if (period === "custom") {
+    if (customMonths.length > 0) return customMonths.includes(luna.slice(0, 7));
     if (customFrom && d < new Date(customFrom)) return false;
     if (customTo && d > new Date(customTo)) return false;
     return true;
@@ -176,6 +184,7 @@ export function CheltuieliClient({
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [filterIncadrare, setFilterIncadrare] = useState("");
   const [filterClasa, setFilterClasa] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -192,13 +201,13 @@ export function CheltuieliClient({
       cheltuieliLinii.filter((l) => {
         const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
         return (
-          inPeriod(l.luna, period, customFrom, customTo) &&
+          inPeriod(l.luna, period, customFrom, customTo, customMonths) &&
           (!filterIncadrare || l.incadrare === filterIncadrare) &&
           (!filterClasa || l.clasa === filterClasa) &&
           (!filterStatus || contract?.status_contract === filterStatus)
         );
       }),
-    [cheltuieliLinii, contractById, period, customFrom, customTo, filterIncadrare, filterClasa, filterStatus]
+    [cheltuieliLinii, contractById, period, customFrom, customTo, customMonths, filterIncadrare, filterClasa, filterStatus]
   );
 
   const filteredContracte = useMemo(
@@ -333,7 +342,17 @@ export function CheltuieliClient({
           <>
             <select
               value={period}
-              onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+              onChange={(e) => {
+                const next = e.target.value as PeriodFilter;
+                setPeriod(next);
+                if (next === "custom" && (!customFrom || !customTo)) {
+                  const now = new Date();
+                  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                  setCustomFrom(start.toISOString().slice(0, 10));
+                  setCustomTo(end.toISOString().slice(0, 10));
+                }
+              }}
               className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
             >
               {PERIOD_OPTIONS.map((p) => (
@@ -344,6 +363,8 @@ export function CheltuieliClient({
             </select>
             {period === "custom" && (
               <>
+                <MonthMultiSelect selected={customMonths} onChange={setCustomMonths} />
+                <span className="text-[10px] text-slate-600">sau interval:</span>
                 <input
                   type="date"
                   value={customFrom}

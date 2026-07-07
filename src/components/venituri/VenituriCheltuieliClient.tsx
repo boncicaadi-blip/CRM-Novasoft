@@ -29,6 +29,7 @@ import { formatEur } from "@/lib/format";
 import { useTableSort } from "@/lib/useTableSort";
 import { SortableTh } from "@/components/ui/SortableTh";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { VENITURI_KPI_DEFINITIONS } from "@/lib/venituri-kpi-definitions";
 import { getTodayISO } from "@/lib/date";
 import {
@@ -57,11 +58,18 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "custom", label: "Perioada personalizata" },
 ];
 
-function inPeriod(luna: string, period: PeriodFilter, customFrom: string, customTo: string): boolean {
+function inPeriod(
+  luna: string,
+  period: PeriodFilter,
+  customFrom: string,
+  customTo: string,
+  customMonths: string[] = []
+): boolean {
   if (period === "toate") return true;
   const d = new Date(luna);
   const now = new Date();
   if (period === "custom") {
+    if (customMonths.length > 0) return customMonths.includes(luna.slice(0, 7));
     if (customFrom && d < new Date(customFrom)) return false;
     if (customTo && d > new Date(customTo)) return false;
     return true;
@@ -178,6 +186,7 @@ export function VenituriCheltuieliClient({
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [filterClient, setFilterClient] = useState("");
   const [filterProdus, setFilterProdus] = useState("");
   const [filterServiciu, setFilterServiciu] = useState("");
@@ -204,7 +213,7 @@ export function VenituriCheltuieliClient({
       venituriLinii.filter((l) => {
         const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
         return (
-          inPeriod(l.luna, period, customFrom, customTo) &&
+          inPeriod(l.luna, period, customFrom, customTo, customMonths) &&
           (!filterClient || l.nume_client === filterClient) &&
           (!filterProdus || l.produs === filterProdus) &&
           (!filterServiciu || l.serviciu === filterServiciu) &&
@@ -219,6 +228,7 @@ export function VenituriCheltuieliClient({
       period,
       customFrom,
       customTo,
+      customMonths,
       filterClient,
       filterProdus,
       filterServiciu,
@@ -386,32 +396,8 @@ export function VenituriCheltuieliClient({
             </select>
             {period === "custom" && (
               <>
-                <select
-                  value=""
-                  onChange={(e) => {
-                    if (!e.target.value) return;
-                    const [y, m] = e.target.value.split("-").map(Number);
-                    setCustomFrom(new Date(y, m - 1, 1).toISOString().slice(0, 10));
-                    setCustomTo(new Date(y, m, 0).toISOString().slice(0, 10));
-                  }}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
-                >
-                  <option value="" style={{ backgroundColor: "#111535" }}>
-                    Alege rapid o luna...
-                  </option>
-                  {Array.from({ length: 24 }, (_, i) => {
-                    const d = new Date();
-                    d.setDate(1);
-                    d.setMonth(d.getMonth() - i);
-                    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                    const label = d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-                    return (
-                      <option key={value} value={value} style={{ backgroundColor: "#111535" }}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
+                <MonthMultiSelect selected={customMonths} onChange={setCustomMonths} />
+                <span className="text-[10px] text-slate-600">sau interval:</span>
                 <input
                   type="date"
                   value={customFrom}

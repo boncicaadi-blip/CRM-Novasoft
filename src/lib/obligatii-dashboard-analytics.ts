@@ -1,4 +1,5 @@
 import type { Obligatie, ObligatiePlata } from "@/types/obligatii";
+import { toRomaniaISO } from "@/lib/date";
 import {
   getObligatieStatus,
   getZileDepasireObligatie,
@@ -114,8 +115,8 @@ export function buildPlatiTimeSeries(
   for (let i = monthsBack; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    const dateFrom = d.toISOString().slice(0, 10);
-    const dateTo = new Date(nextMonth.getTime() - 86_400_000).toISOString().slice(0, 10);
+    const dateFrom = toRomaniaISO(d);
+    const dateTo = toRomaniaISO(new Date(nextMonth.getTime() - 86_400_000));
     const label = d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" });
     const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     months.push({ month: label, monthKey, total: 0, count: 0, dateFrom, dateTo });
@@ -151,8 +152,8 @@ export function buildFacturatTimeSeries(
   for (let i = monthsBack; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    const dateFrom = d.toISOString().slice(0, 10);
-    const dateTo = new Date(nextMonth.getTime() - 86_400_000).toISOString().slice(0, 10);
+    const dateFrom = toRomaniaISO(d);
+    const dateTo = toRomaniaISO(new Date(nextMonth.getTime() - 86_400_000));
     const label = d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" });
     const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     months.push({ month: label, monthKey, facturat: 0, count: 0, dateFrom, dateTo });

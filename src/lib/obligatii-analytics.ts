@@ -132,7 +132,7 @@ export function computeObligatiiSummary(obligatii: Obligatie[]): ObligatiiSummar
 export function computeTotalPlatitInPeriod(
   plati: ObligatiePlata[],
   period: PeriodFilter,
-  customRange?: { from: string; to: string }
+  customRange?: { from: string; to: string; months?: string[] }
 ): number {
   return plati
     .filter((p) => dateMatchesPeriod(p.data_plata, period, customRange))
@@ -144,7 +144,7 @@ export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | 
 export function dateMatchesPeriod(
   dateStr: string | null,
   period: PeriodFilter,
-  customRange?: { from: string; to: string }
+  customRange?: { from: string; to: string; months?: string[] }
 ): boolean {
   if (period === "toate") return true;
   if (!dateStr) return false;
@@ -153,6 +153,10 @@ export function dateMatchesPeriod(
   const now = new Date();
 
   if (period === "custom") {
+    if (customRange?.months && customRange.months.length > 0) {
+      const monthKey = dateStr.slice(0, 7);
+      return customRange.months.includes(monthKey);
+    }
     if (customRange?.from && d < new Date(customRange.from)) return false;
     if (customRange?.to && d > new Date(customRange.to)) return false;
     return true;
@@ -178,7 +182,7 @@ export function dateMatchesPeriod(
 export function inPeriodObligatie(
   o: Obligatie,
   period: PeriodFilter,
-  customRange?: { from: string; to: string }
+  customRange?: { from: string; to: string; months?: string[] }
 ): boolean {
   return dateMatchesPeriod(o.data_factura, period, customRange);
 }

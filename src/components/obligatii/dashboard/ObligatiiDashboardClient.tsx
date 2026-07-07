@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Wallet, AlertTriangle, Target, TrendingDown } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MultiSelect } from "@/components/ui/MultiSelect";
+import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { ExpandableChart } from "@/components/ui/ExpandableChart";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { generateObligatiiInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
@@ -81,14 +82,15 @@ export function ObligatiiDashboardClient({
   const [period, setPeriod] = useState<PeriodFilter>("toate");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [filters, setFilters] = useState<DashboardFilters>(EMPTY_FILTERS);
   const [selected, setSelected] = useState<Obligatie | null>(null);
 
   const platiFlat = useMemo(() => Object.values(plati).flat(), [plati]);
 
   const inPeriodList = useMemo(
-    () => obligatii.filter((o) => inPeriodObligatie(o, period, { from: customFrom, to: customTo })),
-    [obligatii, period, customFrom, customTo]
+    () => obligatii.filter((o) => inPeriodObligatie(o, period, { from: customFrom, to: customTo, months: customMonths })),
+    [obligatii, period, customFrom, customTo, customMonths]
   );
 
   const filtered = useMemo(() => {
@@ -109,8 +111,8 @@ export function ObligatiiDashboardClient({
   const riscData = useMemo(() => topRiscObligatii(filtered, 5), [filtered]);
 
   const totalPlatitInPeriod = useMemo(
-    () => computeTotalPlatitInPeriod(platiFlat, period, { from: customFrom, to: customTo }),
-    [platiFlat, period, customFrom, customTo]
+    () => computeTotalPlatitInPeriod(platiFlat, period, { from: customFrom, to: customTo, months: customMonths }),
+    [platiFlat, period, customFrom, customTo, customMonths]
   );
 
   const grtSeries = useMemo(() => buildGrtSeries(platiFlat, targets, 11), [platiFlat, targets]);
@@ -154,7 +156,17 @@ export function ObligatiiDashboardClient({
         <div className="flex items-center gap-2">
           <select
             value={period}
-            onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+            onChange={(e) => {
+              const next = e.target.value as PeriodFilter;
+              setPeriod(next);
+              if (next === "custom" && (!customFrom || !customTo)) {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                setCustomFrom(start.toISOString().slice(0, 10));
+                setCustomTo(end.toISOString().slice(0, 10));
+              }
+            }}
             className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
           >
             {PERIOD_OPTIONS.map((p) => (
@@ -165,6 +177,8 @@ export function ObligatiiDashboardClient({
           </select>
           {period === "custom" && (
             <>
+              <MonthMultiSelect selected={customMonths} onChange={setCustomMonths} />
+              <span className="text-[10px] text-slate-600">sau interval:</span>
               <input
                 type="date"
                 value={customFrom}

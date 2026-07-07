@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { TrendingUp, TrendingDown, Wallet, Target } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { ExpandableChart } from "@/components/ui/ExpandableChart";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { generateManagementInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
@@ -42,6 +43,7 @@ export function ManagementDashboardClient({
   const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [showComponenta, setShowComponenta] = useState(false);
 
   const angajatiLookup = useMemo(() => {
@@ -124,7 +126,15 @@ export function ManagementDashboardClient({
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={period}
-            onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+            onChange={(e) => {
+              const next = e.target.value as PeriodFilter;
+              setPeriod(next);
+              if (next === "custom" && (!customFrom || !customTo)) {
+                const now = new Date();
+                setCustomFrom(firstOfMonth(now).toISOString().slice(0, 10));
+                setCustomTo(firstOfMonth(now).toISOString().slice(0, 10));
+              }
+            }}
             className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
           >
             {PERIOD_OPTIONS.map((p) => (
@@ -135,6 +145,22 @@ export function ManagementDashboardClient({
           </select>
           {period === "custom" && (
             <>
+              <MonthMultiSelect
+                selected={customMonths}
+                onChange={(months) => {
+                  setCustomMonths(months);
+                  if (months.length > 0) {
+                    const sorted = [...months].sort();
+                    setCustomFrom(`${sorted[0]}-01`);
+                    const [y, m] = sorted[sorted.length - 1].split("-").map(Number);
+                    setCustomTo(new Date(y, m, 0).toISOString().slice(0, 10));
+                  }
+                }}
+              />
+              <span className="text-[10px] text-slate-600" title="Cu mai multe luni alese, se acopera intervalul continuu intre prima si ultima (Management arata o evolutie secventiala, nu poate sari luni).">
+                (interval continuu)
+              </span>
+              <span className="text-[10px] text-slate-600">sau exact:</span>
               <input
                 type="date"
                 value={customFrom}

@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
+import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { ObligatiiImportForm } from "./ObligatiiImportForm";
 import { ObligatieDetailModal } from "./ObligatieDetailModal";
 import { AgingBarObligatii } from "./AgingBarObligatii";
@@ -126,6 +127,7 @@ export function ObligatiiClient({
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("restanta");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Obligatie | null>(null);
@@ -156,8 +158,8 @@ export function ObligatiiClient({
 
   const inPeriodList = useMemo(
     () =>
-      obligatiiEffective.filter((o) => inPeriodObligatie(o, period, { from: customFrom, to: customTo })),
-    [obligatiiEffective, period, customFrom, customTo]
+      obligatiiEffective.filter((o) => inPeriodObligatie(o, period, { from: customFrom, to: customTo, months: customMonths })),
+    [obligatiiEffective, period, customFrom, customTo, customMonths]
   );
 
   // Sold restant, facturi restante si target sunt stari CURENTE, nu legate
@@ -168,8 +170,8 @@ export function ObligatiiClient({
   // dupa data facturii.
   const platiFlat = useMemo(() => Object.values(plati).flat(), [plati]);
   const totalPlatitInPeriod = useMemo(
-    () => computeTotalPlatitInPeriod(platiFlat, period, { from: customFrom, to: customTo }),
-    [platiFlat, period, customFrom, customTo]
+    () => computeTotalPlatitInPeriod(platiFlat, period, { from: customFrom, to: customTo, months: customMonths }),
+    [platiFlat, period, customFrom, customTo, customMonths]
   );
 
   // Desfasuratoare pentru fiecare KPI clicabil.
@@ -187,8 +189,8 @@ export function ObligatiiClient({
   );
   const breakdownTotalPlatit = useMemo(
     () =>
-      platiFlat.filter((p) => dateMatchesPeriod(p.data_plata, period, { from: customFrom, to: customTo })),
-    [platiFlat, period, customFrom, customTo]
+      platiFlat.filter((p) => dateMatchesPeriod(p.data_plata, period, { from: customFrom, to: customTo, months: customMonths })),
+    [platiFlat, period, customFrom, customTo, customMonths]
   );
 
   const filtered = useMemo(() => {
@@ -515,8 +517,16 @@ export function ObligatiiClient({
         <select
           value={period}
           onChange={(e) => {
-            setPeriod(e.target.value as PeriodFilter);
+            const next = e.target.value as PeriodFilter;
+            setPeriod(next);
             setPage(1);
+            if (next === "custom" && (!customFrom || !customTo)) {
+              const now = new Date();
+              const start = new Date(now.getFullYear(), now.getMonth(), 1);
+              const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+              setCustomFrom(start.toISOString().slice(0, 10));
+              setCustomTo(end.toISOString().slice(0, 10));
+            }
           }}
           className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
         >
@@ -528,6 +538,14 @@ export function ObligatiiClient({
         </select>
         {period === "custom" && (
           <>
+            <MonthMultiSelect
+              selected={customMonths}
+              onChange={(months) => {
+                setCustomMonths(months);
+                setPage(1);
+              }}
+            />
+            <span className="text-[10px] text-slate-600">sau interval:</span>
             <input
               type="date"
               value={customFrom}

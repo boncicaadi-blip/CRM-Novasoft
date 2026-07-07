@@ -154,7 +154,7 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
 export function computeTotalIncasatInPeriod(
   incasari: CreantaIncasare[],
   period: PeriodFilter,
-  customRange?: { from: string; to: string }
+  customRange?: { from: string; to: string; months?: string[] }
 ): number {
   return incasari
     .filter((i) => dateMatchesPeriod(i.data_incasare, period, customRange))
@@ -166,7 +166,7 @@ export type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | 
 export function dateMatchesPeriod(
   dateStr: string | null,
   period: PeriodFilter,
-  customRange?: { from: string; to: string }
+  customRange?: { from: string; to: string; months?: string[] }
 ): boolean {
   if (period === "toate") return true;
   if (!dateStr) return false;
@@ -175,6 +175,13 @@ export function dateMatchesPeriod(
   const now = new Date();
 
   if (period === "custom") {
+    // Daca sunt alese luni specifice (multi-select), verificam direct
+    // apartenenta la oricare din ele - permite selectii neconsecutive
+    // (ex: mai + august, sarind iunie-iulie), nu doar un interval continuu.
+    if (customRange?.months && customRange.months.length > 0) {
+      const monthKey = dateStr.slice(0, 7);
+      return customRange.months.includes(monthKey);
+    }
     if (customRange?.from && d < new Date(customRange.from)) return false;
     if (customRange?.to && d > new Date(customRange.to)) return false;
     return true;
@@ -204,7 +211,7 @@ export function dateMatchesPeriod(
 export function inPeriod(
   c: Creanta,
   period: PeriodFilter,
-  customRange?: { from: string; to: string }
+  customRange?: { from: string; to: string; months?: string[] }
 ): boolean {
   return dateMatchesPeriod(c.data_factura, period, customRange);
 }

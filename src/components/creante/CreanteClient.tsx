@@ -21,6 +21,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
+import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { CreanteImportForm } from "./CreanteImportForm";
 import { CreantaDetailModal } from "./CreantaDetailModal";
 import { ManualCreantaFormModal } from "./ManualCreantaFormModal";
@@ -129,6 +130,7 @@ export function CreanteClient({
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
+  const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("restanta");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Creanta | null>(null);
@@ -164,8 +166,8 @@ export function CreanteClient({
   }, [creante, proposOverrides]);
 
   const inPeriodList = useMemo(
-    () => creanteEffective.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo })),
-    [creanteEffective, period, customFrom, customTo]
+    () => creanteEffective.filter((c) => inPeriod(c, period, { from: customFrom, to: customTo, months: customMonths })),
+    [creanteEffective, period, customFrom, customTo, customMonths]
   );
 
   const filtered = useMemo(() => {
@@ -197,44 +199,57 @@ export function CreanteClient({
     return rows;
   }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter, onlyPartial, onlyPropuse]);
 
-  // Totalurile de mai sus reflecta ACUM toate filtrele active (perioada,
-  // status, cautare, aging, propuse) - la cerere explicita. Anterior erau
-  // calculate pe toata baza, indiferent de filtre; asta insemna ca titlul
-  // "click pentru desfasurator" al KPI-urilor si continutul lui erau
-  // usor inconsistente cu ce alegeai mai jos.
-  const summary = useMemo(() => computeCreanteSummary(filtered), [filtered]);
+  // KPI-urile de sus (Total Creante, Sold Restant, Facturi Restante, Target
+  // propus) sunt stari CURENTE, globale - NU se schimba in functie de
+  // filtrele de mai jos (perioada/status/cautare/aging). Reprezinta "cat ai
+  // de incasat AZI", indiferent ce te uiti sa filtrezi in lista de mai jos.
+  // Doar Total Incasat e diferit - vezi mai jos.
+  const summary = useMemo(() => computeCreanteSummary(creanteEffective), [creanteEffective]);
 
   const incasariFlat = useMemo(() => Object.values(incasari).flat(), [incasari]);
-  // Total incasat: suma incasarilor DIN PERIOADA (dupa data incasarii, nu
-  // dupa data facturii), dar DOAR pentru facturile care trec si de
-  // celelalte filtre active (status, cautare, aging, propuse) - altfel
-  // "Total incasat" nu ar respecta filtrele de mai jos, desi toate
-  // celelalte KPI-uri o fac acum.
-  const filteredIds = useMemo(() => new Set(filtered.map((c) => c.id)), [filtered]);
+  // Total incasat: SINGURUL KPI care urmareste perioada selectata sus - suma
+  // incasarilor cu data de incasare in perioada aleasa, indiferent din ce
+  // luna e factura de baza. Nu se intersecteaza cu status/cautare/aging -
+  // e complet izolat de restul filtrelor, ca sa ramana un numar simplu de
+  // citit: "cat am incasat in perioada asta".
   const breakdownTotalIncasat = useMemo(
     () =>
-      incasariFlat.filter(
-        (i) =>
-          filteredIds.has(i.creanta_id) &&
-          dateMatchesPeriod(i.data_incasare, period, { from: customFrom, to: customTo })
+      incasariFlat.filter((i) =>
+        dateMatchesPeriod(i.data_incasare, period, { from: customFrom, to: customTo, months: customMonths })
       ),
-    [incasariFlat, filteredIds, period, customFrom, customTo]
+    [incasariFlat, period, customFrom, customTo, customMonths]
   );
   const totalIncasatInPeriod = useMemo(
     () => breakdownTotalIncasat.reduce((sum, i) => sum + i.valoare, 0),
     [breakdownTotalIncasat]
   );
 
-  // Desfasuratoare pentru fiecare KPI clicabil - tot pe baza filtrata.
+  // GRT (Grad Realizare Target) - tot legat strict de LUNA CURENTA, la fel
+  // ca targetul propus (nu de filtrul de perioada de mai jos, care e
+  // independent). Incasat luna curenta / target propus luna curenta.
+  const incasatLunaCurenta = useMemo(() => {
+    const acum = new Date();
+    return incasariFlat
+      .filter((i) => {
+        const d = new Date(i.data_incasare);
+        return d.getFullYear() === acum.getFullYear() && d.getMonth() === acum.getMonth();
+      })
+      .reduce((sum, i) => sum + i.valoare, 0);
+  }, [incasariFlat]);
+  const grtLunaCurenta = summary.targetPropus > 0 ? (incasatLunaCurenta / summary.targetPropus) * 100 : null;
+
+
+  // Desfasuratoare pentru fiecare KPI clicabil - pe baza globala, ca si
+  // KPI-ul insusi (nu pe lista filtrata de mai jos).
   const creantaById = useMemo(() => new Map(creanteEffective.map((c) => [c.id, c])), [creanteEffective]);
   const breakdownSoldRestant = useMemo(
-    () => filtered.filter((c) => getCreantaStatus(c) === "restanta"),
-    [filtered]
+    () => creanteEffective.filter((c) => getCreantaStatus(c) === "restanta"),
+    [creanteEffective]
   );
-  const breakdownTotalNeincasat = useMemo(() => filtered.filter((c) => c.sold > 0), [filtered]);
+  const breakdownTotalNeincasat = useMemo(() => creanteEffective.filter((c) => c.sold > 0), [creanteEffective]);
   const breakdownTargetPropus = useMemo(
-    () => filtered.filter((c) => c.propus_spre_incasare && c.sold > 0),
-    [filtered]
+    () => creanteEffective.filter((c) => c.propus_spre_incasare && c.sold > 0),
+    [creanteEffective]
   );
 
   // Grupare pe client - respecta toate filtrele active (perioada, status,
@@ -459,7 +474,11 @@ export function CreanteClient({
         <KpiInfoCard
           label="Target propus (bifate)"
           value={formatRon(summary.targetPropus)}
-          sublabel={`${summary.nrFacturiPropuse} facturi — click pentru desfasurator`}
+          sublabel={
+            grtLunaCurenta !== null
+              ? `${summary.nrFacturiPropuse} facturi — GRT ${Math.round(grtLunaCurenta)}%`
+              : `${summary.nrFacturiPropuse} facturi — click pentru desfasurator`
+          }
           icon={<Target size={16} />}
           accent="#E8007A"
           definition={CREANTE_KPI_DEFINITIONS.targetPropus}
@@ -604,35 +623,14 @@ export function CreanteClient({
         </select>
         {period === "custom" && (
           <>
-            <select
-              value=""
-              onChange={(e) => {
-                if (!e.target.value) return;
-                const [y, m] = e.target.value.split("-").map(Number);
-                const start = new Date(y, m - 1, 1);
-                const end = new Date(y, m, 0);
-                setCustomFrom(start.toISOString().slice(0, 10));
-                setCustomTo(end.toISOString().slice(0, 10));
+            <MonthMultiSelect
+              selected={customMonths}
+              onChange={(months) => {
+                setCustomMonths(months);
                 setPage(1);
               }}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
-            >
-              <option value="" style={{ backgroundColor: "#111535" }}>
-                Alege rapid o luna...
-              </option>
-              {Array.from({ length: 24 }, (_, i) => {
-                const d = new Date();
-                d.setDate(1);
-                d.setMonth(d.getMonth() - i);
-                const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                const label = d.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-                return (
-                  <option key={value} value={value} style={{ backgroundColor: "#111535" }}>
-                    {label}
-                  </option>
-                );
-              })}
-            </select>
+            />
+            <span className="text-[10px] text-slate-600">sau interval:</span>
             <input
               type="date"
               value={customFrom}

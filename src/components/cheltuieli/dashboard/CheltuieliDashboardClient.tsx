@@ -5,6 +5,7 @@ import Link from "next/link";
 import { TrendingDown, Target, PiggyBank } from "lucide-react";
 import { formatEur } from "@/lib/format";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { ExpandableChart } from "@/components/ui/ExpandableChart";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { generateCheltuieliInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
@@ -23,19 +24,32 @@ import { CheltuieliComponentaList } from "./CheltuieliComponentaList";
 import { TopClasaList } from "./TopClasaList";
 import type { ContractCheltuiala, CheltuialaLinie } from "@/types/cheltuieli";
 
-type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate";
+type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
 const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "luna_curenta", label: "Luna curenta" },
   { value: "ultimele_3_luni", label: "Ultimele 3 luni" },
   { value: "anul_curent", label: "Anul curent" },
   { value: "toate", label: "Tot istoricul" },
+  { value: "custom", label: "Perioada personalizata" },
 ];
 
-function inPeriod(luna: string, period: PeriodFilter): boolean {
+function inPeriod(
+  luna: string,
+  period: PeriodFilter,
+  customFrom = "",
+  customTo = "",
+  customMonths: string[] = []
+): boolean {
   if (period === "toate") return true;
   const d = new Date(luna);
   const now = new Date();
+  if (period === "custom") {
+    if (customMonths.length > 0) return customMonths.includes(luna.slice(0, 7));
+    if (customFrom && d < new Date(customFrom)) return false;
+    if (customTo && d > new Date(customTo)) return false;
+    return true;
+  }
   if (period === "luna_curenta") return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   if (period === "anul_curent") return d.getFullYear() === now.getFullYear();
   if (period === "ultimele_3_luni") {
@@ -66,6 +80,9 @@ export function CheltuieliDashboardClient({
   contracte: ContractCheltuiala[];
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [showComponenta, setShowComponenta] = useState(false);
 
@@ -80,7 +97,10 @@ export function CheltuieliDashboardClient({
     [cheltuieliLinii]
   );
 
-  const inPeriodList = useMemo(() => cheltuieliLinii.filter((l) => inPeriod(l.luna, period)), [cheltuieliLinii, period]);
+  const inPeriodList = useMemo(
+    () => cheltuieliLinii.filter((l) => inPeriod(l.luna, period, customFrom, customTo, customMonths)),
+    [cheltuieliLinii, period, customFrom, customTo, customMonths]
+  );
 
   function matchesFilters(l: CheltuialaLinie): boolean {
     if (filters.incadrare.length > 0 && !filters.incadrare.includes(l.incadrare)) return false;
@@ -130,7 +150,17 @@ export function CheltuieliDashboardClient({
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={period}
-            onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+            onChange={(e) => {
+              const next = e.target.value as PeriodFilter;
+              setPeriod(next);
+              if (next === "custom" && (!customFrom || !customTo)) {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                setCustomFrom(start.toISOString().slice(0, 10));
+                setCustomTo(end.toISOString().slice(0, 10));
+              }
+            }}
             className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
           >
             {PERIOD_OPTIONS.map((p) => (
@@ -139,6 +169,25 @@ export function CheltuieliDashboardClient({
               </option>
             ))}
           </select>
+          {period === "custom" && (
+            <>
+              <MonthMultiSelect selected={customMonths} onChange={setCustomMonths} />
+              <span className="text-[10px] text-slate-600">sau interval:</span>
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              />
+              <span className="text-xs text-slate-500">-</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              />
+            </>
+          )}
           <MultiSelect
             label="Incadrare"
             options={incadrareOptions}
