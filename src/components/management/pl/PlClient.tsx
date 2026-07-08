@@ -4,21 +4,28 @@ import { useMemo, useState, Fragment } from "react";
 import { ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
+import { VenituriComponentaList } from "@/components/venituri/dashboard/VenituriComponentaList";
+import { CheltuieliComponentaList } from "@/components/cheltuieli/dashboard/CheltuieliComponentaList";
 import { formatEur } from "@/lib/format";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { buildPlReport, type PlGrupValoare } from "@/lib/pl-analytics";
 import type { VenitLinie } from "@/types/venituri";
 import type { CheltuialaLinie } from "@/types/cheltuieli";
 
-type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
+type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "an" | "toate" | "custom";
 
 const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "luna_curenta", label: "Luna curenta" },
   { value: "ultimele_3_luni", label: "Ultimele 3 luni" },
   { value: "anul_curent", label: "Anul curent" },
+  { value: "an", label: "An specific" },
   { value: "toate", label: "Tot istoricul" },
   { value: "custom", label: "Perioada personalizata" },
 ];
+
+type Selection =
+  | { kind: "venit"; tipVenit: "Recurent" | "Nerecurent" | null; luna: string | null; label: string }
+  | { kind: "cost"; incadrare: string; clasa: string | null; luna: string | null; label: string };
 
 function firstOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -34,12 +41,22 @@ export function PlClient({
   incadrareOrdine: string[];
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
+  const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [showEstimat, setShowEstimat] = useState(true);
   const [showRealizat, setShowRealizat] = useState(true);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [selection, setSelection] = useState<Selection | null>(null);
+
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    for (const l of venituriLinii) years.add(Number(l.luna.slice(0, 4)));
+    for (const l of cheltuieliLinii) years.add(Number(l.luna.slice(0, 4)));
+    years.add(new Date().getFullYear());
+    return [...years].sort((a, b) => b - a);
+  }, [venituriLinii, cheltuieliLinii]);
 
   const { from, to } = useMemo(() => {
     const now = new Date();
@@ -53,13 +70,17 @@ export function PlClient({
     if (period === "anul_curent") {
       return { from: new Date(now.getFullYear(), 0, 1), to: new Date(now.getFullYear(), 11, 1) };
     }
+    if (period === "an") {
+      const y = Number(selectedYear) || now.getFullYear();
+      return { from: new Date(y, 0, 1), to: new Date(y, 11, 1) };
+    }
     if (period === "custom" && customFrom && customTo) {
       return { from: firstOfMonth(new Date(customFrom)), to: firstOfMonth(new Date(customTo)) };
     }
     const toateLunile = [...venituriLinii.map((l) => l.luna), ...cheltuieliLinii.map((l) => l.luna)].sort();
     if (toateLunile.length === 0) return { from: firstOfMonth(now), to: firstOfMonth(now) };
     return { from: firstOfMonth(new Date(toateLunile[0])), to: firstOfMonth(new Date(toateLunile[toateLunile.length - 1])) };
-  }, [period, customFrom, customTo, venituriLinii, cheltuieliLinii]);
+  }, [period, selectedYear, customFrom, customTo, venituriLinii, cheltuieliLinii]);
 
   const report = useMemo(
     () => buildPlReport(venituriLinii, cheltuieliLinii, incadrareOrdine, from, to),
@@ -89,9 +110,40 @@ export function PlClient({
 
   const nrColoane = (showEstimat ? 1 : 0) + (showRealizat ? 1 : 0);
 
+  const selectionLinii = useMemo(() => {
+    if (!selection) return [];
+    const lunaSet = selection.luna ? new Set([selection.luna]) : new Set(report.luni.map((l) => l.luna));
+    if (selection.kind === "venit") {
+      return venituriLinii.filter(
+        (l) => (selection.tipVenit === null || l.tip_venit === selection.tipVenit) && lunaSet.has(l.luna.slice(0, 7))
+      );
+    }
+    return cheltuieliLinii.filter(
+      (l) =>
+        (l.incadrare || "ALTELE") === selection.incadrare &&
+        (selection.clasa === null || (l.clasa || "Necategorizat") === selection.clasa) &&
+        lunaSet.has(l.luna.slice(0, 7))
+    );
+  }, [selection, venituriLinii, cheltuieliLinii, report.luni]);
+
+  function AmountButton({ value, onClick }: { value: number; onClick: () => void }) {
+    return (
+      <button type="button" onClick={onClick} className="w-full text-right transition hover:text-[#E8007A] hover:underline">
+        {formatEur(value)}
+      </button>
+    );
+  }
+
   function renderGrupRows(grup: PlGrupValoare, isVenituri: boolean) {
     const isCollapsed = collapsed.has(grup.incadrare);
     const rows: React.ReactNode[] = [];
+
+    const grupSelection = (luna: string | null): Selection => {
+      if (isVenituri) {
+        return { kind: "venit", tipVenit: null, luna, label: "VENITURI" };
+      }
+      return { kind: "cost", incadrare: grup.incadrare, clasa: null, luna, label: grup.incadrare };
+    };
 
     rows.push(
       <tr key={grup.incadrare} className={`border-b border-border-subtle ${isVenituri ? "bg-green-500/[0.06]" : "bg-surface-2"}`}>
@@ -107,25 +159,25 @@ export function PlClient({
         {report.luni.map((luna) => (
           <Fragment key={luna.luna}>
             {showEstimat && (
-              <td key={`${luna.luna}-e`} className="whitespace-nowrap px-3 py-2 text-right font-mono text-sm text-text-primary">
-                {formatEur(grup.perLuna[luna.luna].estimat)}
+              <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-sm text-text-primary">
+                <AmountButton value={grup.perLuna[luna.luna].estimat} onClick={() => setSelection(grupSelection(luna.luna))} />
               </td>
             )}
             {showRealizat && (
-              <td key={`${luna.luna}-r`} className="whitespace-nowrap px-3 py-2 text-right font-mono text-sm text-text-primary">
-                {formatEur(grup.perLuna[luna.luna].realizat)}
+              <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-sm text-text-primary">
+                <AmountButton value={grup.perLuna[luna.luna].realizat} onClick={() => setSelection(grupSelection(luna.luna))} />
               </td>
             )}
           </Fragment>
         ))}
         {showEstimat && (
           <td className="whitespace-nowrap bg-surface-1 px-3 py-2 text-right font-mono text-sm font-medium text-text-primary">
-            {formatEur(grup.totalEstimat)}
+            <AmountButton value={grup.totalEstimat} onClick={() => setSelection(grupSelection(null))} />
           </td>
         )}
         {showRealizat && (
           <td className="whitespace-nowrap bg-surface-1 px-3 py-2 text-right font-mono text-sm font-medium text-text-primary">
-            {formatEur(grup.totalRealizat)}
+            <AmountButton value={grup.totalRealizat} onClick={() => setSelection(grupSelection(null))} />
           </td>
         )}
       </tr>
@@ -133,31 +185,39 @@ export function PlClient({
 
     if (!isCollapsed) {
       for (const linie of grup.linii) {
+        const linieSelection = (luna: string | null): Selection => {
+          if (isVenituri) {
+            const tipVenit = linie.clasa === "Recurente" ? "Recurent" : "Nerecurent";
+            return { kind: "venit", tipVenit, luna, label: linie.clasa };
+          }
+          return { kind: "cost", incadrare: grup.incadrare, clasa: linie.clasa, luna, label: `${grup.incadrare} · ${linie.clasa}` };
+        };
+
         rows.push(
           <tr key={`${grup.incadrare}-${linie.clasa}`} className="border-b border-border-faint">
             <td className="sticky left-0 z-10 bg-surface-1 py-1.5 pl-8 pr-3 text-sm text-text-secondary">{linie.clasa}</td>
             {report.luni.map((luna) => (
               <Fragment key={luna.luna}>
                 {showEstimat && (
-                  <td key={`${luna.luna}-e`} className="whitespace-nowrap px-3 py-1.5 text-right font-mono text-xs text-text-secondary">
-                    {formatEur(linie.perLuna[luna.luna].estimat)}
+                  <td className="whitespace-nowrap px-3 py-1.5 text-right font-mono text-xs text-text-secondary">
+                    <AmountButton value={linie.perLuna[luna.luna].estimat} onClick={() => setSelection(linieSelection(luna.luna))} />
                   </td>
                 )}
                 {showRealizat && (
-                  <td key={`${luna.luna}-r`} className="whitespace-nowrap px-3 py-1.5 text-right font-mono text-xs text-text-secondary">
-                    {formatEur(linie.perLuna[luna.luna].realizat)}
+                  <td className="whitespace-nowrap px-3 py-1.5 text-right font-mono text-xs text-text-secondary">
+                    <AmountButton value={linie.perLuna[luna.luna].realizat} onClick={() => setSelection(linieSelection(luna.luna))} />
                   </td>
                 )}
               </Fragment>
             ))}
             {showEstimat && (
               <td className="whitespace-nowrap bg-surface-1 px-3 py-1.5 text-right font-mono text-xs text-text-primary">
-                {formatEur(linie.totalEstimat)}
+                <AmountButton value={linie.totalEstimat} onClick={() => setSelection(linieSelection(null))} />
               </td>
             )}
             {showRealizat && (
               <td className="whitespace-nowrap bg-surface-1 px-3 py-1.5 text-right font-mono text-xs text-text-primary">
-                {formatEur(linie.totalRealizat)}
+                <AmountButton value={linie.totalRealizat} onClick={() => setSelection(linieSelection(null))} />
               </td>
             )}
           </tr>
@@ -175,7 +235,8 @@ export function PlClient({
           <h1 className="text-lg font-heading text-text-primary">P&amp;L detaliat</h1>
           <p className="text-sm text-text-muted">
             Venituri si costuri pe grupe (Incadrare) si linii (Clasa), calculate automat din Venituri/Cheltuieli. Editezi
-            grupele/liniile din Setari → Nomenclatoare (Incadrare Cheltuieli / Clasa Cheltuieli).
+            grupele/liniile din Setari → Nomenclatoare (Incadrare Cheltuieli / Clasa Cheltuieli). Click pe orice suma
+            pentru a vedea din ce se compune.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -206,6 +267,19 @@ export function PlClient({
             </option>
           ))}
         </select>
+        {period === "an" && (
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
+          >
+            {availableYears.map((y) => (
+              <option key={y} value={y} style={{ backgroundColor: "var(--surface-1)" }}>
+                {y}
+              </option>
+            ))}
+          </select>
+        )}
         {period === "custom" && (
           <>
             <MonthMultiSelect
@@ -290,18 +364,18 @@ export function PlClient({
           Bifeaza cel putin Estimat sau Realizat ca sa vezi tabelul.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border-subtle">
+        <div className="mb-4 max-h-[70vh] overflow-auto rounded-xl border border-border-subtle">
           <table className="w-full border-collapse text-sm">
-            <thead>
+            <thead className="sticky top-0 z-20">
               <tr className="border-b border-border-subtle bg-surface-1">
-                <th className="sticky left-0 z-10 bg-surface-1 px-3 py-2 text-left text-xs font-medium text-text-muted">
+                <th className="sticky left-0 z-30 bg-surface-1 px-3 py-2 text-left text-xs font-medium text-text-muted">
                   Linie
                 </th>
                 {report.luni.map((luna) => (
                   <th
                     key={luna.luna}
                     colSpan={nrColoane}
-                    className="border-l border-border-faint px-3 py-2 text-center text-xs font-medium text-text-muted"
+                    className="border-l border-border-faint bg-surface-1 px-3 py-2 text-center text-xs font-medium text-text-muted"
                   >
                     {luna.label}
                   </th>
@@ -311,18 +385,16 @@ export function PlClient({
                 </th>
               </tr>
               <tr className="border-b border-border-subtle bg-surface-1">
-                <th className="sticky left-0 z-10 bg-surface-1 px-3 py-1 text-left text-[10px] text-text-faint" />
+                <th className="sticky left-0 z-30 bg-surface-1 px-3 py-1 text-left text-[10px] text-text-faint" />
                 {report.luni.map((luna) => (
                   <Fragment key={luna.luna}>
                     {showEstimat && (
-                      <th key={`${luna.luna}-e`} className="border-l border-border-faint px-3 py-1 text-right text-[10px] font-normal text-text-faint">
+                      <th className="border-l border-border-faint bg-surface-1 px-3 py-1 text-right text-[10px] font-normal text-text-faint">
                         Estimat
                       </th>
                     )}
                     {showRealizat && (
-                      <th key={`${luna.luna}-r`} className="px-3 py-1 text-right text-[10px] font-normal text-text-faint">
-                        Realizat
-                      </th>
+                      <th className="bg-surface-1 px-3 py-1 text-right text-[10px] font-normal text-text-faint">Realizat</th>
                     )}
                   </Fragment>
                 ))}
@@ -343,7 +415,6 @@ export function PlClient({
                   <Fragment key={luna.luna}>
                     {showEstimat && (
                       <td
-                        key={`${luna.luna}-e`}
                         className={`whitespace-nowrap px-3 py-2 text-right font-mono text-sm ${
                           report.profit.perLuna[luna.luna].estimat >= 0 ? "text-green-400" : "text-red-400"
                         }`}
@@ -353,7 +424,6 @@ export function PlClient({
                     )}
                     {showRealizat && (
                       <td
-                        key={`${luna.luna}-r`}
                         className={`whitespace-nowrap px-3 py-2 text-right font-mono text-sm ${
                           report.profit.perLuna[luna.luna].realizat >= 0 ? "text-green-400" : "text-red-400"
                         }`}
@@ -384,6 +454,27 @@ export function PlClient({
               </tr>
             </tbody>
           </table>
+        </div>
+      )}
+
+      {selection && (
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs text-text-muted">
+              Compozitie: <span className="text-text-secondary">{selection.label}</span>
+              {selection.luna && (
+                <span className="text-text-secondary"> · {report.luni.find((l) => l.luna === selection.luna)?.label}</span>
+              )}
+            </p>
+            <button onClick={() => setSelection(null)} className="text-xs text-text-muted hover:text-text-primary">
+              Inchide
+            </button>
+          </div>
+          {selection.kind === "venit" ? (
+            <VenituriComponentaList linii={selectionLinii as VenitLinie[]} />
+          ) : (
+            <CheltuieliComponentaList linii={selectionLinii as CheltuialaLinie[]} />
+          )}
         </div>
       )}
     </div>
