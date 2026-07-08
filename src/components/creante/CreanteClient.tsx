@@ -416,8 +416,8 @@ export function CreanteClient({
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Creante</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-lg font-heading text-text-primary">Creante</h1>
+          <p className="text-sm text-text-muted">
             {lastBatch
               ? `Ultimul import: ${new Date(lastBatch.importat_la).toLocaleDateString("ro-RO")} (${lastBatch.nr_facturi_noi} noi, ${lastBatch.nr_facturi_actualizate} actualizate)`
               : "Niciun import inca."}
@@ -429,14 +429,14 @@ export function CreanteClient({
               onClick={handleSyncPartners}
               disabled={isPending}
               title="Cauta firme comune intre Creante, Obligatii si CRM"
-              className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-2 text-xs font-medium text-text-primary transition hover:bg-surface-1 disabled:opacity-50"
             >
               <Link2 size={14} />
               Sincronizeaza parteneri
             </button>
             <CreanteImportForm />
           </div>
-          {syncMessage && <p className="text-xs text-slate-500">{syncMessage}</p>}
+          {syncMessage && <p className="text-xs text-text-muted">{syncMessage}</p>}
         </div>
       </div>
 
@@ -498,7 +498,7 @@ export function CreanteClient({
       </div>
 
       {expandedKpi && (
-        <div className="mb-5 rounded-xl border border-[#E8007A]/20 bg-white/[0.02] p-4">
+        <div className="mb-5 rounded-xl border border-[#E8007A]/20 bg-surface-1 p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-[#E8007A]">
               {expandedKpi === "totalNeincasat" && "Desfasurator — toate facturile neincasate (indiferent de scadenta)"}
@@ -508,7 +508,7 @@ export function CreanteClient({
             </p>
             <button
               onClick={() => setExpandedKpi(null)}
-              className="rounded-md p-1 text-slate-500 hover:text-white"
+              className="rounded-md p-1 text-text-muted hover:text-text-primary"
             >
               <X size={16} />
             </button>
@@ -518,7 +518,7 @@ export function CreanteClient({
             <div className="max-h-72 overflow-y-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[10px] uppercase text-slate-500">
+                  <tr className="text-left text-[10px] uppercase text-text-muted">
                     <th className="px-2 py-1.5">Firma</th>
                     <th className="px-2 py-1.5">Factura</th>
                     <th className="px-2 py-1.5">Scadenta</th>
@@ -538,14 +538,14 @@ export function CreanteClient({
                       <tr
                         key={c.id}
                         onClick={() => setSelected(c)}
-                        className="cursor-pointer border-t border-white/5 hover:bg-white/[0.03]"
+                        className="cursor-pointer border-t border-border-faint hover:bg-surface-1"
                       >
-                        <td className="px-2 py-1.5 text-white">{c.nume_firma}</td>
-                        <td className="px-2 py-1.5 text-slate-400">{c.nr_factura}</td>
-                        <td className="px-2 py-1.5 text-slate-400">
+                        <td className="px-2 py-1.5 text-text-primary">{c.nume_firma}</td>
+                        <td className="px-2 py-1.5 text-text-secondary">{c.nr_factura}</td>
+                        <td className="px-2 py-1.5 text-text-secondary">
                           {c.data_scadenta ? new Date(c.data_scadenta).toLocaleDateString("ro-RO") : "—"}
                         </td>
-                        <td className="px-2 py-1.5 text-right font-mono text-white">
+                        <td className="px-2 py-1.5 text-right font-mono text-text-primary">
                           {formatRon(expandedKpi === "targetPropus" ? getValoarePropusa(c) : c.sold)}
                         </td>
                       </tr>
@@ -558,7 +558,7 @@ export function CreanteClient({
             <div className="max-h-72 overflow-y-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[10px] uppercase text-slate-500">
+                  <tr className="text-left text-[10px] uppercase text-text-muted">
                     <th className="px-2 py-1.5">Firma</th>
                     <th className="px-2 py-1.5">Factura</th>
                     <th className="px-2 py-1.5">Data incasarii</th>
@@ -572,14 +572,14 @@ export function CreanteClient({
                       <tr
                         key={i.id}
                         onClick={() => c && setSelected(c)}
-                        className="cursor-pointer border-t border-white/5 hover:bg-white/[0.03]"
+                        className="cursor-pointer border-t border-border-faint hover:bg-surface-1"
                       >
-                        <td className="px-2 py-1.5 text-white">{c?.nume_firma ?? "—"}</td>
-                        <td className="px-2 py-1.5 text-slate-400">{c?.nr_factura ?? "—"}</td>
-                        <td className="px-2 py-1.5 text-slate-400">
+                        <td className="px-2 py-1.5 text-text-primary">{c?.nume_firma ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-text-secondary">{c?.nr_factura ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-text-secondary">
                           {new Date(i.data_incasare).toLocaleDateString("ro-RO")}
                         </td>
-                        <td className="px-2 py-1.5 text-right font-mono text-white">
+                        <td className="px-2 py-1.5 text-right font-mono text-text-primary">
                           {formatRon(i.valoare)}
                         </td>
                       </tr>
@@ -613,10 +613,10 @@ export function CreanteClient({
               setCustomTo(end.toISOString().slice(0, 10));
             }
           }}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
           {PERIOD_OPTIONS.map((p) => (
-            <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+            <option key={p.value} value={p.value} style={{ backgroundColor: "var(--surface-1)" }}>
               {p.label}
             </option>
           ))}
@@ -630,7 +630,7 @@ export function CreanteClient({
                 setPage(1);
               }}
             />
-            <span className="text-[10px] text-slate-600">sau interval:</span>
+            <span className="text-[10px] text-text-faint">sau interval:</span>
             <input
               type="date"
               value={customFrom}
@@ -638,9 +638,9 @@ export function CreanteClient({
                 setCustomFrom(e.target.value);
                 setPage(1);
               }}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
             />
-            <span className="text-xs text-slate-500">-</span>
+            <span className="text-xs text-text-muted">-</span>
             <input
               type="date"
               value={customTo}
@@ -648,7 +648,7 @@ export function CreanteClient({
                 setCustomTo(e.target.value);
                 setPage(1);
               }}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
             />
           </>
         )}
@@ -659,7 +659,7 @@ export function CreanteClient({
             setPage(1);
           }}
           placeholder="Cauta firma, serviciu sau nr. factura..."
-          className="w-56 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-56 rounded-md border border-border-subtle bg-surface-2 px-3 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
         {(["restanta", "la_zi", "neincasate", "incasata", "toate"] as StatusFilter[]).map((s) => (
           <button
@@ -671,7 +671,7 @@ export function CreanteClient({
             className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
               statusFilter === s
                 ? "bg-[#E8007A] text-[#0B0D1A]"
-                : "border border-white/10 text-slate-400 hover:bg-white/5"
+                : "border border-border-subtle text-text-secondary hover:bg-surface-1"
             }`}
           >
             {s === "restanta"
@@ -690,7 +690,7 @@ export function CreanteClient({
           className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
             onlyPropuse
               ? "bg-[#E8007A] text-[#0B0D1A]"
-              : "border border-white/10 text-slate-400 hover:bg-white/5"
+              : "border border-border-subtle text-text-secondary hover:bg-surface-1"
           }`}
           title="Toate facturile bifate 'Propus spre incasare' (partial sau integral)"
         >
@@ -702,18 +702,18 @@ export function CreanteClient({
           className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
             onlyPartial
               ? "bg-[#E8007A] text-[#0B0D1A]"
-              : "border border-white/10 text-slate-400 hover:bg-white/5"
+              : "border border-border-subtle text-text-secondary hover:bg-surface-1"
           }`}
           title="Facturi propuse spre incasare pentru mai putin decat soldul integral"
         >
           <Target size={13} />
           Propuse partial
         </button>
-        <div className="flex items-center rounded-md border border-white/10 p-0.5">
+        <div className="flex items-center rounded-md border border-border-subtle p-0.5">
           <button
             onClick={() => setViewMode("facturi")}
             className={`rounded px-2 py-1 text-xs font-medium transition ${
-              viewMode === "facturi" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "facturi" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
             }`}
           >
             Pe facturi
@@ -721,7 +721,7 @@ export function CreanteClient({
           <button
             onClick={() => setViewMode("client")}
             className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition ${
-              viewMode === "client" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "client" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
             }`}
           >
             <Users size={12} />
@@ -730,14 +730,14 @@ export function CreanteClient({
         </div>
         <button
           onClick={() => setShowManualForm(true)}
-          className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+          className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-primary transition hover:bg-surface-1"
         >
           <Plus size={13} />
           Adauga manual
         </button>
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+          className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-primary transition hover:bg-surface-1"
         >
           <Download size={13} />
           Export Excel
@@ -763,28 +763,28 @@ export function CreanteClient({
       </div>
 
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+        <div className="rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-text-muted">
             Facturi pentru filtrul curent
           </p>
-          <p className="font-mono text-xl font-semibold text-white">{filteredTotals.count}</p>
+          <p className="font-mono text-xl font-semibold text-text-primary">{filteredTotals.count}</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">Total facturat</p>
-          <p className="font-mono text-xl font-semibold text-white">
+        <div className="rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-text-muted">Total facturat</p>
+          <p className="font-mono text-xl font-semibold text-text-primary">
             {formatRon(filteredTotals.totalFacturat)}
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">Sold</p>
-          <p className="font-mono text-xl font-semibold text-white">
+        <div className="rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-text-muted">Sold</p>
+          <p className="font-mono text-xl font-semibold text-text-primary">
             {formatRon(filteredTotals.totalSold)}
           </p>
         </div>
       </div>
 
       {viewMode === "facturi" && (
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
         <table className="text-sm" style={{ tableLayout: "fixed", width: "max-content" }}>
           <colgroup>
             <col style={{ width: 32 }} />
@@ -793,19 +793,19 @@ export function CreanteClient({
             ))}
           </colgroup>
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-[10px] uppercase text-text-muted">
               <th className="px-2 py-1.5">
                 <input
                   type="checkbox"
                   checked={filtered.length > 0 && checkedIds.size === filtered.length}
                   onChange={toggleCheckAll}
-                  className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                  className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                 />
               </th>
               {DEFAULT_COLUMNS.map((col) => (
                 <th
                   key={col.key}
-                  className={`relative select-none px-2 py-1.5 ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"} ${col.sortKey ? "cursor-pointer hover:text-slate-300" : ""}`}
+                  className={`relative select-none px-2 py-1.5 ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"} ${col.sortKey ? "cursor-pointer hover:text-text-primary" : ""}`}
                   onClick={() => col.sortKey && handleSort(col.sortKey)}
                 >
                   <span className="inline-flex items-center gap-1">
@@ -828,38 +828,38 @@ export function CreanteClient({
               return (
                 <tr
                   key={c.id}
-                  className="border-b border-white/5 transition hover:bg-white/[0.03]"
+                  className="border-b border-border-faint transition hover:bg-surface-1"
                 >
                   <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={checkedIds.has(c.id)}
                       onChange={() => toggleCheck(c.id)}
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                      className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                     />
                   </td>
                   <td className="truncate px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                     <Link
                       href={`/creante/client/${encodeURIComponent(c.nume_firma)}`}
-                      className="text-white hover:text-[#E8007A] hover:underline"
+                      className="text-text-primary hover:text-[#E8007A] hover:underline"
                     >
                       {c.nume_firma}
                     </Link>
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(c)}
                   >
                     {c.serviciu_facturat ?? "—"}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(c)}
                   >
                     {c.tip_vanzare ?? "—"}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(c)}
                   >
                     <span className="flex items-center gap-1">
@@ -875,31 +875,31 @@ export function CreanteClient({
                     </span>
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(c)}
                   >
                     {c.data_factura ? new Date(c.data_factura).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(c)}
                   >
                     {c.data_scadenta ? new Date(c.data_scadenta).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-slate-300"
+                    className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-text-primary"
                     onClick={() => setSelected(c)}
                   >
                     {formatRon(c.total_factura)}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-white"
+                    className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-text-primary"
                     onClick={() => setSelected(c)}
                   >
                     {formatRon(c.sold)}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-right text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-right text-text-secondary"
                     onClick={() => setSelected(c)}
                   >
                     {zile ? (
@@ -911,7 +911,7 @@ export function CreanteClient({
                     )}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(c)}
                   >
                     {c.data_incasare ? new Date(c.data_incasare).toLocaleDateString("ro-RO") : "—"}
@@ -923,7 +923,7 @@ export function CreanteClient({
                         checked={c.propus_spre_incasare}
                         onChange={(e) => handleToggleProposSpreIncasare(c, e.target.checked)}
                         disabled={c.sold <= 0}
-                        className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04] accent-[#E8007A] disabled:opacity-30"
+                        className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2 accent-[#E8007A] disabled:opacity-30"
                         title={
                           c.sold <= 0
                             ? "Factura deja incasata"
@@ -945,7 +945,7 @@ export function CreanteClient({
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={12} className="px-3 py-8 text-center text-sm text-text-muted">
                   Nicio factura gasita.
                 </td>
               </tr>
@@ -956,10 +956,10 @@ export function CreanteClient({
       )}
 
       {viewMode === "client" && (
-        <div className="overflow-x-auto rounded-xl border border-white/10">
+        <div className="overflow-x-auto rounded-xl border border-border-subtle">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+              <tr className="border-b border-border-subtle bg-surface-1 text-left text-[10px] uppercase text-text-muted">
                 <th className="px-3 py-2">Firma</th>
                 <th className="px-3 py-2 text-right">Nr facturi</th>
                 <th className="px-3 py-2 text-right">Total facturat</th>
@@ -969,28 +969,28 @@ export function CreanteClient({
             </thead>
             <tbody>
               {clientGroups.map((g) => (
-                <tr key={g.numeFirma} className="border-b border-white/5 hover:bg-white/[0.03]">
+                <tr key={g.numeFirma} className="border-b border-border-faint hover:bg-surface-1">
                   <td className="px-3 py-2">
                     <Link
                       href={`/creante/client/${encodeURIComponent(g.numeFirma)}`}
-                      className="text-white hover:text-[#E8007A] hover:underline"
+                      className="text-text-primary hover:text-[#E8007A] hover:underline"
                     >
                       {g.numeFirma}
                     </Link>
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-400">{g.nrFacturi}</td>
-                  <td className="px-3 py-2 text-right font-mono text-slate-300">
+                  <td className="px-3 py-2 text-right text-text-secondary">{g.nrFacturi}</td>
+                  <td className="px-3 py-2 text-right font-mono text-text-primary">
                     {formatRon(g.totalFacturat)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-green-400">
                     {formatRon(g.incasat)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-white">{formatRon(g.sold)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-text-primary">{formatRon(g.sold)}</td>
                 </tr>
               ))}
               {clientGroups.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">
+                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-text-muted">
                     Niciun client gasit.
                   </td>
                 </tr>
@@ -1001,7 +1001,7 @@ export function CreanteClient({
       )}
 
       {viewMode === "facturi" && (
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
           {[25, 50, 100, "toate" as const].map((size) => (
@@ -1014,7 +1014,7 @@ export function CreanteClient({
               className={`rounded-md px-2 py-1 font-medium transition ${
                 pageSize === size
                   ? "bg-[#E8007A] text-[#0B0D1A]"
-                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+                  : "border border-border-subtle text-text-secondary hover:bg-surface-1"
               }`}
             >
               {size === "toate" ? "Toate" : size}
@@ -1031,7 +1031,7 @@ export function CreanteClient({
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronLeft size={14} />
             </button>
@@ -1041,7 +1041,7 @@ export function CreanteClient({
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronRight size={14} />
             </button>

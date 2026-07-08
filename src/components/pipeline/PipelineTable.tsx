@@ -92,7 +92,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
 
   return (
     <div className="flex h-full flex-col px-3 py-4 sm:px-6">
-      <div className="flex-1 overflow-auto rounded-xl border border-white/10">
+      <div className="flex-1 overflow-auto rounded-xl border border-border-subtle">
         <table className="w-full table-fixed text-sm">
           <colgroup>
             {COLUMN_KEYS.map((key) => (
@@ -100,7 +100,7 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
             ))}
           </colgroup>
           <thead className="sticky top-0 z-10">
-            <tr className="border-b border-white/10 bg-[#111535] text-left text-xs text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-xs text-text-muted">
               <Th label="Firma" onClick={() => toggleSort("nume_potential")} sticky colKey="firma" width={colWidths.firma} onResize={startResize} />
               <Th label="Cod fiscal" colKey="codFiscal" width={colWidths.codFiscal} onResize={startResize} />
               <Th label="Domeniu" colKey="domeniu" width={colWidths.domeniu} onResize={startResize} />
@@ -130,20 +130,20 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
           </thead>
           <tbody>
             {sorted.map((o) => (
-              <tr key={o.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
-                <td className="sticky left-0 z-[1] bg-[#0B0D1A] px-3 py-2.5">
+              <tr key={o.id} className="border-b border-border-faint transition hover:bg-surface-1">
+                <td className="sticky left-0 z-[1] bg-surface-0 px-3 py-2.5">
                   <Link
                     href={`/oportunitati/${o.id}`}
-                    className="font-medium text-white hover:text-[#E8007A]"
+                    className="font-medium text-text-primary hover:text-[#E8007A]"
                   >
                     {o.nume_potential}
                   </Link>
-                  <p className="text-[11px] text-slate-500">{o.nume_grup}</p>
+                  <p className="text-[11px] text-text-muted">{o.nume_grup}</p>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">
                   {o.cod_fiscal ?? "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">
                   {o.domeniul_activitate ?? "—"}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5">
@@ -174,26 +174,26 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
                 <td className="whitespace-nowrap px-3 py-2.5">
                   <ScoreBadge o={o} />
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">
                   {o.substatus ?? "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">
                   {o.profiles?.full_name ?? "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">{o.judet ?? "—"}</td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">{o.judet ?? "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">
                   {o.tip_proiect ?? "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">
                   {o.actiune ?? "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">
                   {o.data_actiune ? new Date(o.data_actiune).toLocaleDateString("ro-RO") : "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-slate-400">
+                <td className="whitespace-nowrap px-3 py-2.5 text-text-secondary">
                   {o.canal_intrare ?? "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-slate-300">
+                <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-text-primary">
                   {o.mrr_synergo > 0 ? formatEur(o.mrr_synergo) : "—"}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-[#E8007A]">
@@ -202,14 +202,14 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
                 <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-[#0070F3]">
                   {o.forecast_total_saas > 0 ? formatEur(o.forecast_total_saas) : "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2.5 text-right text-xs text-slate-500">
+                <td className="whitespace-nowrap px-3 py-2.5 text-right text-xs text-text-muted">
                   {new Date(o.updated_at).toLocaleDateString("ro-RO")}
                 </td>
               </tr>
             ))}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={18} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={18} className="px-3 py-8 text-center text-text-muted">
                   Nicio oportunitate gasita.
                 </td>
               </tr>
@@ -217,11 +217,11 @@ export function PipelineTable({ opportunities }: { opportunities: Opportunity[] 
           </tbody>
           {sorted.length > 0 && (
             <tfoot>
-              <tr className="border-t border-white/10 bg-white/[0.02] font-medium">
-                <td className="sticky left-0 bg-[#111535] px-3 py-2.5 text-white" colSpan={14}>
+              <tr className="border-t border-border-subtle bg-surface-1 font-medium">
+                <td className="sticky left-0 bg-surface-1 px-3 py-2.5 text-text-primary" colSpan={14}>
                   Total ({sorted.length} oportunitati)
                 </td>
-                <td className="px-3 py-2.5 text-right font-mono text-slate-200">
+                <td className="px-3 py-2.5 text-right font-mono text-text-primary">
                   {formatEur(totals.mrr)}
                 </td>
                 <td className="px-3 py-2.5 text-right font-mono text-[#E8007A]">
@@ -262,8 +262,8 @@ function Th({
       onClick={onClick}
       style={width ? { width, minWidth: width, maxWidth: width } : undefined}
       className={`relative select-none whitespace-nowrap px-3 py-2.5 font-medium transition ${
-        onClick ? "cursor-pointer hover:text-slate-300" : ""
-      } ${align === "right" ? "text-right" : "text-left"} ${sticky ? "sticky left-0 z-10 bg-[#111535]" : ""}`}
+        onClick ? "cursor-pointer hover:text-text-primary" : ""
+      } ${align === "right" ? "text-right" : "text-left"} ${sticky ? "sticky left-0 z-10 bg-surface-1" : ""}`}
     >
       {label}
       {colKey && onResize && (
@@ -318,5 +318,5 @@ function RiskBadge({ o }: { o: Opportunity }) {
       </span>
     );
   }
-  return <span className="text-xs text-slate-600">—</span>;
+  return <span className="text-xs text-text-faint">—</span>;
 }

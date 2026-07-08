@@ -79,14 +79,14 @@ export function MapDashboardClient({
     <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Oportunitati pe harta</h1>
-          <p className="text-sm text-slate-500">Distributie geografica pe judete, Romania</p>
+          <h1 className="text-lg font-heading text-text-primary">Oportunitati pe harta</h1>
+          <p className="text-sm text-text-muted">Distributie geografica pe judete, Romania</p>
         </div>
-        <div className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
+        <div className="flex gap-1 rounded-lg bg-surface-1 p-1 text-xs">
           <button
             onClick={() => setMetric("count")}
             className={`rounded-md px-3 py-1.5 transition ${
-              metric === "count" ? "bg-white/10 text-white" : "text-slate-500"
+              metric === "count" ? "bg-surface-2 text-text-primary" : "text-text-muted"
             }`}
           >
             Nr. oportunitati
@@ -94,7 +94,7 @@ export function MapDashboardClient({
           <button
             onClick={() => setMetric("arr")}
             className={`rounded-md px-3 py-1.5 transition ${
-              metric === "arr" ? "bg-white/10 text-white" : "text-slate-500"
+              metric === "arr" ? "bg-surface-2 text-text-primary" : "text-text-muted"
             }`}
           >
             ARR
@@ -116,7 +116,7 @@ export function MapDashboardClient({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
           <RomaniaMap
             geoData={geoData}
             data={data}
@@ -126,9 +126,9 @@ export function MapDashboardClient({
           />
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-medium text-white">
+            <p className="text-sm font-medium text-text-primary">
               {selectedJudete.length > 0
                 ? `Oportunitati: ${selectedJudete.join(", ")}`
                 : "Top judete"}
@@ -136,7 +136,7 @@ export function MapDashboardClient({
             {selectedJudete.length > 0 && (
               <button
                 onClick={() => setSelectedJudete([])}
-                className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-white"
+                className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-text-primary"
                 title="Sterge selectia"
               >
                 <X size={14} />
@@ -150,25 +150,25 @@ export function MapDashboardClient({
                 <Link
                   key={o.id}
                   href={`/oportunitati/${o.id}`}
-                  className="block rounded-lg border border-white/5 bg-white/[0.02] p-2 transition hover:border-white/20"
+                  className="block rounded-lg border border-border-faint bg-surface-1 p-2 transition hover:border-border-strong"
                 >
-                  <p className="truncate text-sm text-white">{o.nume_potential}</p>
+                  <p className="truncate text-sm text-text-primary">{o.nume_potential}</p>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span
                       className="rounded-full px-1.5 py-0.5 text-[10px]"
                       style={{
-                        backgroundColor: `${STAGE_COLORS[o.stage] ?? "#94A3B8"}20`,
-                        color: STAGE_COLORS[o.stage] ?? "#94A3B8",
+                        backgroundColor: `${STAGE_COLORS[o.stage] ?? "var(--text-secondary)"}20`,
+                        color: STAGE_COLORS[o.stage] ?? "var(--text-secondary)",
                       }}
                     >
                       {o.stage}
                     </span>
-                    <span className="text-[11px] text-slate-500">{o.judet}</span>
+                    <span className="text-[11px] text-text-muted">{o.judet}</span>
                   </div>
                 </Link>
               ))}
               {opportunitiesInSelection.length === 0 && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-text-muted">
                   Nicio oportunitate in judetele selectate.
                 </p>
               )}
@@ -179,16 +179,16 @@ export function MapDashboardClient({
                 <button
                   key={d.judet}
                   onClick={() => setSelectedJudete([d.judet])}
-                  className="flex w-full items-center justify-between rounded-md px-1.5 py-1 text-sm transition hover:bg-white/5"
+                  className="flex w-full items-center justify-between rounded-md px-1.5 py-1 text-sm transition hover:bg-surface-1"
                 >
-                  <span className="text-slate-300">{d.judet}</span>
-                  <span className="font-mono text-xs text-slate-400">
+                  <span className="text-text-primary">{d.judet}</span>
+                  <span className="font-mono text-xs text-text-secondary">
                     {metric === "count" ? `${d.count} oport.` : formatEur(d.arr)}
                   </span>
                 </button>
               ))}
               {sorted.length === 0 && (
-                <p className="text-xs text-slate-500">Nicio oportunitate cu judet completat.</p>
+                <p className="text-xs text-text-muted">Nicio oportunitate cu judet completat.</p>
               )}
             </div>
           )}

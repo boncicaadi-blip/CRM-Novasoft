@@ -19,8 +19,8 @@ const PERIOD_OPTIONS: { value: PeriodPreset; label: string }[] = [
 ];
 
 const selectClass =
-  "rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]";
-const optionStyle = { backgroundColor: "#111535", color: "#F1F5F9" };
+  "rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]";
+const optionStyle = { backgroundColor: "var(--surface-1)", color: "var(--text-primary)" };
 
 export function DashboardFilterBar({
   filters,
@@ -104,7 +104,7 @@ export function DashboardFilterBar({
             onChange={(e) => onChange({ ...filters, dateFrom: e.target.value || null })}
             className={selectClass}
           />
-          <span className="text-xs text-slate-500">→</span>
+          <span className="text-xs text-text-muted">→</span>
           <input
             type="date"
             value={filters.dateTo ?? ""}
@@ -133,7 +133,7 @@ export function DashboardFilterBar({
               periodPreset: null,
             })
           }
-          className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5 hover:text-white"
+          className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1 hover:text-text-primary"
         >
           <X size={13} />
           Reseteaza filtrele

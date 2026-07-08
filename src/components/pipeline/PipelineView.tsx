@@ -63,11 +63,11 @@ export function PipelineView({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-white/10 px-3 py-4 sm:px-6">
+      <div className="border-b border-border-subtle px-3 py-4 sm:px-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-lg font-heading text-white">Pipeline</h1>
-            <p className="text-sm text-slate-500">
+            <h1 className="text-lg font-heading text-text-primary">Pipeline</h1>
+            <p className="text-sm text-text-muted">
               {filtered.length} din {opportunities.length} oportunitati
             </p>
           </div>

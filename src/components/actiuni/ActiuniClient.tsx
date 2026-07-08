@@ -46,8 +46,8 @@ export function ActiuniClient({
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <h1 className="mb-1 text-lg font-heading text-white">Actiuni</h1>
-      <p className="mb-4 text-sm text-slate-500">
+      <h1 className="mb-1 text-lg font-heading text-text-primary">Actiuni</h1>
+      <p className="mb-4 text-sm text-text-muted">
         Ce trebuie facut astazi, ce e intarziat si ce risca sa fie uitat.
       </p>
 
@@ -59,23 +59,23 @@ export function ActiuniClient({
             className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition ${
               filter === f.key
                 ? "border-[#E8007A] bg-[#E8007A]/10 text-[#E8007A]"
-                : "border-white/10 text-slate-400 hover:bg-white/5"
+                : "border-border-subtle text-text-secondary hover:bg-surface-1"
             }`}
           >
             {f.label}
-            <span className="rounded-full bg-white/10 px-1.5 text-[11px]">{counts[f.key]}</span>
+            <span className="rounded-full bg-surface-2 px-1.5 text-[11px]">{counts[f.key]}</span>
           </button>
         ))}
         <select
           value={responsabilFilter}
           onChange={(e) => setResponsabilFilter(e.target.value)}
-          className="ml-auto rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="ml-auto rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toti responsabilii
           </option>
           {profiles.map((p) => (
-            <option key={p.id} value={p.id} style={{ backgroundColor: "#111535" }}>
+            <option key={p.id} value={p.id} style={{ backgroundColor: "var(--surface-1)" }}>
               {p.full_name}
             </option>
           ))}
@@ -87,7 +87,7 @@ export function ActiuniClient({
           <ActionRow key={item.opportunity.id} item={item} filter={filter} />
         ))}
         {items.length === 0 && (
-          <p className="py-10 text-center text-sm text-slate-500">
+          <p className="py-10 text-center text-sm text-text-muted">
             Nimic aici - foarte bine, inseamna ca ai prins tot.
           </p>
         )}
@@ -123,7 +123,7 @@ function ActionRow({
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
+    <div className="rounded-lg border border-border-subtle bg-surface-1 p-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
@@ -138,15 +138,15 @@ function ActionRow({
             )}
             <Link
               href={`/oportunitati/${o.id}`}
-              className="truncate text-sm font-medium text-white hover:text-[#E8007A]"
+              className="truncate text-sm font-medium text-text-primary hover:text-[#E8007A]"
             >
               {o.nume_potential}
             </Link>
             <span
               className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px]"
               style={{
-                backgroundColor: `${STAGE_COLORS[o.stage] ?? "#94A3B8"}20`,
-                color: STAGE_COLORS[o.stage] ?? "#94A3B8",
+                backgroundColor: `${STAGE_COLORS[o.stage] ?? "var(--text-secondary)"}20`,
+                color: STAGE_COLORS[o.stage] ?? "var(--text-secondary)",
               }}
             >
               {o.stage}
@@ -160,7 +160,7 @@ function ActionRow({
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-text-muted">
             {o.actiune ?? "Fara actiune definita"}
             {o.data_actiune && ` · ${new Date(o.data_actiune).toLocaleDateString("ro-RO")}`}
             {o.profiles?.full_name && ` · ${o.profiles.full_name}`}
@@ -183,19 +183,19 @@ function ActionRow({
           <button
             onClick={handlePostpone}
             disabled={isPending}
-            className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+            className="rounded-md border border-border-subtle px-3 py-1.5 text-xs text-text-primary transition hover:bg-surface-1"
           >
             Amana 7 zile
           </button>
           <button
             onClick={() => setShowReschedule((v) => !v)}
-            className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+            className="rounded-md border border-border-subtle px-3 py-1.5 text-xs text-text-primary transition hover:bg-surface-1"
           >
             Reprogrameaza
           </button>
           <Link
             href={`/oportunitati/${o.id}`}
-            className="flex items-center gap-1 rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+            className="flex items-center gap-1 rounded-md border border-border-subtle px-3 py-1.5 text-xs text-text-primary transition hover:bg-surface-1"
           >
             Deschide
             <ArrowRight size={12} />
@@ -250,44 +250,44 @@ function FinalizeForm({ opportunityId, onDone }: { opportunityId: string; onDone
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-2 max-w-sm space-y-2 rounded-md bg-white/[0.03] p-2.5"
+      className="mt-2 max-w-sm space-y-2 rounded-md bg-surface-1 p-2.5"
     >
       <div>
-        <label className="mb-1 block text-[11px] text-slate-500">Rezultat actiune *</label>
+        <label className="mb-1 block text-[11px] text-text-muted">Rezultat actiune *</label>
         <input
           required
           value={rezultat}
           onChange={(e) => setRezultat(e.target.value)}
           placeholder="Ce s-a discutat / rezultat..."
-          className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+          className="w-full rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
         />
       </div>
       <div>
-        <label className="mb-1 block text-[11px] text-slate-500">Data finalizare</label>
+        <label className="mb-1 block text-[11px] text-text-muted">Data finalizare</label>
         <input
           type="date"
           value={dataFinalizare}
           onChange={(e) => setDataFinalizare(e.target.value)}
-          className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+          className="w-full rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
         />
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="mb-1 block text-[11px] text-slate-500">Urmatorul pas</label>
+          <label className="mb-1 block text-[11px] text-text-muted">Urmatorul pas</label>
           <input
             value={nextActiune}
             onChange={(e) => setNextActiune(e.target.value)}
             placeholder="opțional"
-            className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+            className="w-full rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
           />
         </div>
         <div>
-          <label className="mb-1 block text-[11px] text-slate-500">Data</label>
+          <label className="mb-1 block text-[11px] text-text-muted">Data</label>
           <input
             type="date"
             value={nextData}
             onChange={(e) => setNextData(e.target.value)}
-            className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+            className="w-full rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
           />
         </div>
       </div>
@@ -302,7 +302,7 @@ function FinalizeForm({ opportunityId, onDone }: { opportunityId: string; onDone
         <button
           type="button"
           onClick={onDone}
-          className="rounded-md px-2.5 py-1.5 text-[11px] text-slate-400 hover:bg-white/5"
+          className="rounded-md px-2.5 py-1.5 text-[11px] text-text-secondary hover:bg-surface-1"
         >
           Anuleaza
         </button>
@@ -325,13 +325,13 @@ function RescheduleForm({ opportunityId, onDone }: { opportunityId: string; onDo
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 flex max-w-xs gap-1.5 rounded-md bg-white/[0.03] p-2.5">
+    <form onSubmit={handleSubmit} className="mt-2 flex max-w-xs gap-1.5 rounded-md bg-surface-1 p-2.5">
       <input
         type="date"
         required
         value={date}
         onChange={(e) => setDate(e.target.value)}
-        className="w-40 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+        className="w-40 rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
       />
       <button
         type="submit"
@@ -343,7 +343,7 @@ function RescheduleForm({ opportunityId, onDone }: { opportunityId: string; onDo
       <button
         type="button"
         onClick={onDone}
-        className="rounded-md px-2.5 py-1.5 text-[11px] text-slate-400 hover:bg-white/5"
+        className="rounded-md px-2.5 py-1.5 text-[11px] text-text-secondary hover:bg-surface-1"
       >
         X
       </button>

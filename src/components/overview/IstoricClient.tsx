@@ -23,7 +23,7 @@ const TYPE_CONFIG: Record<
   TimelineEntryType,
   { icon: typeof StickyNote; color: string; label: string }
 > = {
-  nota: { icon: StickyNote, color: "#94A3B8", label: "Nota" },
+  nota: { icon: StickyNote, color: "var(--text-secondary)", label: "Nota" },
   call: { icon: Phone, color: "#0070F3", label: "Call" },
   email: { icon: Mail, color: "#0070F3", label: "Email" },
   demo: { icon: Presentation, color: "#FBBF24", label: "Demo" },
@@ -54,16 +54,16 @@ export function IstoricClient({
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <p className="text-xs text-slate-500">Trasabilitate completa</p>
-      <h1 className="mb-1 text-lg font-heading text-white">{opportunity.nume_potential}</h1>
-      <p className="mb-5 text-sm text-slate-500">
+      <p className="text-xs text-text-muted">Trasabilitate completa</p>
+      <h1 className="mb-1 text-lg font-heading text-text-primary">{opportunity.nume_potential}</h1>
+      <p className="mb-5 text-sm text-text-muted">
         Tot ce s-a intamplat pe aceasta oportunitate, de la intrarea in sistem.
       </p>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Sumar timp pe stage */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-text-muted">
             Timp petrecut pe Stage
           </p>
           <div className="space-y-2.5">
@@ -72,25 +72,25 @@ export function IstoricClient({
                 <span className="flex items-center gap-1.5">
                   <span
                     className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: STAGE_COLORS[d.stage] ?? "#94A3B8" }}
+                    style={{ backgroundColor: STAGE_COLORS[d.stage] ?? "var(--text-secondary)" }}
                   />
                   {d.stage}
                   {!d.dataIesire && (
-                    <span className="text-[10px] text-slate-500">(curent)</span>
+                    <span className="text-[10px] text-text-muted">(curent)</span>
                   )}
                 </span>
-                <span className="font-mono text-xs text-slate-400">{d.zile}z</span>
+                <span className="font-mono text-xs text-text-secondary">{d.zile}z</span>
               </div>
             ))}
             {stageDurations.length === 0 && (
-              <p className="text-xs text-slate-500">Nu exista inca date suficiente.</p>
+              <p className="text-xs text-text-muted">Nu exista inca date suficiente.</p>
             )}
           </div>
         </div>
 
         {/* Cronologie completa */}
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-2">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4 lg:col-span-2">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-text-muted">
             Cronologie completa ({chronological.length} evenimente)
           </p>
           <div className="relative space-y-0">
@@ -101,7 +101,7 @@ export function IstoricClient({
               return (
                 <div key={entry.id} className="relative flex gap-3 pb-5">
                   {!isLast && (
-                    <div className="absolute left-[11px] top-6 h-full w-px bg-white/10" />
+                    <div className="absolute left-[11px] top-6 h-full w-px bg-surface-2" />
                   )}
                   <div
                     className="z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
@@ -114,7 +114,7 @@ export function IstoricClient({
                       <span className="text-xs font-medium" style={{ color: config.color }}>
                         {config.label}
                       </span>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-[11px] text-text-muted">
                         {new Date(entry.created_at).toLocaleString("ro-RO", {
                           day: "2-digit",
                           month: "2-digit",
@@ -124,13 +124,13 @@ export function IstoricClient({
                         })}
                       </span>
                       {entry.profiles?.full_name && (
-                        <span className="text-[11px] text-slate-500">
+                        <span className="text-[11px] text-text-muted">
                           · {entry.profiles.full_name}
                         </span>
                       )}
                     </div>
                     {entry.continut && (
-                      <p className="mt-0.5 whitespace-pre-line text-sm text-slate-300">
+                      <p className="mt-0.5 whitespace-pre-line text-sm text-text-primary">
                         {entry.continut}
                       </p>
                     )}
@@ -139,7 +139,7 @@ export function IstoricClient({
               );
             })}
             {chronological.length === 0 && (
-              <p className="py-6 text-center text-xs text-slate-500">Niciun eveniment inca.</p>
+              <p className="py-6 text-center text-xs text-text-muted">Niciun eveniment inca.</p>
             )}
           </div>
         </div>

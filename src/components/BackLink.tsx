@@ -15,7 +15,7 @@ export function BackLink({ label }: { label: string }) {
   return (
     <button
       onClick={() => router.back()}
-      className="flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-white"
+      className="flex items-center gap-1.5 text-sm text-text-secondary transition hover:text-text-primary"
     >
       <ArrowLeft size={13} />
       {label}

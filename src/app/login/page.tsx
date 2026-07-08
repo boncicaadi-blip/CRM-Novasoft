@@ -46,7 +46,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0B0D1A] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-surface-0 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Image
@@ -57,17 +57,17 @@ export default function LoginPage() {
             className="mx-auto mb-3 h-16 w-16 rounded-2xl"
             priority
           />
-          <h1 className="font-heading text-xl text-white">NovaSales</h1>
-          <p className="text-sm text-slate-400">Novasoft CRM</p>
+          <h1 className="font-heading text-xl text-text-primary">NovaSales</h1>
+          <p className="text-sm text-text-secondary">Novasoft CRM</p>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
-          <div className="mb-5 flex gap-1 rounded-lg bg-white/5 p-1 text-sm">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-6">
+          <div className="mb-5 flex gap-1 rounded-lg bg-surface-1 p-1 text-sm">
             <button
               type="button"
               onClick={() => setMode("signin")}
               className={`flex-1 rounded-md py-1.5 transition ${
-                mode === "signin" ? "bg-[#E8007A] text-[#0B0D1A] font-medium" : "text-slate-300"
+                mode === "signin" ? "bg-[#E8007A] text-[#0B0D1A] font-medium" : "text-text-primary"
               }`}
             >
               Autentificare
@@ -76,7 +76,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setMode("signup")}
               className={`flex-1 rounded-md py-1.5 transition ${
-                mode === "signup" ? "bg-[#E8007A] text-[#0B0D1A] font-medium" : "text-slate-300"
+                mode === "signup" ? "bg-[#E8007A] text-[#0B0D1A] font-medium" : "text-text-primary"
               }`}
             >
               Cont nou
@@ -86,36 +86,36 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-3">
             {mode === "signup" && (
               <div>
-                <label className="mb-1 block text-xs text-slate-400">Nume complet</label>
+                <label className="mb-1 block text-xs text-text-secondary">Nume complet</label>
                 <input
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+                  className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                   placeholder="Adrian Boncica"
                 />
               </div>
             )}
             <div>
-              <label className="mb-1 block text-xs text-slate-400">Email</label>
+              <label className="mb-1 block text-xs text-text-secondary">Email</label>
               <input
                 required
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+                className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                 placeholder="tu@firma.ro"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-400">Parola</label>
+              <label className="mb-1 block text-xs text-text-secondary">Parola</label>
               <input
                 required
                 type="password"
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+                className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                 placeholder="••••••••"
               />
             </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
-        <p className="mt-4 text-center text-[11px] text-slate-600">Creat de Adrian Boncica</p>
+        <p className="mt-4 text-center text-[11px] text-text-faint">Creat de Adrian Boncica</p>
       </div>
     </div>
   );

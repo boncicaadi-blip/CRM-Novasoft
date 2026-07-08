@@ -46,38 +46,38 @@ export function AngajatiForm({ rows }: { rows: AngajatiLunarRow[] }) {
   })();
 
   return (
-    <div className="max-w-md rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="max-w-md rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center gap-2">
-        <label className="text-xs text-slate-500">An:</label>
+        <label className="text-xs text-text-muted">An:</label>
         <select
           value={anSelectat}
           onChange={(e) => handleAnChange(Number(e.target.value))}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         >
           {aniDisponibili.map((an) => (
-            <option key={an} value={an} style={{ backgroundColor: "#111535" }}>
+            <option key={an} value={an} style={{ backgroundColor: "var(--surface-1)" }}>
               {an}
             </option>
           ))}
         </select>
         <button
           onClick={() => handleAnChange(anSelectat - 1)}
-          className="ml-auto rounded-md border border-white/10 px-2 py-1 text-xs text-slate-400 hover:bg-white/5"
+          className="ml-auto rounded-md border border-border-subtle px-2 py-1 text-xs text-text-secondary hover:bg-surface-1"
         >
           An anterior
         </button>
       </div>
 
       {mediePeAn !== null && (
-        <p className="mb-3 rounded-md border border-white/5 bg-white/[0.02] px-2.5 py-1.5 text-xs text-slate-400">
-          Medie {anSelectat} (din lunile completate): <span className="font-mono text-white">{mediePeAn.toFixed(1)}</span>
+        <p className="mb-3 rounded-md border border-border-faint bg-surface-1 px-2.5 py-1.5 text-xs text-text-secondary">
+          Medie {anSelectat} (din lunile completate): <span className="font-mono text-text-primary">{mediePeAn.toFixed(1)}</span>
         </p>
       )}
 
       <div>
         {LUNI.map((label, i) => (
-          <div key={i} className="flex items-center gap-2 border-b border-white/5 py-1.5 last:border-0">
-            <span className="w-24 text-sm text-slate-400">{label}</span>
+          <div key={i} className="flex items-center gap-2 border-b border-border-faint py-1.5 last:border-0">
+            <span className="w-24 text-sm text-text-secondary">{label}</span>
             <input
               type="number"
               min={0}
@@ -88,7 +88,7 @@ export function AngajatiForm({ rows }: { rows: AngajatiLunarRow[] }) {
                 next[i] = e.target.value;
                 setValues(next);
               }}
-              className="w-20 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
+              className="w-20 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-sm text-text-primary outline-none focus:border-[#E8007A]"
             />
           </div>
         ))}
@@ -101,9 +101,9 @@ export function AngajatiForm({ rows }: { rows: AngajatiLunarRow[] }) {
       >
         {isPending ? "Se salveaza..." : `Salveaza tot anul ${anSelectat}`}
       </button>
-      {message && <p className="mt-2 text-center text-xs text-slate-400">{message}</p>}
+      {message && <p className="mt-2 text-center text-xs text-text-secondary">{message}</p>}
 
-      <p className="mt-3 text-[11px] text-slate-500">
+      <p className="mt-3 text-[11px] text-text-muted">
         Numarul mediu de angajati, per luna, se foloseste pentru productivitate (Venit / Angajat) si
         cost per angajat (Cheltuieli / Angajat) in Management.
       </p>

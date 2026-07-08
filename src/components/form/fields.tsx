@@ -14,15 +14,15 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-medium text-slate-400">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-text-secondary">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-[11px] text-slate-500">{hint}</span>}
+      {hint && <span className="mt-1 block text-[11px] text-text-muted">{hint}</span>}
     </label>
   );
 }
 
 const inputClass =
-  "w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none transition focus:border-[#E8007A] placeholder:text-slate-600";
+  "w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none transition focus:border-[#E8007A] placeholder:text-text-faint";
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${inputClass} ${props.className ?? ""}`} />;
@@ -38,7 +38,7 @@ export function MoneyInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
         {...props}
         className={`${inputClass} pr-10 ${props.className ?? ""}`}
       />
-      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-500">
+      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-text-muted">
         EUR
       </span>
     </div>
@@ -65,7 +65,7 @@ export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
 // (browserul le randeaza cu paleta sistemului de operare), asa ca fortam
 // culorile explicit prin style inline - altfel optiunile apar alb-pe-alb
 // pe dark theme.
-const optionStyle = { backgroundColor: "#111535", color: "#F1F5F9" };
+const optionStyle = { backgroundColor: "var(--surface-1)", color: "var(--text-primary)" };
 
 export function Select({
   options,
@@ -94,11 +94,11 @@ export function Checkbox({
   ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-300">
+    <label className="flex items-center gap-2 text-sm text-text-primary">
       <input
         type="checkbox"
         {...props}
-        className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#E8007A]"
+        className="h-4 w-4 rounded border-border-strong bg-surface-1 accent-[#E8007A]"
       />
       {label}
     </label>

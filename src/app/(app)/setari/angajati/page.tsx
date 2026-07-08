@@ -6,8 +6,8 @@ export default async function SetariAngajatiPage() {
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <h1 className="text-lg font-heading text-white">Angajati</h1>
-      <p className="mb-5 text-sm text-slate-500">
+      <h1 className="text-lg font-heading text-text-primary">Angajati</h1>
+      <p className="mb-5 text-sm text-text-muted">
         Numarul de angajati, pe luna - folosit pentru productivitate si cost per angajat in Management.
       </p>
       <AngajatiForm rows={rows} />

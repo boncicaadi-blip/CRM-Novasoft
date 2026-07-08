@@ -41,9 +41,9 @@ export function FisaFurnizorClient({
   return (
     <div>
       <div className="mb-5">
-        <p className="text-xs text-slate-500">Fisa furnizor</p>
-        <h1 className="text-lg font-heading text-white">{numeFurnizor}</h1>
-        <p className="text-sm text-slate-500">{obligatii.length} facturi in total</p>
+        <p className="text-xs text-text-muted">Fisa furnizor</p>
+        <h1 className="text-lg font-heading text-text-primary">{numeFurnizor}</h1>
+        <p className="text-sm text-text-muted">{obligatii.length} facturi in total</p>
       </div>
 
       {(crossLinks.opportunityId || crossLinks.otherRoleSummary) && (
@@ -51,12 +51,12 @@ export function FisaFurnizorClient({
           {crossLinks.opportunityId && (
             <Link
               href={`/oportunitati/${crossLinks.opportunityId}`}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5"
+              className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary transition hover:bg-surface-1"
             >
               <GitBranch size={15} className="text-[#0070F3]" />
               Are oportunitate in CRM
               {crossLinks.opportunityNume && (
-                <span className="text-slate-500">— {crossLinks.opportunityNume}</span>
+                <span className="text-text-muted">— {crossLinks.opportunityNume}</span>
               )}
             </Link>
           )}
@@ -104,10 +104,10 @@ export function FisaFurnizorClient({
         />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] uppercase text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-[11px] uppercase text-text-muted">
               <th className="px-3 py-2">Serviciu</th>
               <th className="px-3 py-2">Factura</th>
               <th className="px-3 py-2">Data factura</th>
@@ -125,20 +125,20 @@ export function FisaFurnizorClient({
                 <tr
                   key={o.id}
                   onClick={() => setSelected(o)}
-                  className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.03]"
+                  className="cursor-pointer border-b border-border-faint transition hover:bg-surface-1"
                 >
-                  <td className="px-3 py-2 text-slate-400">{o.serviciu_facturat ?? "—"}</td>
-                  <td className="px-3 py-2 text-slate-400">{o.nr_factura}</td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">{o.serviciu_facturat ?? "—"}</td>
+                  <td className="px-3 py-2 text-text-secondary">{o.nr_factura}</td>
+                  <td className="px-3 py-2 text-text-secondary">
                     {o.data_factura ? new Date(o.data_factura).toLocaleDateString("ro-RO") : "—"}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">
                     {o.data_scadenta ? new Date(o.data_scadenta).toLocaleDateString("ro-RO") : "—"}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-slate-300">
+                  <td className="px-3 py-2 text-right font-mono text-text-primary">
                     {formatRon(o.total_factura)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-white">
+                  <td className="px-3 py-2 text-right font-mono text-text-primary">
                     {formatRon(o.sold)}
                   </td>
                   <td className="px-3 py-2">
@@ -147,7 +147,7 @@ export function FisaFurnizorClient({
                     ) : status === "restanta" ? (
                       <span className="text-red-400">Restanta ({zile}z)</span>
                     ) : (
-                      <span className="text-slate-400">La zi</span>
+                      <span className="text-text-secondary">La zi</span>
                     )}
                   </td>
                 </tr>
@@ -155,7 +155,7 @@ export function FisaFurnizorClient({
             })}
             {obligatii.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={7} className="px-3 py-8 text-center text-sm text-text-muted">
                   Nicio factura pentru acest furnizor.
                 </td>
               </tr>

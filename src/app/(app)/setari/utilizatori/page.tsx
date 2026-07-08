@@ -27,17 +27,17 @@ export default async function UtilizatoriPage() {
     <div className="px-3 py-4 sm:px-6">
       <div className="mb-1 flex items-center gap-2">
         <BackButton />
-        <h1 className="text-lg font-heading text-white">Utilizatori</h1>
+        <h1 className="text-lg font-heading text-text-primary">Utilizatori</h1>
       </div>
-      <p className="mb-5 text-sm text-slate-500">
+      <p className="mb-5 text-sm text-text-muted">
         Toti utilizatorii cu acces la aplicatie. Click pe iconita de editare pentru a schimba
         numele sau rolul.
       </p>
 
-      <div className="overflow-hidden rounded-xl border border-white/10">
+      <div className="overflow-hidden rounded-xl border border-border-subtle">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-[#111535] text-left text-xs text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-xs text-text-muted">
               <th className="px-3 py-2.5 font-medium">Nume</th>
               <th className="px-3 py-2.5 font-medium">Email</th>
               <th className="px-3 py-2.5 font-medium">Rol</th>

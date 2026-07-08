@@ -31,8 +31,8 @@ export function TopClasaList({
   const total = sorted.reduce((s, d) => s + d.realizat, 0);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         {title}
         {definition && <InfoTooltip title={title} definition={definition} />}
       </p>
@@ -44,24 +44,24 @@ export function TopClasaList({
             <button
               key={d.cheie}
               onClick={() => onToggle(d.cheie)}
-              className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition hover:bg-white/5 ${
+              className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition hover:bg-surface-1 ${
                 selected.length > 0 && !isSelected ? "opacity-40" : ""
               }`}
             >
-              <span className="truncate text-slate-300">{d.cheie}</span>
-              <span className="ml-2 shrink-0 font-mono text-xs text-slate-400">
-                {formatEur(d.realizat)} <span className="text-slate-600">({pct}%)</span>
+              <span className="truncate text-text-primary">{d.cheie}</span>
+              <span className="ml-2 shrink-0 font-mono text-xs text-text-secondary">
+                {formatEur(d.realizat)} <span className="text-text-faint">({pct}%)</span>
               </span>
             </button>
           );
         })}
         {rest.length > 0 && (
-          <div className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-slate-500">
+          <div className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-text-muted">
             <span>Altele ({rest.length})</span>
             <span className="font-mono text-xs">{formatEur(totalRest)}</span>
           </div>
         )}
-        {sorted.length === 0 && <p className="py-4 text-center text-xs text-slate-500">Niciun rezultat.</p>}
+        {sorted.length === 0 && <p className="py-4 text-center text-xs text-text-muted">Niciun rezultat.</p>}
       </div>
     </div>
   );

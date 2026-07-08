@@ -10,7 +10,7 @@ import type { TipAchizitieDatum } from "@/lib/obligatii-dashboard-analytics";
 const TIP_COLORS: Record<string, string> = {
   Recurente: "#E8007A",
   Nerecurente: "#0070F3",
-  Necunoscut: "#94A3B8",
+  Necunoscut: "var(--text-secondary)",
 };
 
 export function ObligatiiTipAchizitieChart({
@@ -25,9 +25,9 @@ export function ObligatiiTipAchizitieChart({
   const total = data.reduce((s, d) => s + d.sold, 0);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">Distributie Tip Achizitie (dupa sold)<InfoTooltip title="Distributie Tip Achizitie" definition={OBLIGATII_KPI_DEFINITIONS.tipAchizitieChart} /></p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">Distributie Tip Achizitie (dupa sold)<InfoTooltip title="Distributie Tip Achizitie" definition={OBLIGATII_KPI_DEFINITIONS.tipAchizitieChart} /></p>
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <PieChart>
@@ -47,7 +47,7 @@ export function ObligatiiTipAchizitieChart({
             {data.map((entry) => (
               <Cell
                 key={entry.tip}
-                fill={TIP_COLORS[entry.tip] ?? "#94A3B8"}
+                fill={TIP_COLORS[entry.tip] ?? "var(--text-secondary)"}
                 opacity={selected.length === 0 || selected.includes(entry.tip) ? 1 : 0.3}
               />
             ))}
@@ -70,8 +70,8 @@ export function ObligatiiTipAchizitieChart({
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: 12, color: "#94A3B8" }}
-            formatter={(value) => <span style={{ color: "#CBD5E1" }}>{value}</span>}
+            wrapperStyle={{ fontSize: 12, color: "var(--text-secondary)" }}
+            formatter={(value) => <span style={{ color: "var(--text-primary)" }}>{value}</span>}
           />
         </PieChart>
       </ResponsiveContainer>

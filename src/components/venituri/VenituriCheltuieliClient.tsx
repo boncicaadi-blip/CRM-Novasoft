@@ -87,13 +87,13 @@ function inPeriod(
 }
 
 const selectClass =
-  "w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]";
+  "w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]";
 const inputClass = selectClass;
-const labelClass = "mb-1 block text-[11px] text-slate-500";
+const labelClass = "mb-1 block text-[11px] text-text-muted";
 
 function NomOption({ n }: { n: Nomenclator }) {
   return (
-    <option value={n.valoare} style={{ backgroundColor: "#111535" }}>
+    <option value={n.valoare} style={{ backgroundColor: "var(--surface-1)" }}>
       {n.valoare}
     </option>
   );
@@ -131,16 +131,16 @@ function VeniturChart({ linii }: { linii: VenitLinie[] }) {
   if (data.length === 0) return null;
 
   return (
-    <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="mb-5 rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         Estimat vs. Realizat, pe perioada selectata
         <InfoTooltip title="Estimat vs. Realizat" definition={VENITURI_KPI_DEFINITIONS.evolutieEstimatRealizat} />
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
@@ -156,7 +156,7 @@ function VeniturChart({ linii }: { linii: VenitLinie[] }) {
               );
             }}
           />
-          <Legend wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
           <Bar dataKey="estimat" name="Estimat" fill="#475569" radius={[3, 3, 0, 0]} />
           <Bar dataKey="realizat" name="Realizat" fill="#22C55E" radius={[3, 3, 0, 0]} />
         </BarChart>
@@ -282,8 +282,8 @@ export function VenituriCheltuieliClient({
     <div className="px-3 py-4 sm:px-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Venituri & Cheltuieli</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-lg font-heading text-text-primary">Venituri & Cheltuieli</h1>
+          <p className="text-sm text-text-muted">
             Contracte (recurente si nerecurente), buget vs. realizat. Toate valorile in EUR, fara TVA.
           </p>
         </div>
@@ -292,7 +292,7 @@ export function VenituriCheltuieliClient({
             <button
               onClick={handleSync}
               disabled={isPending}
-              className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-2 text-xs font-medium text-text-primary transition hover:bg-surface-1 disabled:opacity-50"
             >
               <RefreshCw size={13} />
               Genereaza linii lipsa
@@ -300,7 +300,7 @@ export function VenituriCheltuieliClient({
             {viewMode === "venituri" && (
               <button
                 onClick={() => setShowManualForm(true)}
-                className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+                className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-2 text-xs font-medium text-text-primary transition hover:bg-surface-1"
               >
                 <Plus size={14} />
                 Venit manual
@@ -314,27 +314,27 @@ export function VenituriCheltuieliClient({
               Contract nou
             </button>
           </div>
-          {syncMessage && <p className="text-xs text-slate-500">{syncMessage}</p>}
+          {syncMessage && <p className="text-xs text-text-muted">{syncMessage}</p>}
         </div>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             Venit estimat (buget)
             <InfoTooltip title="Venit estimat" definition={VENITURI_KPI_DEFINITIONS.venitEstimat} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.estimat)}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.estimat)}</p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             Venit realizat
             <InfoTooltip title="Venit realizat" definition={VENITURI_KPI_DEFINITIONS.venitRealizat} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.realizat)}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.realizat)}</p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             Diferenta (pana in luna curenta)
             <InfoTooltip title="Diferenta (YTD)" definition={VENITURI_KPI_DEFINITIONS.diferentaYtd} />
           </p>
@@ -344,18 +344,18 @@ export function VenituriCheltuieliClient({
             {summary.diferenta >= 0 ? "+" : ""}
             {formatEur(summary.diferenta)}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-600">Nu include lunile viitoare</p>
+          <p className="mt-0.5 text-[10px] text-text-faint">Nu include lunile viitoare</p>
         </div>
       </div>
 
       <VeniturChart linii={filteredLinii} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex items-center rounded-md border border-white/10 p-0.5">
+        <div className="flex items-center rounded-md border border-border-subtle p-0.5">
           <button
             onClick={() => setViewMode("venituri")}
             className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition ${
-              viewMode === "venituri" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "venituri" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
             }`}
           >
             <TrendingUp size={13} />
@@ -364,7 +364,7 @@ export function VenituriCheltuieliClient({
           <button
             onClick={() => setViewMode("contracte")}
             className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition ${
-              viewMode === "contracte" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "contracte" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
             }`}
           >
             <FileText size={13} />
@@ -386,10 +386,10 @@ export function VenituriCheltuieliClient({
                   setCustomTo(end.toISOString().slice(0, 10));
                 }
               }}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
             >
               {PERIOD_OPTIONS.map((p) => (
-                <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+                <option key={p.value} value={p.value} style={{ backgroundColor: "var(--surface-1)" }}>
                   {p.label}
                 </option>
               ))}
@@ -397,34 +397,34 @@ export function VenituriCheltuieliClient({
             {period === "custom" && (
               <>
                 <MonthMultiSelect selected={customMonths} onChange={setCustomMonths} />
-                <span className="text-[10px] text-slate-600">sau interval:</span>
+                <span className="text-[10px] text-text-faint">sau interval:</span>
                 <input
                   type="date"
                   value={customFrom}
                   onChange={(e) => setCustomFrom(e.target.value)}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                  className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
                 />
-                <span className="text-xs text-slate-500">-</span>
+                <span className="text-xs text-text-muted">-</span>
                 <input
                   type="date"
                   value={customTo}
                   onChange={(e) => setCustomTo(e.target.value)}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                  className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
                 />
               </>
             )}
             <select
               value={filterTipVenit}
               onChange={(e) => setFilterTipVenit(e.target.value)}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
             >
-              <option value="" style={{ backgroundColor: "#111535" }}>
+              <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                 Recurent + Nerecurent
               </option>
-              <option value="Recurent" style={{ backgroundColor: "#111535" }}>
+              <option value="Recurent" style={{ backgroundColor: "var(--surface-1)" }}>
                 Recurent
               </option>
-              <option value="Nerecurent" style={{ backgroundColor: "#111535" }}>
+              <option value="Nerecurent" style={{ backgroundColor: "var(--surface-1)" }}>
                 Nerecurent
               </option>
             </select>
@@ -433,13 +433,13 @@ export function VenituriCheltuieliClient({
         <select
           value={filterClient}
           onChange={(e) => setFilterClient(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toti clientii
           </option>
           {clientOptions.map((c) => (
-            <option key={c} value={c} style={{ backgroundColor: "#111535" }}>
+            <option key={c} value={c} style={{ backgroundColor: "var(--surface-1)" }}>
               {c}
             </option>
           ))}
@@ -447,9 +447,9 @@ export function VenituriCheltuieliClient({
         <select
           value={filterProdus}
           onChange={(e) => setFilterProdus(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toate produsele
           </option>
           {produseOptions.map((n) => (
@@ -459,9 +459,9 @@ export function VenituriCheltuieliClient({
         <select
           value={filterServiciu}
           onChange={(e) => setFilterServiciu(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toate serviciile
           </option>
           {serviciiOptions.map((n) => (
@@ -471,24 +471,24 @@ export function VenituriCheltuieliClient({
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toate statusurile
           </option>
-          <option value="Activ" style={{ backgroundColor: "#111535" }}>
+          <option value="Activ" style={{ backgroundColor: "var(--surface-1)" }}>
             Activ
           </option>
-          <option value="Inactiv" style={{ backgroundColor: "#111535" }}>
+          <option value="Inactiv" style={{ backgroundColor: "var(--surface-1)" }}>
             Inactiv
           </option>
         </select>
         <select
           value={filterStadiu}
           onChange={(e) => setFilterStadiu(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toate stadiile
           </option>
           {stadiiOptions.map((n) => (
@@ -691,7 +691,7 @@ function VenituriTable({
     <div>
       {checkedIds.size > 0 && (
         <div className="mb-2 flex items-center gap-2 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2">
-          <span className="text-xs text-slate-300">{checkedIds.size} selectate</span>
+          <span className="text-xs text-text-primary">{checkedIds.size} selectate</span>
           <button
             onClick={handleBulkFacturat}
             disabled={isPending}
@@ -710,16 +710,16 @@ function VenituriTable({
           </button>
         </div>
       )}
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
         <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-[10px] uppercase text-text-muted">
               <th className="w-8 px-3 py-2">
                 <input
                   type="checkbox"
                   checked={sorted.length > 0 && checkedIds.size === sorted.length}
                   onChange={toggleCheckAll}
-                  className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                  className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                 />
               </th>
               <SortableTh label="Client" sortKey="client" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.client} onResize={(w) => setColWidths((c) => ({ ...c, client: w }))} />
@@ -740,21 +740,21 @@ function VenituriTable({
               const isEditing = editingId === l.id;
               const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
               return (
-                <tr key={l.id} className="border-b border-white/5 hover:bg-white/[0.03]">
+                <tr key={l.id} className="border-b border-border-faint hover:bg-surface-1">
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={checkedIds.has(l.id)}
                       onChange={() => toggleCheck(l.id)}
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                      className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                     />
                   </td>
-                  <td className="px-3 py-2 text-white">{l.nume_client}</td>
-                  <td className="px-3 py-2 text-slate-400">{l.tip_venit}</td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-primary">{l.nume_client}</td>
+                  <td className="px-3 py-2 text-text-secondary">{l.tip_venit}</td>
+                  <td className="px-3 py-2 text-text-secondary">
                     {isEditing ? (
                       <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
-                        <option value="" style={{ backgroundColor: "#111535" }}>
+                        <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                           —
                         </option>
                         {produseOptions.map((n) => (
@@ -765,10 +765,10 @@ function VenituriTable({
                       (l.produs ?? "—")
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">
                     {isEditing ? (
                       <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
-                        <option value="" style={{ backgroundColor: "#111535" }}>
+                        <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                           —
                         </option>
                         {serviciiOptions.map((n) => (
@@ -781,21 +781,21 @@ function VenituriTable({
                   </td>
                   <td className="px-3 py-2">
                     {contract ? (
-                      <span className={contract.status_contract === "Activ" ? "text-green-400" : "text-slate-500"}>
+                      <span className={contract.status_contract === "Activ" ? "text-green-400" : "text-text-muted"}>
                         {contract.status_contract}
                       </span>
                     ) : (
-                      <span className="text-slate-600">Manual</span>
+                      <span className="text-text-faint">Manual</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">{contract?.modalitate_facturare ?? "—"}</td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">{contract?.modalitate_facturare ?? "—"}</td>
+                  <td className="px-3 py-2 text-text-secondary">
                     {isEditing ? (
                       <input
                         type="month"
                         value={luna}
                         onChange={(e) => setLuna(e.target.value)}
-                        className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
+                        className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
                       new Date(l.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })
@@ -808,10 +808,10 @@ function VenituriTable({
                         step="0.01"
                         value={venitEstimat}
                         onChange={(e) => setVenitEstimat(e.target.value)}
-                        className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
+                        className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-right text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
-                      <span className="font-mono text-slate-300">{formatEur(l.venit_estimat)}</span>
+                      <span className="font-mono text-text-primary">{formatEur(l.venit_estimat)}</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -821,10 +821,10 @@ function VenituriTable({
                         step="0.01"
                         value={venitRealizat}
                         onChange={(e) => setVenitRealizat(e.target.value)}
-                        className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
+                        className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-right text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
-                      <span className="font-mono text-white">
+                      <span className="font-mono text-text-primary">
                         {l.venit_realizat !== null ? formatEur(l.venit_realizat) : "—"}
                       </span>
                     )}
@@ -844,7 +844,7 @@ function VenituriTable({
                     ) : l.facturat ? (
                       <Check size={14} className="mx-auto text-green-400" />
                     ) : (
-                      <span className="text-slate-600">—</span>
+                      <span className="text-text-faint">—</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -859,7 +859,7 @@ function VenituriTable({
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="rounded-md p-1 text-slate-500 hover:bg-white/5"
+                          className="rounded-md p-1 text-text-muted hover:bg-surface-1"
                         >
                           <X size={14} />
                         </button>
@@ -868,13 +868,13 @@ function VenituriTable({
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => startEdit(l)}
-                          className="rounded-md p-1 text-slate-500 hover:bg-white/5 hover:text-[#E8007A]"
+                          className="rounded-md p-1 text-text-muted hover:bg-surface-1 hover:text-[#E8007A]"
                         >
                           <Pencil size={13} />
                         </button>
                         <button
                           onClick={() => handleDelete(l.id)}
-                          className="rounded-md p-1 text-slate-600 hover:bg-red-500/10 hover:text-red-400"
+                          className="rounded-md p-1 text-text-faint hover:bg-red-500/10 hover:text-red-400"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -886,7 +886,7 @@ function VenituriTable({
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={12} className="px-3 py-8 text-center text-sm text-text-muted">
                   Nicio linie de venit pentru filtrul curent.
                 </td>
               </tr>
@@ -894,7 +894,7 @@ function VenituriTable({
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
           {[25, 50, 100, "toate" as const].map((size) => (
@@ -907,7 +907,7 @@ function VenituriTable({
               className={`rounded-md px-2 py-1 font-medium transition ${
                 pageSize === size
                   ? "bg-[#E8007A] text-[#0B0D1A]"
-                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+                  : "border border-border-subtle text-text-secondary hover:bg-surface-1"
               }`}
             >
               {size === "toate" ? "Toate" : size}
@@ -924,7 +924,7 @@ function VenituriTable({
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronLeft size={14} />
             </button>
@@ -934,7 +934,7 @@ function VenituriTable({
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronRight size={14} />
             </button>
@@ -999,10 +999,10 @@ function ContracteTable({
 
   return (
     <div>
-    <div className="overflow-x-auto rounded-xl border border-white/10">
+    <div className="overflow-x-auto rounded-xl border border-border-subtle">
       <table className="w-full table-fixed text-sm">
         <thead>
-          <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+          <tr className="border-b border-border-subtle bg-surface-1 text-left text-[10px] uppercase text-text-muted">
             <SortableTh label="Client" sortKey="client" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
             <SortableTh label="Tip venit" sortKey="tip" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
             <SortableTh label="Produs" sortKey="produs" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
@@ -1021,30 +1021,30 @@ function ContracteTable({
             <tr
               key={c.id}
               onClick={() => onEdit(c)}
-              className="cursor-pointer border-b border-white/5 hover:bg-white/[0.03]"
+              className="cursor-pointer border-b border-border-faint hover:bg-surface-1"
             >
-              <td className="px-3 py-2 text-white">{c.nume_client}</td>
-              <td className="px-3 py-2 text-slate-400">{c.tip_venit}</td>
-              <td className="px-3 py-2 text-slate-400">{c.produs ?? "—"}</td>
-              <td className="px-3 py-2 text-slate-400">{c.serviciu ?? "—"}</td>
-              <td className="px-3 py-2 text-slate-400">
+              <td className="px-3 py-2 text-text-primary">{c.nume_client}</td>
+              <td className="px-3 py-2 text-text-secondary">{c.tip_venit}</td>
+              <td className="px-3 py-2 text-text-secondary">{c.produs ?? "—"}</td>
+              <td className="px-3 py-2 text-text-secondary">{c.serviciu ?? "—"}</td>
+              <td className="px-3 py-2 text-text-secondary">
                 {c.modalitate_facturare ?? "—"}
                 {c.tip_venit === "Nerecurent" && c.nr_rate > 1 && (
-                  <span className="ml-1 text-[10px] text-slate-500">({c.nr_rate}x)</span>
+                  <span className="ml-1 text-[10px] text-text-muted">({c.nr_rate}x)</span>
                 )}
               </td>
-              <td className="px-3 py-2 text-right font-mono text-white">
+              <td className="px-3 py-2 text-right font-mono text-text-primary">
                 {formatEur(c.valoare_lunara)}
               </td>
-              <td className="px-3 py-2 text-slate-400">
+              <td className="px-3 py-2 text-text-secondary">
                 {new Date(c.data_inceput).toLocaleDateString("ro-RO")}
               </td>
-              <td className="px-3 py-2 text-slate-400">
+              <td className="px-3 py-2 text-text-secondary">
                 {c.data_sfarsit ? new Date(c.data_sfarsit).toLocaleDateString("ro-RO") : "Nedeterminat"}
               </td>
-              <td className="px-3 py-2 text-slate-400">{c.stadiu_contract ?? "—"}</td>
+              <td className="px-3 py-2 text-text-secondary">{c.stadiu_contract ?? "—"}</td>
               <td className="px-3 py-2">
-                <span className={c.status_contract === "Activ" ? "text-green-400" : "text-slate-500"}>
+                <span className={c.status_contract === "Activ" ? "text-green-400" : "text-text-muted"}>
                   {c.status_contract}
                 </span>
               </td>
@@ -1052,7 +1052,7 @@ function ContracteTable({
                 <button
                   onClick={() => handleDelete(c.id)}
                   disabled={isPending}
-                  className="rounded-md p-1 text-slate-600 hover:bg-red-500/10 hover:text-red-400"
+                  className="rounded-md p-1 text-text-faint hover:bg-red-500/10 hover:text-red-400"
                 >
                   <Trash2 size={13} />
                 </button>
@@ -1061,7 +1061,7 @@ function ContracteTable({
           ))}
           {contracte.length === 0 && (
             <tr>
-              <td colSpan={11} className="px-3 py-8 text-center text-sm text-slate-500">
+              <td colSpan={11} className="px-3 py-8 text-center text-sm text-text-muted">
                 Niciun contract inca.
               </td>
             </tr>
@@ -1069,7 +1069,7 @@ function ContracteTable({
         </tbody>
       </table>
     </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
           {[25, 50, 100, "toate" as const].map((size) => (
@@ -1082,7 +1082,7 @@ function ContracteTable({
               className={`rounded-md px-2 py-1 font-medium transition ${
                 pageSize === size
                   ? "bg-[#E8007A] text-[#0B0D1A]"
-                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+                  : "border border-border-subtle text-text-secondary hover:bg-surface-1"
               }`}
             >
               {size === "toate" ? "Toate" : size}
@@ -1099,7 +1099,7 @@ function ContracteTable({
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronLeft size={14} />
             </button>
@@ -1109,7 +1109,7 @@ function ContracteTable({
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronRight size={14} />
             </button>
@@ -1218,19 +1218,19 @@ function ContractFormModal({
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-[#111535] p-5"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border-subtle bg-surface-1 p-5"
       >
         <div className="mb-4 flex items-start justify-between">
-          <h2 className="text-lg font-heading text-white">
+          <h2 className="text-lg font-heading text-text-primary">
             {contract ? "Editeaza contract" : "Contract nou"}
           </h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white">
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={18} />
           </button>
         </div>
 
         {contract && (
-          <p className="mb-3 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2 text-[11px] text-slate-300">
+          <p className="mb-3 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2 text-[11px] text-text-primary">
             La salvare, toate liniile de venit ale acestui contract se regenereaza dupa noile setari.
             Realizatul deja inregistrat se pastreaza, acolo unde perioadele se suprapun.
           </p>
@@ -1240,7 +1240,7 @@ function ContractFormModal({
           <div>
             <label className={labelClass}>Client *</label>
             {contract ? (
-              <p className="rounded-md border border-white/10 bg-white/[0.02] px-2.5 py-2 text-sm text-white">
+              <p className="rounded-md border border-border-subtle bg-surface-1 px-2.5 py-2 text-sm text-text-primary">
                 {contract.nume_client}
               </p>
             ) : (
@@ -1249,11 +1249,11 @@ function ContractFormModal({
                 onChange={(e) => setPartnerId(e.target.value)}
                 className={selectClass}
               >
-                <option value="" style={{ backgroundColor: "#111535" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                   Alege clientul...
                 </option>
                 {clienti.map((c) => (
-                  <option key={c.id} value={c.id} style={{ backgroundColor: "#111535" }}>
+                  <option key={c.id} value={c.id} style={{ backgroundColor: "var(--surface-1)" }}>
                     {c.nume}
                   </option>
                 ))}
@@ -1262,19 +1262,19 @@ function ContractFormModal({
           </div>
 
           {selectedClient && (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-md border border-white/5 bg-white/[0.02] px-3 py-2 text-[11px] text-slate-400">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-md border border-border-faint bg-surface-1 px-3 py-2 text-[11px] text-text-secondary">
               <span>
-                Cod fiscal: <span className="text-slate-300">{selectedClient.cod_fiscal ?? "—"}</span>
+                Cod fiscal: <span className="text-text-primary">{selectedClient.cod_fiscal ?? "—"}</span>
               </span>
               <span>
                 Tip activitate:{" "}
-                <span className="text-slate-300">{selectedClient.domeniul_activitate ?? "—"}</span>
+                <span className="text-text-primary">{selectedClient.domeniul_activitate ?? "—"}</span>
               </span>
               <span>
-                Judet: <span className="text-slate-300">{selectedClient.judet ?? "—"}</span>
+                Judet: <span className="text-text-primary">{selectedClient.judet ?? "—"}</span>
               </span>
               <span>
-                Localitate: <span className="text-slate-300">{selectedClient.oras ?? "—"}</span>
+                Localitate: <span className="text-text-primary">{selectedClient.oras ?? "—"}</span>
               </span>
             </div>
           )}
@@ -1286,10 +1286,10 @@ function ContractFormModal({
               onChange={(e) => setTipVenit(e.target.value as TipVenit)}
               className={selectClass}
             >
-              <option value="Recurent" style={{ backgroundColor: "#111535" }}>
+              <option value="Recurent" style={{ backgroundColor: "var(--surface-1)" }}>
                 Recurent
               </option>
-              <option value="Nerecurent" style={{ backgroundColor: "#111535" }}>
+              <option value="Nerecurent" style={{ backgroundColor: "var(--surface-1)" }}>
                 Nerecurent
               </option>
             </select>
@@ -1299,7 +1299,7 @@ function ContractFormModal({
             <div>
               <label className={labelClass}>Produs</label>
               <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
-                <option value="" style={{ backgroundColor: "#111535" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                   —
                 </option>
                 {produseOptions.map((n) => (
@@ -1310,7 +1310,7 @@ function ContractFormModal({
             <div>
               <label className={labelClass}>Serviciu</label>
               <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
-                <option value="" style={{ backgroundColor: "#111535" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                   —
                 </option>
                 {serviciiOptions.map((n) => (
@@ -1361,7 +1361,7 @@ function ContractFormModal({
                     className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
                       durationMode === opt.value
                         ? "bg-[#E8007A] text-[#0B0D1A]"
-                        : "border border-white/10 text-slate-400 hover:bg-white/5"
+                        : "border border-border-subtle text-text-secondary hover:bg-surface-1"
                     }`}
                   >
                     {opt.label}
@@ -1377,7 +1377,7 @@ function ContractFormModal({
                 />
               )}
               {durationMode === "un_an" && (
-                <p className="mt-1 text-[11px] text-slate-500">
+                <p className="mt-1 text-[11px] text-text-muted">
                   Se genereaza automat pana la {addMonthsToDateStr(dataInceput, 12)}.
                 </p>
               )}
@@ -1392,7 +1392,7 @@ function ContractFormModal({
                 onChange={(e) => setStadiuContract(e.target.value)}
                 className={selectClass}
               >
-                <option value="" style={{ backgroundColor: "#111535" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                   —
                 </option>
                 {stadiiOptions.map((n) => (
@@ -1407,16 +1407,16 @@ function ContractFormModal({
                 onChange={(e) => setStatusContract(e.target.value as ContractStatus)}
                 className={selectClass}
               >
-                <option value="Activ" style={{ backgroundColor: "#111535" }}>
+                <option value="Activ" style={{ backgroundColor: "var(--surface-1)" }}>
                   Activ
                 </option>
-                <option value="Inactiv" style={{ backgroundColor: "#111535" }}>
+                <option value="Inactiv" style={{ backgroundColor: "var(--surface-1)" }}>
                   Inactiv
                 </option>
               </select>
             </div>
           </div>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-text-muted">
             Un contract &quot;Inactiv&quot; nu genereaza linii de venit - util pentru contracte introduse
             in avans, inainte sa se activeze.
           </p>
@@ -1428,7 +1428,7 @@ function ContractFormModal({
               onChange={(e) => setModalitateFacturare(e.target.value)}
               className={selectClass}
             >
-              <option value="" style={{ backgroundColor: "#111535" }}>
+              <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                 —
               </option>
               {modalitatiOptions.map((n) => (
@@ -1448,7 +1448,7 @@ function ContractFormModal({
                 onChange={(e) => setNrRate(e.target.value)}
                 className={inputClass}
               />
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] text-text-muted">
                 Se genereaza {nrRate || 1} {Number(nrRate) > 1 ? "linii lunare" : "linie"}, incepand cu
                 data de inceput, cu valoarea impartita egal ({formatEur(Number(valoare || 0) / Math.max(1, Number(nrRate) || 1))} fiecare).
                 Editezi apoi individual, pe fiecare linie, daca ratele nu sunt egale sau au alte date.
@@ -1531,15 +1531,15 @@ function ManualVenitFormModal({
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-xl border border-white/10 bg-[#111535] p-5"
+        className="w-full max-w-md rounded-xl border border-border-subtle bg-surface-1 p-5"
       >
         <div className="mb-4 flex items-start justify-between">
-          <h2 className="text-lg font-heading text-white">Venit manual</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white">
+          <h2 className="text-lg font-heading text-text-primary">Venit manual</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={18} />
           </button>
         </div>
-        <p className="mb-3 text-[11px] text-slate-500">
+        <p className="mb-3 text-[11px] text-text-muted">
           O singura linie, independenta - util pentru o rata sau o etapa dintr-un contract cu
           facturare pe Rate/Etape, sau orice venit care nu se preteaza la generare automata.
         </p>
@@ -1552,11 +1552,11 @@ function ManualVenitFormModal({
               onChange={(e) => setPartnerId(e.target.value)}
               className={selectClass}
             >
-              <option value="" style={{ backgroundColor: "#111535" }}>
+              <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                 Alege clientul...
               </option>
               {clienti.map((c) => (
-                <option key={c.id} value={c.id} style={{ backgroundColor: "#111535" }}>
+                <option key={c.id} value={c.id} style={{ backgroundColor: "var(--surface-1)" }}>
                   {c.nume}
                 </option>
               ))}
@@ -1569,10 +1569,10 @@ function ManualVenitFormModal({
               onChange={(e) => setTipVenit(e.target.value as TipVenit)}
               className={selectClass}
             >
-              <option value="Recurent" style={{ backgroundColor: "#111535" }}>
+              <option value="Recurent" style={{ backgroundColor: "var(--surface-1)" }}>
                 Recurent
               </option>
-              <option value="Nerecurent" style={{ backgroundColor: "#111535" }}>
+              <option value="Nerecurent" style={{ backgroundColor: "var(--surface-1)" }}>
                 Nerecurent
               </option>
             </select>
@@ -1581,7 +1581,7 @@ function ManualVenitFormModal({
             <div>
               <label className={labelClass}>Produs</label>
               <select value={produs} onChange={(e) => setProdus(e.target.value)} className={selectClass}>
-                <option value="" style={{ backgroundColor: "#111535" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                   —
                 </option>
                 {produseOptions.map((n) => (
@@ -1592,7 +1592,7 @@ function ManualVenitFormModal({
             <div>
               <label className={labelClass}>Serviciu</label>
               <select value={serviciu} onChange={(e) => setServiciu(e.target.value)} className={selectClass}>
-                <option value="" style={{ backgroundColor: "#111535" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                   —
                 </option>
                 {serviciiOptions.map((n) => (

@@ -24,31 +24,31 @@ export function TermeneCredentialsForm({ initial }: { initial: TermeneCredential
   return (
     <form action={handleSubmit} className="max-w-md space-y-3">
       <div>
-        <label className="mb-1 block text-xs text-slate-400">Utilizator</label>
+        <label className="mb-1 block text-xs text-text-secondary">Utilizator</label>
         <input
           name="username"
           defaultValue={initial.username ?? ""}
           required
-          className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           placeholder="ex: adrian.boncica9d9zZ"
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs text-slate-400">Parola</label>
+        <label className="mb-1 block text-xs text-text-secondary">Parola</label>
         <input
           name="password"
           defaultValue={initial.password ?? ""}
           required
-          className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs text-slate-400">Schema Key</label>
+        <label className="mb-1 block text-xs text-text-secondary">Schema Key</label>
         <input
           name="schemaKey"
           defaultValue={initial.schemaKey ?? ""}
           required
-          className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-mono text-white outline-none focus:border-[#E8007A]"
+          className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm font-mono text-text-primary outline-none focus:border-[#E8007A]"
         />
       </div>
 

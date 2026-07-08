@@ -99,7 +99,7 @@ export function MicButton({
       onClick={toggle}
       title={listening ? "Se asculta... (click pentru stop)" : "Dicteaza"}
       className={`flex items-center justify-center rounded-md p-1.5 transition ${
-        listening ? "bg-red-500/20 text-red-400" : "text-slate-500 hover:bg-white/10 hover:text-slate-300"
+        listening ? "bg-red-500/20 text-red-400" : "text-text-muted hover:bg-surface-2 hover:text-text-primary"
       } ${className}`}
     >
       {listening ? <Loader2 size={14} className="animate-spin" /> : <Mic size={14} />}

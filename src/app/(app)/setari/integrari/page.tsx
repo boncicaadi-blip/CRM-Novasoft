@@ -22,14 +22,14 @@ export default async function IntegrariPage() {
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <h1 className="mb-1 text-lg font-heading text-white">Integrari</h1>
-      <p className="mb-5 text-sm text-slate-500">
+      <h1 className="mb-1 text-lg font-heading text-text-primary">Integrari</h1>
+      <p className="mb-5 text-sm text-text-muted">
         Credentiale pentru servicii externe folosite de aplicatie.
       </p>
 
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-        <p className="mb-3 text-sm font-medium text-white">Termene.ro</p>
-        <p className="mb-4 text-xs text-slate-500">
+      <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+        <p className="mb-3 text-sm font-medium text-text-primary">Termene.ro</p>
+        <p className="mb-4 text-xs text-text-muted">
           Folosit pentru butonul &quot;Actualizeaza din ANAF&quot; (cifra de afaceri, nr.
           angajati) si auto-completare la introducerea CUI-ului.
         </p>

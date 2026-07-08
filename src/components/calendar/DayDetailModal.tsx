@@ -20,7 +20,7 @@ const STATUS_LABELS: Record<CalendarAction["status"], string> = {
 };
 
 const STATUS_COLORS: Record<CalendarAction["status"], string> = {
-  restanta: "#94A3B8",
+  restanta: "var(--text-secondary)",
   azi: "#F59E0B",
   viitoare: "#0070F3",
   finalizata: "#22C55E",
@@ -42,34 +42,34 @@ export function DayDetailModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-[#0B0D1A] p-5"
+        className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border-subtle bg-surface-0 p-5"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-heading text-lg text-white">
+          <h3 className="font-heading text-lg text-text-primary">
             {format(parseLocalDate(dateStr), "d MMMM yyyy", { locale: ro })}
           </h3>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
+            className="rounded-md p-1.5 text-text-secondary transition hover:bg-surface-1 hover:text-text-primary"
           >
             <X size={18} />
           </button>
         </div>
 
         {actions.length === 0 ? (
-          <p className="py-8 text-center text-sm text-slate-500">Nicio actiune in aceasta zi.</p>
+          <p className="py-8 text-center text-sm text-text-muted">Nicio actiune in aceasta zi.</p>
         ) : (
           <div className="space-y-2">
             {actions.map((a) => (
               <Link
                 key={a.id}
                 href={`/oportunitati/${a.opportunityId}`}
-                className="block rounded-lg border border-white/10 bg-white/[0.02] p-3 transition hover:border-white/20"
+                className="block rounded-lg border border-border-subtle bg-surface-1 p-3 transition hover:border-border-strong"
               >
                 <div className="mb-1.5 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <StatusIcon status={a.status} />
-                    <span className="font-medium text-white">{a.numePotential}</span>
+                    <span className="font-medium text-text-primary">{a.numePotential}</span>
                   </div>
                   <span
                     className="rounded-full px-2 py-0.5 text-[11px]"
@@ -81,13 +81,13 @@ export function DayDetailModal({
                     {STATUS_LABELS[a.status]}
                   </span>
                 </div>
-                <p className="mb-1.5 text-sm text-slate-400">{a.actiune ?? "—"}</p>
+                <p className="mb-1.5 text-sm text-text-secondary">{a.actiune ?? "—"}</p>
                 <div className="flex items-center justify-between">
                   <span
                     className="rounded-full px-2 py-0.5 text-[11px]"
                     style={{
-                      backgroundColor: `${STAGE_COLORS[a.stage] ?? "#94A3B8"}20`,
-                      color: STAGE_COLORS[a.stage] ?? "#94A3B8",
+                      backgroundColor: `${STAGE_COLORS[a.stage] ?? "var(--text-secondary)"}20`,
+                      color: STAGE_COLORS[a.stage] ?? "var(--text-secondary)",
                     }}
                   >
                     {a.stage}
@@ -108,6 +108,6 @@ export function DayDetailModal({
 
 function StatusIcon({ status }: { status: CalendarAction["status"] }) {
   if (status === "finalizata") return <CheckCircle2 size={14} className="text-green-400" />;
-  if (status === "restanta") return <AlertCircle size={14} className="text-slate-400" />;
+  if (status === "restanta") return <AlertCircle size={14} className="text-text-secondary" />;
   return <Clock size={14} className="text-[#0070F3]" />;
 }

@@ -61,8 +61,8 @@ export function RaportComercialClient({
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="mb-6">
-        <h1 className="text-lg font-heading text-white">Raport Comercial</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-lg font-heading text-text-primary">Raport Comercial</h1>
+        <p className="text-sm text-text-muted">
           Analiza de ansamblu a pipeline-ului: volum, calitate si dinamica. Click pe iconita info
           de pe orice card pentru definitie si cum il analizezi.
         </p>
@@ -212,7 +212,7 @@ export function RaportComercialClient({
       </Section>
 
       {!targetComercial && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-text-muted">
           Pipeline Coverage necesita un target comercial setat.{" "}
           <Link href="/setari/comercial" className="text-[#E8007A] hover:underline">
             Seteaza-l aici
@@ -239,8 +239,8 @@ function Section({
     <div className="mb-6">
       <div className="mb-3 flex items-center gap-2">
         <span className="h-2 w-2 rounded-full" style={{ backgroundColor: dotColor }} />
-        <h2 className="text-sm font-medium text-white">{title}</h2>
-        <span className="text-xs text-slate-500">— {description}</span>
+        <h2 className="text-sm font-medium text-text-primary">{title}</h2>
+        <span className="text-xs text-text-muted">— {description}</span>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">{children}</div>
     </div>

@@ -29,7 +29,7 @@ export function RiskZone({
     <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4">
       <div className="mb-3 flex items-center gap-2">
         <AlertTriangle size={16} className="text-amber-400" />
-        <p className="text-sm font-medium text-white">Zona de risc</p>
+        <p className="text-sm font-medium text-text-primary">Zona de risc</p>
       </div>
 
       <div className="space-y-4">
@@ -82,10 +82,10 @@ function RiskGroup({
             <Link
               key={o.id}
               href={`/oportunitati/${o.id}`}
-              className="block rounded-md bg-white/[0.02] px-2 py-1.5 text-xs transition hover:bg-white/5"
+              className="block rounded-md bg-surface-1 px-2 py-1.5 text-xs transition hover:bg-surface-1"
             >
-              <p className="truncate text-slate-200">{o.nume_potential}</p>
-              <p className="text-[10px] text-slate-500">
+              <p className="truncate text-text-primary">{o.nume_potential}</p>
+              <p className="text-[10px] text-text-muted">
                 {stagnare.zileInStage > 0 && `${stagnare.zileInStage}z in stage · `}
                 {formatEur((o.forecast_total_saas ?? 0) + (o.forecast_total_onpremise ?? 0))}
               </p>
@@ -93,7 +93,7 @@ function RiskGroup({
           );
         })}
         {items.length > 4 && (
-          <p className="px-2 text-[10px] text-slate-500">+{items.length - 4} mai multe</p>
+          <p className="px-2 text-[10px] text-text-muted">+{items.length - 4} mai multe</p>
         )}
       </div>
     </div>

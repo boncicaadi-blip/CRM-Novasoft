@@ -28,18 +28,18 @@ export function ObligatiiGrtCard({
   const barColor = grt === null ? "#475569" : grt >= 100 ? "#22C55E" : grt >= 70 ? "#FBBF24" : "#EF4444";
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           <Target size={15} className="text-[#E8007A]" />
           GRT — {labelLuna}
           <InfoTooltip title="GRT (Grad Realizare Target)" definition={OBLIGATII_KPI_DEFINITIONS.grtCard} />
         </p>
-        <p className="text-[11px] text-slate-500">Calculat automat din facturile propuse</p>
+        <p className="text-[11px] text-text-muted">Calculat automat din facturile propuse</p>
       </div>
 
       {target === 0 ? (
-        <p className="py-2 text-xs text-slate-500">
+        <p className="py-2 text-xs text-text-muted">
           Niciun target pentru luna curenta inca - bifeaza facturi ca &quot;Propus spre plata&quot; in
           lista de Obligatii, ca sa vezi aici gradul de realizare.
         </p>
@@ -47,15 +47,15 @@ export function ObligatiiGrtCard({
         <>
           <div className="mb-2 flex items-end justify-between">
             <div>
-              <p className="font-mono text-2xl font-medium text-white">
+              <p className="font-mono text-2xl font-medium text-text-primary">
                 {grt !== null ? `${Math.round(grt)}%` : "—"}
               </p>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-text-muted">
                 {formatRon(realizat)} din {formatRon(target)}
               </p>
             </div>
           </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/5">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-surface-1">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${pct}%`, backgroundColor: barColor }}

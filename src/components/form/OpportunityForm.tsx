@@ -242,7 +242,7 @@ export function OpportunityForm({
   return (
     <form ref={formRef} action={handleSubmit} className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8">
       {/* Stepper */}
-      <p className="mb-2 text-center text-xs text-slate-500 sm:hidden">
+      <p className="mb-2 text-center text-xs text-text-muted sm:hidden">
         Pasul {stepIndex + 1} din {STEPS.length}: {STEPS[stepIndex].label}
       </p>
       <div className="mb-8 flex items-center justify-between">
@@ -264,7 +264,7 @@ export function OpportunityForm({
                     ? "border-[#E8007A] bg-[#E8007A] text-[#0B0D1A]"
                     : isDone
                     ? "border-[#E8007A]/50 bg-[#E8007A]/10 text-[#E8007A]"
-                    : "border-white/10 bg-white/[0.03] text-slate-500"
+                    : "border-border-subtle bg-surface-1 text-text-muted"
                 }`}
               >
                 {isDone ? <Check size={15} /> : <Icon size={15} />}
@@ -277,7 +277,7 @@ export function OpportunityForm({
               </div>
               <span
                 className={`hidden text-[11px] transition sm:inline ${
-                  isActive ? "text-white font-medium" : "text-slate-500"
+                  isActive ? "text-text-primary font-medium" : "text-text-muted"
                 }`}
               >
                 {step.label}
@@ -287,11 +287,11 @@ export function OpportunityForm({
         })}
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+      <div className="rounded-xl border border-border-subtle bg-surface-1 p-6">
         {/* PAS 1: Firma */}
         <div className={stepIndex === 0 ? "space-y-4" : "hidden"}>
-          <h2 className="mb-1 text-base font-semibold text-white">Identificare firma</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <h2 className="mb-1 text-base font-semibold text-text-primary">Identificare firma</h2>
+          <p className="mb-4 text-xs text-text-muted">
             Datele de baza ale prospectului / clientului.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -325,7 +325,7 @@ export function OpportunityForm({
                     type="button"
                     onClick={handleAnafLookup}
                     disabled={!codFiscal || anafLookupState === "loading"}
-                    className="shrink-0 rounded-md border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
+                    className="shrink-0 rounded-md border border-border-subtle px-3 py-2 text-sm text-text-primary transition hover:bg-surface-1 disabled:opacity-50"
                   >
                     {anafLookupState === "loading" ? "..." : "Cauta"}
                   </button>
@@ -346,16 +346,16 @@ export function OpportunityForm({
               <select
                 name="responsabil_vanzare_id"
                 defaultValue={opportunity?.responsabil_vanzare_id ?? ""}
-                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+                className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
               >
-                <option value="" style={{ backgroundColor: "#111535", color: "#F1F5F9" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)", color: "var(--text-primary)" }}>
                   Selecteaza...
                 </option>
                 {profiles.map((p) => (
                   <option
                     key={p.id}
                     value={p.id}
-                    style={{ backgroundColor: "#111535", color: "#F1F5F9" }}
+                    style={{ backgroundColor: "var(--surface-1)", color: "var(--text-primary)" }}
                   >
                     {p.full_name}
                   </option>
@@ -375,13 +375,13 @@ export function OpportunityForm({
                 name="judet"
                 value={judetField}
                 onChange={(e) => setJudetField(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+                className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
               >
-                <option value="" style={{ backgroundColor: "#111535", color: "#F1F5F9" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)", color: "var(--text-primary)" }}>
                   Selecteaza...
                 </option>
                 {JUDETE.map((j) => (
-                  <option key={j} value={j} style={{ backgroundColor: "#111535", color: "#F1F5F9" }}>
+                  <option key={j} value={j} style={{ backgroundColor: "var(--surface-1)", color: "var(--text-primary)" }}>
                     {j}
                   </option>
                 ))}
@@ -401,8 +401,8 @@ export function OpportunityForm({
 
         {/* PAS 2: Calificare */}
         <div className={stepIndex === 1 ? "space-y-4" : "hidden"}>
-          <h2 className="mb-1 text-base font-semibold text-white">Calificare tehnica</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <h2 className="mb-1 text-base font-semibold text-text-primary">Calificare tehnica</h2>
+          <p className="mb-4 text-xs text-text-muted">
             Context tehnic si operational despre prospect.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -507,8 +507,8 @@ export function OpportunityForm({
 
         {/* PAS 3: Pipeline */}
         <div className={stepIndex === 2 ? "space-y-4" : "hidden"}>
-          <h2 className="mb-1 text-base font-semibold text-white">Stadiu pipeline</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <h2 className="mb-1 text-base font-semibold text-text-primary">Stadiu pipeline</h2>
+          <p className="mb-4 text-xs text-text-muted">
             Unde se afla aceasta oportunitate in procesul de vanzare.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -560,7 +560,7 @@ export function OpportunityForm({
                 name="substatus"
                 list="substatus-suggestions"
                 defaultValue={opportunity?.substatus ?? ""}
-                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+                className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                 placeholder="alege sau scrie liber"
               />
               <datalist id="substatus-suggestions">
@@ -582,8 +582,8 @@ export function OpportunityForm({
 
         {/* PAS 4: Actiune */}
         <div className={stepIndex === 3 ? "space-y-4" : "hidden"}>
-          <h2 className="mb-1 text-base font-semibold text-white">Actiune curenta / follow-up</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <h2 className="mb-1 text-base font-semibold text-text-primary">Actiune curenta / follow-up</h2>
+          <p className="mb-4 text-xs text-text-muted">
             Ce e de facut in continuare cu aceasta oportunitate.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -628,17 +628,17 @@ export function OpportunityForm({
 
         {/* PAS 5: Pricing */}
         <div className={stepIndex === 4 ? "space-y-4" : "hidden"}>
-          <h2 className="mb-1 text-base font-semibold text-white">Pricing</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <h2 className="mb-1 text-base font-semibold text-text-primary">Pricing</h2>
+          <p className="mb-4 text-xs text-text-muted">
             Valorile calculate (ARR, Forecast etc) se actualizeaza automat la salvare.
           </p>
 
-          <div className="mb-4 flex gap-1 rounded-lg bg-white/5 p-1 text-sm">
+          <div className="mb-4 flex gap-1 rounded-lg bg-surface-1 p-1 text-sm">
             <button
               type="button"
               onClick={() => setPricingMode("saas")}
               className={`flex-1 rounded-md py-2 transition ${
-                pricingMode === "saas" ? "bg-[#E8007A] font-medium text-[#0B0D1A]" : "text-slate-400"
+                pricingMode === "saas" ? "bg-[#E8007A] font-medium text-[#0B0D1A]" : "text-text-secondary"
               }`}
             >
               SaaS
@@ -649,7 +649,7 @@ export function OpportunityForm({
               className={`flex-1 rounded-md py-2 transition ${
                 pricingMode === "onpremise"
                   ? "bg-[#E8007A] font-medium text-[#0B0D1A]"
-                  : "text-slate-400"
+                  : "text-text-secondary"
               }`}
             >
               OnPremise
@@ -776,8 +776,8 @@ export function OpportunityForm({
 
         {/* PAS 6: Sursa */}
         <div className={stepIndex === 5 ? "space-y-4" : "hidden"}>
-          <h2 className="mb-1 text-base font-semibold text-white">Sursa & context</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <h2 className="mb-1 text-base font-semibold text-text-primary">Sursa & context</h2>
+          <p className="mb-4 text-xs text-text-muted">
             De unde a venit aceasta oportunitate si alte observatii.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -836,7 +836,7 @@ export function OpportunityForm({
             setStepIndex((i) => Math.max(0, i - 1));
           }}
           disabled={isFirstStep}
-          className="flex items-center gap-1 rounded-md border border-white/10 px-4 py-2 text-sm text-slate-300 transition hover:bg-white/5 disabled:opacity-30"
+          className="flex items-center gap-1 rounded-md border border-border-subtle px-4 py-2 text-sm text-text-primary transition hover:bg-surface-1 disabled:opacity-30"
         >
           <ChevronLeft size={15} />
           Inapoi
@@ -854,7 +854,7 @@ export function OpportunityForm({
           <button
             type="button"
             onClick={() => goToStep(Math.min(STEPS.length - 1, stepIndex + 1))}
-            className="flex items-center gap-1 rounded-md bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/20"
+            className="flex items-center gap-1 rounded-md bg-surface-2 px-4 py-2 text-sm text-text-primary transition hover:bg-surface-2"
           >
             Inainte
             <ChevronRight size={15} />
@@ -868,7 +868,7 @@ export function OpportunityForm({
 function ForecastPreview({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="text-[11px] text-slate-500">{label}</p>
+      <p className="text-[11px] text-text-muted">{label}</p>
       <p className="font-mono text-lg text-[#E8007A]">{formatEur(value)}</p>
     </div>
   );
@@ -877,7 +877,7 @@ function ForecastPreview({ label, value }: { label: string; value: number }) {
 function ReadOnlyMoneyField({ label, value }: { label: string; value: number }) {
   return (
     <Field label={label} hint="Calculat automat">
-      <div className="flex items-center justify-between rounded-md border border-white/5 bg-white/[0.02] px-3 py-2 text-sm text-slate-300">
+      <div className="flex items-center justify-between rounded-md border border-border-faint bg-surface-1 px-3 py-2 text-sm text-text-primary">
         <span className="font-mono">{formatEur(value)}</span>
       </div>
     </Field>

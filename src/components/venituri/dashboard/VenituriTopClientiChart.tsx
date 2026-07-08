@@ -24,29 +24,29 @@ export function VenituriTopClientiChart({
 }) {
   if (data.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+      <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           {title}
           {definition && <InfoTooltip title={title} definition={definition} />}
         </p>
-        <p className="py-8 text-center text-xs text-slate-500">Niciun rezultat pentru filtrul curent.</p>
+        <p className="py-8 text-center text-xs text-text-muted">Niciun rezultat pentru filtrul curent.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           {title}
           {definition && <InfoTooltip title={title} definition={definition} />}
         </p>
       </div>
       <ResponsiveContainer width="100%" height={Math.max(200, data.length * 30)}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-          <YAxis type="category" dataKey="cheie" tick={{ fontSize: 10, fill: "#94A3B8" }} width={150} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
+          <YAxis type="category" dataKey="cheie" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} width={150} />
           <Tooltip
             cursor={{ fill: "rgba(255,255,255,0.04)" }}
             content={({ active, payload }) => {

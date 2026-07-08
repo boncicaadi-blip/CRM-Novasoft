@@ -365,8 +365,8 @@ export function ObligatiiClient({
     <div>
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Obligatii</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-lg font-heading text-text-primary">Obligatii</h1>
+          <p className="text-sm text-text-muted">
             {lastBatch
               ? `Ultimul import: ${new Date(lastBatch.importat_la).toLocaleDateString("ro-RO")} (${lastBatch.nr_facturi_noi} noi, ${lastBatch.nr_facturi_actualizate} actualizate)`
               : "Niciun import inca."}
@@ -419,7 +419,7 @@ export function ObligatiiClient({
       </div>
 
       {expandedKpi && (
-        <div className="mb-5 rounded-xl border border-[#E8007A]/20 bg-white/[0.02] p-4">
+        <div className="mb-5 rounded-xl border border-[#E8007A]/20 bg-surface-1 p-4">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-[#E8007A]">
               {expandedKpi === "soldRestant" && "Desfasurator — facturi restante"}
@@ -428,7 +428,7 @@ export function ObligatiiClient({
             </p>
             <button
               onClick={() => setExpandedKpi(null)}
-              className="rounded-md p-1 text-slate-500 hover:text-white"
+              className="rounded-md p-1 text-text-muted hover:text-text-primary"
             >
               <X size={16} />
             </button>
@@ -438,7 +438,7 @@ export function ObligatiiClient({
             <div className="max-h-72 overflow-y-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[10px] uppercase text-slate-500">
+                  <tr className="text-left text-[10px] uppercase text-text-muted">
                     <th className="px-2 py-1.5">Furnizor</th>
                     <th className="px-2 py-1.5">Factura</th>
                     <th className="px-2 py-1.5">Scadenta</th>
@@ -453,14 +453,14 @@ export function ObligatiiClient({
                       <tr
                         key={o.id}
                         onClick={() => setSelected(o)}
-                        className="cursor-pointer border-t border-white/5 hover:bg-white/[0.03]"
+                        className="cursor-pointer border-t border-border-faint hover:bg-surface-1"
                       >
-                        <td className="px-2 py-1.5 text-white">{o.nume_furnizor}</td>
-                        <td className="px-2 py-1.5 text-slate-400">{o.nr_factura}</td>
-                        <td className="px-2 py-1.5 text-slate-400">
+                        <td className="px-2 py-1.5 text-text-primary">{o.nume_furnizor}</td>
+                        <td className="px-2 py-1.5 text-text-secondary">{o.nr_factura}</td>
+                        <td className="px-2 py-1.5 text-text-secondary">
                           {o.data_scadenta ? new Date(o.data_scadenta).toLocaleDateString("ro-RO") : "—"}
                         </td>
-                        <td className="px-2 py-1.5 text-right font-mono text-white">
+                        <td className="px-2 py-1.5 text-right font-mono text-text-primary">
                           {formatRon(expandedKpi === "targetPropus" ? getValoarePropusaObligatie(o) : o.sold)}
                         </td>
                       </tr>
@@ -473,7 +473,7 @@ export function ObligatiiClient({
             <div className="max-h-72 overflow-y-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[10px] uppercase text-slate-500">
+                  <tr className="text-left text-[10px] uppercase text-text-muted">
                     <th className="px-2 py-1.5">Furnizor</th>
                     <th className="px-2 py-1.5">Factura</th>
                     <th className="px-2 py-1.5">Data platii</th>
@@ -487,14 +487,14 @@ export function ObligatiiClient({
                       <tr
                         key={p.id}
                         onClick={() => o && setSelected(o)}
-                        className="cursor-pointer border-t border-white/5 hover:bg-white/[0.03]"
+                        className="cursor-pointer border-t border-border-faint hover:bg-surface-1"
                       >
-                        <td className="px-2 py-1.5 text-white">{o?.nume_furnizor ?? "—"}</td>
-                        <td className="px-2 py-1.5 text-slate-400">{o?.nr_factura ?? "—"}</td>
-                        <td className="px-2 py-1.5 text-slate-400">
+                        <td className="px-2 py-1.5 text-text-primary">{o?.nume_furnizor ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-text-secondary">{o?.nr_factura ?? "—"}</td>
+                        <td className="px-2 py-1.5 text-text-secondary">
                           {new Date(p.data_plata).toLocaleDateString("ro-RO")}
                         </td>
-                        <td className="px-2 py-1.5 text-right font-mono text-white">
+                        <td className="px-2 py-1.5 text-right font-mono text-text-primary">
                           {formatRon(p.valoare)}
                         </td>
                       </tr>
@@ -528,10 +528,10 @@ export function ObligatiiClient({
               setCustomTo(end.toISOString().slice(0, 10));
             }
           }}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
           {PERIOD_OPTIONS.map((p) => (
-            <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+            <option key={p.value} value={p.value} style={{ backgroundColor: "var(--surface-1)" }}>
               {p.label}
             </option>
           ))}
@@ -545,7 +545,7 @@ export function ObligatiiClient({
                 setPage(1);
               }}
             />
-            <span className="text-[10px] text-slate-600">sau interval:</span>
+            <span className="text-[10px] text-text-faint">sau interval:</span>
             <input
               type="date"
               value={customFrom}
@@ -553,9 +553,9 @@ export function ObligatiiClient({
                 setCustomFrom(e.target.value);
                 setPage(1);
               }}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
             />
-            <span className="text-xs text-slate-500">-</span>
+            <span className="text-xs text-text-muted">-</span>
             <input
               type="date"
               value={customTo}
@@ -563,7 +563,7 @@ export function ObligatiiClient({
                 setCustomTo(e.target.value);
                 setPage(1);
               }}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
             />
           </>
         )}
@@ -574,7 +574,7 @@ export function ObligatiiClient({
             setPage(1);
           }}
           placeholder="Cauta furnizor, serviciu sau nr. factura..."
-          className="w-56 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-56 rounded-md border border-border-subtle bg-surface-2 px-3 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
         {(["restanta", "la_zi", "platita", "toate"] as StatusFilter[]).map((s) => (
           <button
@@ -586,7 +586,7 @@ export function ObligatiiClient({
             className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
               statusFilter === s
                 ? "bg-[#E8007A] text-[#0B0D1A]"
-                : "border border-white/10 text-slate-400 hover:bg-white/5"
+                : "border border-border-subtle text-text-secondary hover:bg-surface-1"
             }`}
           >
             {s === "restanta"
@@ -603,18 +603,18 @@ export function ObligatiiClient({
           className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
             onlyPartial
               ? "bg-[#E8007A] text-[#0B0D1A]"
-              : "border border-white/10 text-slate-400 hover:bg-white/5"
+              : "border border-border-subtle text-text-secondary hover:bg-surface-1"
           }`}
           title="Facturi propuse spre plata pentru mai putin decat soldul integral"
         >
           <Target size={13} />
           Propuse partial
         </button>
-        <div className="flex items-center rounded-md border border-white/10 p-0.5">
+        <div className="flex items-center rounded-md border border-border-subtle p-0.5">
           <button
             onClick={() => setViewMode("facturi")}
             className={`rounded px-2 py-1 text-xs font-medium transition ${
-              viewMode === "facturi" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "facturi" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
             }`}
           >
             Pe facturi
@@ -622,7 +622,7 @@ export function ObligatiiClient({
           <button
             onClick={() => setViewMode("furnizor")}
             className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition ${
-              viewMode === "furnizor" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "furnizor" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
             }`}
           >
             <Users size={12} />
@@ -631,7 +631,7 @@ export function ObligatiiClient({
         </div>
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+          className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-primary transition hover:bg-surface-1"
         >
           <Download size={13} />
           Export Excel
@@ -657,28 +657,28 @@ export function ObligatiiClient({
       </div>
 
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+        <div className="rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-text-muted">
             Facturi pentru filtrul curent
           </p>
-          <p className="font-mono text-xl font-semibold text-white">{filteredTotals.count}</p>
+          <p className="font-mono text-xl font-semibold text-text-primary">{filteredTotals.count}</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">Total facturat</p>
-          <p className="font-mono text-xl font-semibold text-white">
+        <div className="rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-text-muted">Total facturat</p>
+          <p className="font-mono text-xl font-semibold text-text-primary">
             {formatRon(filteredTotals.totalFacturat)}
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500">Sold</p>
-          <p className="font-mono text-xl font-semibold text-white">
+        <div className="rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
+          <p className="text-[11px] uppercase tracking-wide text-text-muted">Sold</p>
+          <p className="font-mono text-xl font-semibold text-text-primary">
             {formatRon(filteredTotals.totalSold)}
           </p>
         </div>
       </div>
 
       {viewMode === "facturi" && (
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
         <table className="text-sm" style={{ tableLayout: "fixed", width: "max-content" }}>
           <colgroup>
             <col style={{ width: 32 }} />
@@ -687,19 +687,19 @@ export function ObligatiiClient({
             ))}
           </colgroup>
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-[10px] uppercase text-text-muted">
               <th className="px-2 py-1.5">
                 <input
                   type="checkbox"
                   checked={filtered.length > 0 && checkedIds.size === filtered.length}
                   onChange={toggleCheckAll}
-                  className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                  className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                 />
               </th>
               {DEFAULT_COLUMNS.map((col) => (
                 <th
                   key={col.key}
-                  className={`relative select-none px-2 py-1.5 ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"} ${col.sortKey ? "cursor-pointer hover:text-slate-300" : ""}`}
+                  className={`relative select-none px-2 py-1.5 ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"} ${col.sortKey ? "cursor-pointer hover:text-text-primary" : ""}`}
                   onClick={() => col.sortKey && handleSort(col.sortKey)}
                 >
                   <span className="inline-flex items-center gap-1">
@@ -720,67 +720,67 @@ export function ObligatiiClient({
             {pagedRows.map((o) => {
               const zile = getZileDepasireObligatie(o);
               return (
-                <tr key={o.id} className="border-b border-white/5 transition hover:bg-white/[0.03]">
+                <tr key={o.id} className="border-b border-border-faint transition hover:bg-surface-1">
                   <td className="px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={checkedIds.has(o.id)}
                       onChange={() => toggleCheck(o.id)}
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                      className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                     />
                   </td>
                   <td className="truncate px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
                     <Link
                       href={`/obligatii/furnizor/${encodeURIComponent(o.nume_furnizor)}`}
-                      className="text-white hover:text-[#E8007A] hover:underline"
+                      className="text-text-primary hover:text-[#E8007A] hover:underline"
                     >
                       {o.nume_furnizor}
                     </Link>
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(o)}
                   >
                     {o.serviciu_facturat ?? "—"}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(o)}
                   >
                     {o.tip_achizitie ?? "—"}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(o)}
                   >
                     {o.nr_factura}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(o)}
                   >
                     {o.data_factura ? new Date(o.data_factura).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(o)}
                   >
                     {o.data_scadenta ? new Date(o.data_scadenta).toLocaleDateString("ro-RO") : "—"}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-slate-300"
+                    className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-text-primary"
                     onClick={() => setSelected(o)}
                   >
                     {formatRon(o.total_factura)}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-white"
+                    className="cursor-pointer truncate px-2 py-1.5 text-right font-mono text-text-primary"
                     onClick={() => setSelected(o)}
                   >
                     {formatRon(o.sold)}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-right text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-right text-text-secondary"
                     onClick={() => setSelected(o)}
                   >
                     {zile ? (
@@ -790,7 +790,7 @@ export function ObligatiiClient({
                     )}
                   </td>
                   <td
-                    className="cursor-pointer truncate px-2 py-1.5 text-slate-400"
+                    className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
                     onClick={() => setSelected(o)}
                   >
                     {o.data_plata ? new Date(o.data_plata).toLocaleDateString("ro-RO") : "—"}
@@ -802,7 +802,7 @@ export function ObligatiiClient({
                         checked={o.propus_spre_plata}
                         onChange={(e) => handleToggleProposSprePlata(o, e.target.checked)}
                         disabled={o.sold <= 0}
-                        className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04] accent-[#E8007A] disabled:opacity-30"
+                        className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2 accent-[#E8007A] disabled:opacity-30"
                         title={
                           o.sold <= 0
                             ? "Factura deja platita"
@@ -824,7 +824,7 @@ export function ObligatiiClient({
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={12} className="px-3 py-8 text-center text-sm text-text-muted">
                   Nicio factura gasita.
                 </td>
               </tr>
@@ -835,10 +835,10 @@ export function ObligatiiClient({
       )}
 
       {viewMode === "furnizor" && (
-        <div className="overflow-x-auto rounded-xl border border-white/10">
+        <div className="overflow-x-auto rounded-xl border border-border-subtle">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+              <tr className="border-b border-border-subtle bg-surface-1 text-left text-[10px] uppercase text-text-muted">
                 <th className="px-3 py-2">Furnizor</th>
                 <th className="px-3 py-2 text-right">Nr facturi</th>
                 <th className="px-3 py-2 text-right">Total facturat</th>
@@ -848,28 +848,28 @@ export function ObligatiiClient({
             </thead>
             <tbody>
               {furnizorGroups.map((g) => (
-                <tr key={g.numeFurnizor} className="border-b border-white/5 hover:bg-white/[0.03]">
+                <tr key={g.numeFurnizor} className="border-b border-border-faint hover:bg-surface-1">
                   <td className="px-3 py-2">
                     <Link
                       href={`/obligatii/furnizor/${encodeURIComponent(g.numeFurnizor)}`}
-                      className="text-white hover:text-[#E8007A] hover:underline"
+                      className="text-text-primary hover:text-[#E8007A] hover:underline"
                     >
                       {g.numeFurnizor}
                     </Link>
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-400">{g.nrFacturi}</td>
-                  <td className="px-3 py-2 text-right font-mono text-slate-300">
+                  <td className="px-3 py-2 text-right text-text-secondary">{g.nrFacturi}</td>
+                  <td className="px-3 py-2 text-right font-mono text-text-primary">
                     {formatRon(g.totalFacturat)}
                   </td>
                   <td className="px-3 py-2 text-right font-mono text-green-400">
                     {formatRon(g.platit)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-white">{formatRon(g.sold)}</td>
+                  <td className="px-3 py-2 text-right font-mono text-text-primary">{formatRon(g.sold)}</td>
                 </tr>
               ))}
               {furnizorGroups.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-500">
+                  <td colSpan={5} className="px-3 py-8 text-center text-sm text-text-muted">
                     Niciun furnizor gasit.
                   </td>
                 </tr>
@@ -880,7 +880,7 @@ export function ObligatiiClient({
       )}
 
       {viewMode === "facturi" && (
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
           {[25, 50, 100, "toate" as const].map((size) => (
@@ -893,7 +893,7 @@ export function ObligatiiClient({
               className={`rounded-md px-2 py-1 font-medium transition ${
                 pageSize === size
                   ? "bg-[#E8007A] text-[#0B0D1A]"
-                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+                  : "border border-border-subtle text-text-secondary hover:bg-surface-1"
               }`}
             >
               {size === "toate" ? "Toate" : size}
@@ -910,7 +910,7 @@ export function ObligatiiClient({
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronLeft size={14} />
             </button>
@@ -920,7 +920,7 @@ export function ObligatiiClient({
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronRight size={14} />
             </button>

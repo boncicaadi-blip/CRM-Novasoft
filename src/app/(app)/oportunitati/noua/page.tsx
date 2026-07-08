@@ -11,11 +11,11 @@ export default async function NewOpportunityPage() {
 
   return (
     <div>
-      <div className="flex items-center gap-2 border-b border-white/10 px-3 py-4 sm:px-6">
+      <div className="flex items-center gap-2 border-b border-border-subtle px-3 py-4 sm:px-6">
         <BackButton />
         <div>
-          <h1 className="text-lg font-heading text-white">Oportunitate noua</h1>
-          <p className="text-sm text-slate-500">Completeaza pasii de mai jos.</p>
+          <h1 className="text-lg font-heading text-text-primary">Oportunitate noua</h1>
+          <p className="text-sm text-text-muted">Completeaza pasii de mai jos.</p>
         </div>
       </div>
       <OpportunityForm profiles={profiles} nomenclatoare={nomenclatoare} />

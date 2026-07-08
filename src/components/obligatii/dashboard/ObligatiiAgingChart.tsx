@@ -36,16 +36,16 @@ export function ObligatiiAgingChart({
   selected?: AgingBucketObligatie[];
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">Vechime sold restant (aging)<InfoTooltip title="Vechime sold (aging)" definition={OBLIGATII_KPI_DEFINITIONS.agingChart} /></p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">Vechime sold restant (aging)<InfoTooltip title="Vechime sold (aging)" definition={OBLIGATII_KPI_DEFINITIONS.agingChart} /></p>
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <YAxis
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             tickFormatter={(v) => formatRonCompact(v)}
           />
           <Tooltip

@@ -20,8 +20,8 @@ export function SursaCard({ o, canaleIntrare }: { o: Opportunity; canaleIntrare:
           <InfoRow label="Nume canal intrare" value={o.nume_canal_intrare} />
           {o.observatii && (
             <div className="py-1.5">
-              <span className="text-xs text-slate-500">Observatii</span>
-              <p className="mt-1 text-sm text-slate-300">{o.observatii}</p>
+              <span className="text-xs text-text-muted">Observatii</span>
+              <p className="mt-1 text-sm text-text-primary">{o.observatii}</p>
             </div>
           )}
         </>

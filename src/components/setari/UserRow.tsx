@@ -58,40 +58,40 @@ export function UserRow({ user }: { user: Profile }) {
 
   if (editing) {
     return (
-      <tr className="border-b border-white/5 bg-white/[0.02]">
+      <tr className="border-b border-border-faint bg-surface-1">
         <td className="px-3 py-2.5" colSpan={5}>
           <div className="flex flex-wrap items-start gap-3">
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-40 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
+              className="w-40 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-sm text-text-primary outline-none focus:border-[#E8007A]"
             />
             <select
               value={role}
               onChange={(e) => setRole(e.target.value as "admin" | "user")}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-sm text-text-primary outline-none focus:border-[#E8007A]"
             >
-              <option value="user" style={{ backgroundColor: "#111535" }}>
+              <option value="user" style={{ backgroundColor: "var(--surface-1)" }}>
                 Utilizator
               </option>
-              <option value="admin" style={{ backgroundColor: "#111535" }}>
+              <option value="admin" style={{ backgroundColor: "var(--surface-1)" }}>
                 Administrator
               </option>
             </select>
 
             {role === "user" && (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] text-slate-500">Module:</span>
+                <span className="text-[11px] text-text-muted">Module:</span>
                 {ALL_MODULES.map((m) => (
                   <label
                     key={m}
-                    className="flex items-center gap-1.5 rounded-md border border-white/10 px-2 py-1 text-xs text-slate-300"
+                    className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2 py-1 text-xs text-text-primary"
                   >
                     <input
                       type="checkbox"
                       checked={moduleAccess.includes(m)}
                       onChange={() => toggleModule(m)}
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                      className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                     />
                     {MODULE_LABELS[m]}
                   </label>
@@ -104,17 +104,17 @@ export function UserRow({ user }: { user: Profile }) {
                 if (!submodules || moduleAccess.includes(m)) return null;
                 return (
                   <div key={m} className="flex w-full flex-wrap items-center gap-2 pl-1">
-                    <span className="text-[11px] text-slate-500">Sau doar, din {MODULE_LABELS[m]}:</span>
+                    <span className="text-[11px] text-text-muted">Sau doar, din {MODULE_LABELS[m]}:</span>
                     {submodules.map((s) => (
                       <label
                         key={s.key}
-                        className="flex items-center gap-1.5 rounded-md border border-white/10 px-2 py-1 text-xs text-slate-400"
+                        className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2 py-1 text-xs text-text-secondary"
                       >
                         <input
                           type="checkbox"
                           checked={submoduleAccess.includes(submoduleFullKey(m, s.key))}
                           onChange={() => toggleSubmodule(m, s.key)}
-                          className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                          className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                         />
                         {s.label}
                       </label>
@@ -123,7 +123,7 @@ export function UserRow({ user }: { user: Profile }) {
                 );
               })}
             {role === "admin" && (
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-text-muted">
                 Adminii au acces automat la toate modulele.
               </span>
             )}
@@ -140,7 +140,7 @@ export function UserRow({ user }: { user: Profile }) {
               <button
                 onClick={handleCancel}
                 disabled={isPending}
-                className="rounded-md p-1 text-slate-400 hover:bg-white/5"
+                className="rounded-md p-1 text-text-secondary hover:bg-surface-1"
               >
                 <X size={14} />
               </button>
@@ -153,19 +153,19 @@ export function UserRow({ user }: { user: Profile }) {
   }
 
   return (
-    <tr className="border-b border-white/5">
-      <td className="px-3 py-2.5 text-white">{user.full_name}</td>
-      <td className="px-3 py-2.5 text-slate-400">{user.email}</td>
+    <tr className="border-b border-border-faint">
+      <td className="px-3 py-2.5 text-text-primary">{user.full_name}</td>
+      <td className="px-3 py-2.5 text-text-secondary">{user.email}</td>
       <td className="px-3 py-2.5">
         <span
           className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-            user.role === "admin" ? "bg-[#E8007A]/20 text-[#E8007A]" : "bg-white/10 text-slate-300"
+            user.role === "admin" ? "bg-[#E8007A]/20 text-[#E8007A]" : "bg-surface-2 text-text-primary"
           }`}
         >
           {user.role === "admin" ? "Administrator" : "Utilizator"}
         </span>
         {user.role === "user" && (
-          <span className="ml-2 text-[11px] text-slate-500">
+          <span className="ml-2 text-[11px] text-text-muted">
             {[
               ...(user.module_access ?? []).map((m) => MODULE_LABELS[m as ModuleKey] ?? m),
               ...(user.submodule_access ?? []).map((s) => {
@@ -203,7 +203,7 @@ export function UserRow({ user }: { user: Profile }) {
           )}
           <button
             onClick={() => setEditing(true)}
-            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-[#E8007A]"
             title="Editeaza"
           >
             <Pencil size={14} />

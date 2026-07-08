@@ -22,9 +22,9 @@ export function ResponsabilChart({
   selected?: string | null;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           ARR pe Responsabil vanzare
           <InfoTooltip title="ARR pe Responsabil vanzare" definition={KPI_DEFINITIONS.crmResponsabilChart} />
         </p>
@@ -39,12 +39,12 @@ export function ResponsabilChart({
       </div>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={(v) => formatEurCompact(v)} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} tickFormatter={(v) => formatEurCompact(v)} />
           <YAxis
             type="category"
             dataKey="name"
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             width={110}
           />
           <Tooltip

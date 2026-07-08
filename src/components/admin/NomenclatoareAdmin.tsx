@@ -31,12 +31,12 @@ export function NomenclatoareAdmin({ items }: { items: Nomenclator[] }) {
               onClick={() => setActiveTab(cat.value)}
               className={`flex shrink-0 items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm transition whitespace-nowrap lg:w-full lg:whitespace-normal ${
                 activeTab === cat.value
-                  ? "bg-white/10 font-medium text-white"
-                  : "text-slate-400 hover:bg-white/5"
+                  ? "bg-surface-2 font-medium text-text-primary"
+                  : "text-text-secondary hover:bg-surface-1"
               }`}
             >
               {cat.label}
-              <span className="rounded-full bg-white/10 px-1.5 text-[11px] text-slate-400">
+              <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-text-secondary">
                 {count}
               </span>
             </button>
@@ -57,7 +57,7 @@ export function NomenclatoareAdmin({ items }: { items: Nomenclator[] }) {
             />
           ))}
           {categoryItems.length === 0 && (
-            <p className="py-6 text-center text-sm text-slate-500">
+            <p className="py-6 text-center text-sm text-text-muted">
               Nicio valoare in aceasta categorie inca.
             </p>
           )}
@@ -90,7 +90,7 @@ function AddNomenclatorForm({
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-md border border-dashed border-white/20 px-3 py-2 text-sm text-slate-400 transition hover:border-[#E8007A]/50 hover:text-[#E8007A]"
+        className="flex items-center gap-1.5 rounded-md border border-dashed border-border-strong px-3 py-2 text-sm text-text-secondary transition hover:border-[#E8007A]/50 hover:text-[#E8007A]"
       >
         <Plus size={15} />
         Adauga valoare noua
@@ -101,32 +101,32 @@ function AddNomenclatorForm({
   return (
     <form
       action={handleSubmit}
-      className="flex flex-wrap items-end gap-2 rounded-lg border border-white/10 bg-white/[0.02] p-3"
+      className="flex flex-wrap items-end gap-2 rounded-lg border border-border-subtle bg-surface-1 p-3"
     >
       <input type="hidden" name="categorie" value={categorie} />
       <div>
-        <label className="mb-1 block text-[11px] text-slate-500">Valoare</label>
+        <label className="mb-1 block text-[11px] text-text-muted">Valoare</label>
         <input
           name="valoare"
           required
           autoFocus
-          className="w-full sm:w-48 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-full sm:w-48 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
       </div>
       {hasColor && (
         <div>
-          <label className="mb-1 block text-[11px] text-slate-500">Culoare</label>
+          <label className="mb-1 block text-[11px] text-text-muted">Culoare</label>
           <input
             type="color"
             name="culoare"
-            defaultValue="#94A3B8"
-            className="h-[34px] w-12 rounded-md border border-white/10 bg-white/[0.04]"
+            defaultValue="var(--text-secondary)"
+            className="h-[34px] w-12 rounded-md border border-border-subtle bg-surface-2"
           />
         </div>
       )}
       {hasProbability && (
         <div>
-          <label className="mb-1 block text-[11px] text-slate-500">Probability (0-1)</label>
+          <label className="mb-1 block text-[11px] text-text-muted">Probability (0-1)</label>
           <input
             type="number"
             name="probability"
@@ -134,17 +134,17 @@ function AddNomenclatorForm({
             min={0}
             max={1}
             defaultValue={0.1}
-            className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+            className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           />
         </div>
       )}
       <div>
-        <label className="mb-1 block text-[11px] text-slate-500">Ordine</label>
+        <label className="mb-1 block text-[11px] text-text-muted">Ordine</label>
         <input
           type="number"
           name="ordine"
           defaultValue={0}
-          className="w-16 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-16 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
       </div>
       <button
@@ -157,7 +157,7 @@ function AddNomenclatorForm({
       <button
         type="button"
         onClick={() => setOpen(false)}
-        className="rounded-md px-3 py-1.5 text-sm text-slate-400 hover:bg-white/5"
+        className="rounded-md px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-1"
       >
         Anuleaza
       </button>
@@ -197,20 +197,20 @@ function NomenclatorRow({
     return (
       <form
         action={handleUpdate}
-        className="flex flex-wrap items-end gap-2 rounded-lg border border-[#E8007A]/30 bg-white/[0.02] p-3"
+        className="flex flex-wrap items-end gap-2 rounded-lg border border-[#E8007A]/30 bg-surface-1 p-3"
       >
         <input
           name="valoare"
           defaultValue={item.valoare}
           required
-          className="w-full sm:w-48 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-full sm:w-48 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
         {hasColor && (
           <input
             type="color"
             name="culoare"
-            defaultValue={item.culoare ?? "#94A3B8"}
-            className="h-[34px] w-12 rounded-md border border-white/10 bg-white/[0.04]"
+            defaultValue={item.culoare ?? "var(--text-secondary)"}
+            className="h-[34px] w-12 rounded-md border border-border-subtle bg-surface-2"
           />
         )}
         {hasProbability && (
@@ -221,14 +221,14 @@ function NomenclatorRow({
             min={0}
             max={1}
             defaultValue={item.probability ?? 0}
-            className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+            className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           />
         )}
         <input
           type="number"
           name="ordine"
           defaultValue={item.ordine}
-          className="w-16 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-16 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
         <button
           type="submit"
@@ -240,7 +240,7 @@ function NomenclatorRow({
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="rounded-md px-3 py-1.5 text-sm text-slate-400 hover:bg-white/5"
+          className="rounded-md px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-1"
         >
           Anuleaza
         </button>
@@ -250,29 +250,29 @@ function NomenclatorRow({
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg border border-white/5 px-3 py-2 transition ${
-        item.activ ? "bg-white/[0.02]" : "bg-white/[0.01] opacity-50"
+      className={`flex items-center gap-3 rounded-lg border border-border-faint px-3 py-2 transition ${
+        item.activ ? "bg-surface-1" : "bg-surface-1 opacity-50"
       }`}
     >
-      <GripVertical size={14} className="shrink-0 text-slate-600" />
+      <GripVertical size={14} className="shrink-0 text-text-faint" />
       {hasColor && item.culoare && (
         <span
           className="h-3 w-3 shrink-0 rounded-full"
           style={{ backgroundColor: item.culoare }}
         />
       )}
-      <button onClick={() => setEditing(true)} className="flex-1 text-left text-sm text-white hover:text-[#E8007A]">
+      <button onClick={() => setEditing(true)} className="flex-1 text-left text-sm text-text-primary hover:text-[#E8007A]">
         {item.valoare}
       </button>
       {hasProbability && item.probability !== null && (
-        <span className="text-xs text-slate-500">{Math.round(item.probability * 100)}%</span>
+        <span className="text-xs text-text-muted">{Math.round(item.probability * 100)}%</span>
       )}
-      <span className="text-xs text-slate-600">#{item.ordine}</span>
+      <span className="text-xs text-text-faint">#{item.ordine}</span>
       <button
         onClick={handleToggle}
         disabled={isPending}
         title={item.activ ? "Dezactiveaza" : "Activeaza"}
-        className="rounded-md p-1.5 text-slate-500 transition hover:bg-white/5 hover:text-slate-200"
+        className="rounded-md p-1.5 text-text-muted transition hover:bg-surface-1 hover:text-text-primary"
       >
         {item.activ ? <Eye size={14} /> : <EyeOff size={14} />}
       </button>
@@ -287,7 +287,7 @@ function NomenclatorRow({
           </button>
           <button
             onClick={() => setConfirmingDelete(false)}
-            className="rounded-md px-2 py-1 text-slate-400 hover:bg-white/5"
+            className="rounded-md px-2 py-1 text-text-secondary hover:bg-surface-1"
           >
             Anuleaza
           </button>
@@ -296,7 +296,7 @@ function NomenclatorRow({
         <button
           onClick={() => setConfirmingDelete(true)}
           title="Sterge definitiv"
-          className="rounded-md p-1.5 text-slate-500 transition hover:bg-red-500/10 hover:text-red-400"
+          className="rounded-md p-1.5 text-text-muted transition hover:bg-red-500/10 hover:text-red-400"
         >
           <Trash2 size={14} />
         </button>

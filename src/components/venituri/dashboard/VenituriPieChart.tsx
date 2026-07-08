@@ -7,7 +7,7 @@ import { formatEur } from "@/lib/format";
 import type { GrupareDatum } from "@/lib/venituri-dashboard-analytics";
 import type { KpiDefinition } from "@/lib/kpi-definitions";
 
-const CULORI = ["#E8007A", "#0070F3", "#22C55E", "#FBBF24", "#F97316", "#A855F7", "#06B6D4", "#94A3B8", "#EC4899"];
+const CULORI = ["#E8007A", "#0070F3", "#22C55E", "#FBBF24", "#F97316", "#A855F7", "#06B6D4", "var(--text-secondary)", "#EC4899"];
 
 export function VenituriPieChart({
   title,
@@ -26,9 +26,9 @@ export function VenituriPieChart({
   const total = data.reduce((s, d) => s + d.realizat, 0);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           {title}
           {definition && <InfoTooltip title={title} definition={definition} />}
         </p>
@@ -73,7 +73,7 @@ export function VenituriPieChart({
               );
             }}
           />
-          <Legend wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} formatter={(v) => <span style={{ color: "#CBD5E1" }}>{v}</span>} />
+          <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} formatter={(v) => <span style={{ color: "var(--text-primary)" }}>{v}</span>} />
         </PieChart>
       </ResponsiveContainer>
     </div>

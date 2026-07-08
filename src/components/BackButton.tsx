@@ -14,7 +14,7 @@ export function BackButton() {
     <button
       onClick={() => router.back()}
       title="Inapoi"
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#111535] text-slate-400 shadow-lg transition hover:bg-white/10 hover:text-white"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border-subtle bg-surface-1 text-text-secondary shadow-lg transition hover:bg-surface-2 hover:text-text-primary"
     >
       <ArrowLeft size={15} />
     </button>

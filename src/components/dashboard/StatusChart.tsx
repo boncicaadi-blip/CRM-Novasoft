@@ -23,9 +23,9 @@ export function StatusChart({
   const total = data.reduce((s, d) => s + d.count, 0);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           Distributie Status
           <InfoTooltip title="Distributie Status" definition={KPI_DEFINITIONS.crmStatusChart} />
         </p>
@@ -56,7 +56,7 @@ export function StatusChart({
             {data.map((entry) => (
               <Cell
                 key={entry.status}
-                fill={STATUS_COLORS[entry.status] ?? "#94A3B8"}
+                fill={STATUS_COLORS[entry.status] ?? "var(--text-secondary)"}
                 opacity={!selected || selected === entry.status ? 1 : 0.3}
               />
             ))}
@@ -78,8 +78,8 @@ export function StatusChart({
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: 12, color: "#94A3B8" }}
-            formatter={(value) => <span style={{ color: "#CBD5E1" }}>{value}</span>}
+            wrapperStyle={{ fontSize: 12, color: "var(--text-secondary)" }}
+            formatter={(value) => <span style={{ color: "var(--text-primary)" }}>{value}</span>}
           />
         </PieChart>
       </ResponsiveContainer>

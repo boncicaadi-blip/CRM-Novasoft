@@ -8,8 +8,8 @@ import type { TipVanzare } from "@/types/creante";
 import type { ClientOption } from "@/lib/data/venituri";
 
 const inputClass =
-  "w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]";
-const labelClass = "mb-1 block text-[11px] text-slate-500";
+  "w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]";
+const labelClass = "mb-1 block text-[11px] text-text-muted";
 
 export function ManualCreantaFormModal({ clienti, onClose }: { clienti: ClientOption[]; onClose: () => void }) {
   const [isPending, startTransition] = useTransition();
@@ -55,11 +55,11 @@ export function ManualCreantaFormModal({ clienti, onClose }: { clienti: ClientOp
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-white/10 bg-[#111535] p-5"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-border-subtle bg-surface-1 p-5"
       >
         <div className="mb-4 flex items-start justify-between">
-          <h2 className="text-lg font-heading text-white">Adauga factura manual</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white">
+          <h2 className="text-lg font-heading text-text-primary">Adauga factura manual</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={18} />
           </button>
         </div>
@@ -85,16 +85,16 @@ export function ManualCreantaFormModal({ clienti, onClose }: { clienti: ClientOp
           <div>
             <label className={labelClass}>Client *</label>
             <select value={clientId} onChange={(e) => setClientId(e.target.value)} className={inputClass}>
-              <option value="" style={{ backgroundColor: "#111535" }}>
+              <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                 Alege clientul...
               </option>
               {clienti.map((c) => (
-                <option key={c.id} value={c.id} style={{ backgroundColor: "#111535" }}>
+                <option key={c.id} value={c.id} style={{ backgroundColor: "var(--surface-1)" }}>
                   {c.nume}
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-[10px] text-slate-600">
+            <p className="mt-1 text-[10px] text-text-faint">
               Lista vine din fisa Facturabil (Financiar → Venituri → Clienti facturabili).
             </p>
           </div>
@@ -139,13 +139,13 @@ export function ManualCreantaFormModal({ clienti, onClose }: { clienti: ClientOp
                 onChange={(e) => setTipVanzare(e.target.value as TipVanzare | "")}
                 className={inputClass}
               >
-                <option value="" style={{ backgroundColor: "#111535" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                   Necunoscut
                 </option>
-                <option value="Recurente" style={{ backgroundColor: "#111535" }}>
+                <option value="Recurente" style={{ backgroundColor: "var(--surface-1)" }}>
                   Recurente
                 </option>
-                <option value="Nerecurente" style={{ backgroundColor: "#111535" }}>
+                <option value="Nerecurente" style={{ backgroundColor: "var(--surface-1)" }}>
                   Nerecurente
                 </option>
               </select>

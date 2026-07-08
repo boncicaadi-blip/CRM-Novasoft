@@ -19,16 +19,16 @@ export function ManagementLineChart({
   definition?: KpiDefinition;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         {title}
         {definition && <InfoTooltip title={title} definition={definition} />}
       </p>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;

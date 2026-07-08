@@ -73,9 +73,9 @@ export function FisaClientClient({
   return (
     <div>
       <div className="mb-5">
-        <p className="text-xs text-slate-500">Fisa client</p>
-        <h1 className="text-lg font-heading text-white">{numeFirma}</h1>
-        <p className="text-sm text-slate-500">{creante.length} facturi in total</p>
+        <p className="text-xs text-text-muted">Fisa client</p>
+        <h1 className="text-lg font-heading text-text-primary">{numeFirma}</h1>
+        <p className="text-sm text-text-muted">{creante.length} facturi in total</p>
       </div>
 
       {(crossLinks.opportunityId || crossLinks.otherRoleSummary) && (
@@ -83,12 +83,12 @@ export function FisaClientClient({
           {crossLinks.opportunityId && (
             <Link
               href={`/oportunitati/${crossLinks.opportunityId}`}
-              className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-slate-300 transition hover:bg-white/5"
+              className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary transition hover:bg-surface-1"
             >
               <GitBranch size={15} className="text-[#0070F3]" />
               Are oportunitate in CRM
               {crossLinks.opportunityNume && (
-                <span className="text-slate-500">— {crossLinks.opportunityNume}</span>
+                <span className="text-text-muted">— {crossLinks.opportunityNume}</span>
               )}
             </Link>
           )}
@@ -137,12 +137,12 @@ export function FisaClientClient({
       </div>
 
       {(summary.mediePlataZile !== null || summary.nrPromisiuniActive > 0) && (
-        <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-border-subtle bg-surface-1 px-4 py-3 text-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
             Comportament de plata
           </p>
           {summary.mediePlataZile !== null && (
-            <span className="text-slate-300">
+            <span className="text-text-primary">
               In medie plateste{" "}
               <span
                 className={`font-mono font-medium ${summary.mediePlataZile <= 0 ? "text-green-400" : "text-amber-400"}`}
@@ -151,7 +151,7 @@ export function FisaClientClient({
                   ? `cu ${Math.abs(summary.mediePlataZile)} zile inainte de scadenta`
                   : `cu ${summary.mediePlataZile} zile dupa scadenta`}
               </span>{" "}
-              <span className="text-slate-500">({summary.nrFacturiIncasateCuScadenta} facturi incasate)</span>
+              <span className="text-text-muted">({summary.nrFacturiIncasateCuScadenta} facturi incasate)</span>
             </span>
           )}
           {summary.nrPromisiuniActive > 0 && (
@@ -163,10 +163,10 @@ export function FisaClientClient({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[11px] uppercase text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-[11px] uppercase text-text-muted">
               <th className="px-3 py-2">Serviciu</th>
               <th className="px-3 py-2">Factura</th>
               <th className="px-3 py-2">Data factura</th>
@@ -184,20 +184,20 @@ export function FisaClientClient({
                 <tr
                   key={c.id}
                   onClick={() => setSelected(c)}
-                  className="cursor-pointer border-b border-white/5 transition hover:bg-white/[0.03]"
+                  className="cursor-pointer border-b border-border-faint transition hover:bg-surface-1"
                 >
-                  <td className="px-3 py-2 text-slate-400">{c.serviciu_facturat ?? "—"}</td>
-                  <td className="px-3 py-2 text-slate-400">{c.nr_factura}</td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">{c.serviciu_facturat ?? "—"}</td>
+                  <td className="px-3 py-2 text-text-secondary">{c.nr_factura}</td>
+                  <td className="px-3 py-2 text-text-secondary">
                     {c.data_factura ? new Date(c.data_factura).toLocaleDateString("ro-RO") : "—"}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">
                     {c.data_scadenta ? new Date(c.data_scadenta).toLocaleDateString("ro-RO") : "—"}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-slate-300">
+                  <td className="px-3 py-2 text-right font-mono text-text-primary">
                     {formatRon(c.total_factura)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono text-white">
+                  <td className="px-3 py-2 text-right font-mono text-text-primary">
                     {formatRon(c.sold)}
                   </td>
                   <td className="px-3 py-2">
@@ -206,7 +206,7 @@ export function FisaClientClient({
                     ) : status === "restanta" ? (
                       <span className="text-red-400">Restanta ({zile}z)</span>
                     ) : (
-                      <span className="text-slate-400">La zi</span>
+                      <span className="text-text-secondary">La zi</span>
                     )}
                   </td>
                 </tr>
@@ -214,7 +214,7 @@ export function FisaClientClient({
             })}
             {creante.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={7} className="px-3 py-8 text-center text-sm text-text-muted">
                   Nicio factura pentru aceasta firma.
                 </td>
               </tr>

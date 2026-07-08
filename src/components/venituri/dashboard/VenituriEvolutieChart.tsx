@@ -22,8 +22,8 @@ export function VenituriEvolutieChart({
   gradientId?: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         {title}
         <InfoTooltip title={title} definition={VENITURI_KPI_DEFINITIONS.evolutieEstimatRealizat} />
       </p>
@@ -39,9 +39,9 @@ export function VenituriEvolutieChart({
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
@@ -50,14 +50,14 @@ export function VenituriEvolutieChart({
                 <ChartTooltipBox
                   title={d.label}
                   rows={[
-                    { label: "Estimat", value: formatEur(d.estimat), color: "#94A3B8" },
+                    { label: "Estimat", value: formatEur(d.estimat), color: "var(--text-secondary)" },
                     { label: "Realizat", value: formatEur(d.realizat), color },
                   ]}
                 />
               );
             }}
           />
-          <Legend wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
           <Area
             type="monotone"
             dataKey="estimat"

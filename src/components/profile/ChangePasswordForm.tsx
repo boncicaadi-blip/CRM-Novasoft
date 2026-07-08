@@ -42,26 +42,26 @@ export function ChangePasswordForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="mb-1 block text-xs text-slate-400">Parola noua</label>
+        <label className="mb-1 block text-xs text-text-secondary">Parola noua</label>
         <input
           type="password"
           minLength={6}
           required
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           placeholder="••••••••"
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs text-slate-400">Confirma parola noua</label>
+        <label className="mb-1 block text-xs text-text-secondary">Confirma parola noua</label>
         <input
           type="password"
           minLength={6}
           required
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           placeholder="••••••••"
         />
       </div>

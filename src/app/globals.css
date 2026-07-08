@@ -21,9 +21,11 @@
   --surface-2: #161b45; /* carduri hover, elemente ridicate */
   --border-subtle: rgba(255, 255, 255, 0.1);
   --border-faint: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.2);
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
+  --text-faint: #475569;
 }
 
 .light {
@@ -41,9 +43,11 @@
   --surface-2: #f1f5f9;
   --border-subtle: rgba(15, 23, 42, 0.1);
   --border-faint: rgba(15, 23, 42, 0.05);
+  --border-strong: rgba(15, 23, 42, 0.2);
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
+  --text-faint: #cbd5e1;
 }
 
 @theme inline {
@@ -54,9 +58,11 @@
   --color-surface-2: var(--surface-2);
   --color-border-subtle: var(--border-subtle);
   --color-border-faint: var(--border-faint);
+  --color-border-strong: var(--border-strong);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
   --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading: var(--font-barlow), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, Menlo, monospace;

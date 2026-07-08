@@ -38,7 +38,7 @@ export function ExpandableChart({ children }: { children: React.ReactNode }) {
       <button
         onClick={() => setExpanded(true)}
         title="Mareste graficul"
-        className="absolute right-2 top-2 z-10 rounded-md bg-black/30 p-1.5 text-slate-300 opacity-0 backdrop-blur-sm transition group-hover:opacity-100 hover:bg-black/50 hover:text-white"
+        className="absolute right-2 top-2 z-10 rounded-md bg-black/30 p-1.5 text-text-primary opacity-0 backdrop-blur-sm transition group-hover:opacity-100 hover:bg-black/50 hover:text-text-primary"
       >
         <Maximize2 size={14} />
       </button>
@@ -52,7 +52,7 @@ export function ExpandableChart({ children }: { children: React.ReactNode }) {
           <button
             onClick={() => setExpanded(false)}
             title="Inchide (Esc)"
-            className="absolute right-4 top-4 rounded-md border border-white/10 bg-white/10 p-2 text-white transition hover:bg-white/20"
+            className="absolute right-4 top-4 rounded-md border border-border-subtle bg-surface-2 p-2 text-text-primary transition hover:bg-surface-2"
           >
             <X size={20} />
           </button>

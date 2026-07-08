@@ -19,15 +19,15 @@ function EditableRow({ an, target }: { an: number; target: number }) {
   }
 
   return (
-    <div className="flex items-center gap-2 border-b border-white/5 py-2 last:border-0">
-      <span className="w-16 font-mono text-sm text-white">{an}</span>
+    <div className="flex items-center gap-2 border-b border-border-faint py-2 last:border-0">
+      <span className="w-16 font-mono text-sm text-text-primary">{an}</span>
       <input
         type="number"
         min={0}
         step="1"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="flex-1 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+        className="flex-1 rounded-md border border-border-subtle bg-surface-2 px-3 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
       />
       <button
         onClick={handleSave}
@@ -36,7 +36,7 @@ function EditableRow({ an, target }: { an: number; target: number }) {
       >
         {isPending ? "..." : "Salveaza"}
       </button>
-      {message && <span className="text-[11px] text-slate-500">{message}</span>}
+      {message && <span className="text-[11px] text-text-muted">{message}</span>}
     </div>
   );
 }
@@ -59,32 +59,32 @@ export function TargetComercialForm({ targete }: { targete: TargetAnual[] }) {
   }
 
   return (
-    <div className="max-w-md rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <label className="mb-1.5 block text-xs text-slate-500">Target comercial anual (EUR)</label>
+    <div className="max-w-md rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <label className="mb-1.5 block text-xs text-text-muted">Target comercial anual (EUR)</label>
       <div className="mb-2">
         {aniAfisati.map((an) => (
           <EditableRow key={an} an={an} target={targetByAn.get(an) ?? 0} />
         ))}
       </div>
 
-      <div className="flex items-center gap-2 border-t border-white/10 pt-3">
+      <div className="flex items-center gap-2 border-t border-border-subtle pt-3">
         <input
           type="number"
           value={anNou}
           onChange={(e) => setAnNou(e.target.value)}
           placeholder={`ex: ${anCurent - 1}`}
-          className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+          className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
         <button
           onClick={handleAddAn}
-          className="flex items-center gap-1 rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+          className="flex items-center gap-1 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs text-text-primary transition hover:bg-surface-1"
         >
           <Plus size={13} />
           Adauga an
         </button>
       </div>
 
-      <p className="mt-3 text-[11px] text-slate-500">
+      <p className="mt-3 text-[11px] text-text-muted">
         Targetul anului curent e folosit pentru Pipeline Coverage in Raportul Comercial. Poti
         completa si anii anteriori, retroactiv, ca sa te raportezi la istoric.
       </p>

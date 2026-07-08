@@ -6,8 +6,8 @@ export default async function SetariComercialPage() {
 
   return (
     <div className="px-3 py-4 sm:px-6">
-      <h1 className="text-lg font-heading text-white">Comercial</h1>
-      <p className="mb-5 text-sm text-slate-500">
+      <h1 className="text-lg font-heading text-text-primary">Comercial</h1>
+      <p className="mb-5 text-sm text-text-muted">
         Setari folosite in Raportul Comercial (Pipeline Coverage si alte KPI-uri de business).
       </p>
       <TargetComercialForm targete={targete} />

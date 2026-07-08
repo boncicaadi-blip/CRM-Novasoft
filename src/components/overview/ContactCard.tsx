@@ -47,15 +47,15 @@ export function ContactCard({ o }: { o: Opportunity }) {
   const hasContact2 = o.contact2_nume || o.contact2_telefon || o.contact2_email;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
           Persoane de contact
         </p>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
-            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-[#E8007A]"
             title="Editeaza Persoane de contact"
           >
             <Pencil size={13} />
@@ -66,7 +66,7 @@ export function ContactCard({ o }: { o: Opportunity }) {
       {editing ? (
         <form ref={formRef} action={handleSubmit} className="space-y-3">
           <div className="space-y-2.5">
-            <p className="text-[11px] font-medium text-slate-500">Contact principal</p>
+            <p className="text-[11px] font-medium text-text-muted">Contact principal</p>
             <LabeledInput label="Nume">
               <TextInput name="contact_nume" defaultValue={o.contact_nume ?? ""} />
             </LabeledInput>
@@ -81,8 +81,8 @@ export function ContactCard({ o }: { o: Opportunity }) {
             </LabeledInput>
           </div>
 
-          <div className="space-y-2.5 border-t border-white/5 pt-3">
-            <p className="text-[11px] font-medium text-slate-500">Contact secundar</p>
+          <div className="space-y-2.5 border-t border-border-faint pt-3">
+            <p className="text-[11px] font-medium text-text-muted">Contact secundar</p>
             <LabeledInput label="Nume">
               <TextInput name="contact2_nume" defaultValue={o.contact2_nume ?? ""} />
             </LabeledInput>
@@ -119,7 +119,7 @@ export function ContactCard({ o }: { o: Opportunity }) {
               type="button"
               onClick={() => setEditing(false)}
               disabled={isPending}
-              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1"
             >
               <X size={13} />
               Anuleaza
@@ -155,7 +155,7 @@ export function ContactCard({ o }: { o: Opportunity }) {
             </div>
           )}
           {hasContact2 && (
-            <div className={`divide-y divide-white/5 ${hasContact1 ? "border-t border-white/5 pt-3" : ""}`}>
+            <div className={`divide-y divide-white/5 ${hasContact1 ? "border-t border-border-faint pt-3" : ""}`}>
               <InfoRow label="Nume" value={o.contact2_nume} />
               <InfoRow label="Functie" value={o.contact2_functie} />
               <InfoRow
@@ -182,7 +182,7 @@ export function ContactCard({ o }: { o: Opportunity }) {
           )}
         </div>
       ) : (
-        <p className="text-xs text-slate-500">Nicio persoana de contact adaugata.</p>
+        <p className="text-xs text-text-muted">Nicio persoana de contact adaugata.</p>
       )}
     </div>
   );

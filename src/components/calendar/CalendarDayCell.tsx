@@ -31,13 +31,13 @@ export function CalendarDayCell({
     <div
       ref={setNodeRef}
       onClick={() => onOpenDay(dayStr)}
-      className={`flex min-h-[56px] flex-col items-stretch border-b border-r border-white/5 p-1 text-left transition last:border-r-0 cursor-pointer sm:min-h-[88px] sm:p-1.5 ${
+      className={`flex min-h-[56px] flex-col items-stretch border-b border-r border-border-faint p-1 text-left transition last:border-r-0 cursor-pointer sm:min-h-[88px] sm:p-1.5 ${
         isCurrentMonth ? "" : "opacity-30"
       } ${isToday ? "bg-[#E8007A]/[0.06]" : ""} ${
-        isOver ? "bg-[#0070F3]/10 ring-1 ring-inset ring-[#0070F3]" : "hover:bg-white/[0.02]"
+        isOver ? "bg-[#0070F3]/10 ring-1 ring-inset ring-[#0070F3]" : "hover:bg-surface-1"
       }`}
     >
-      <span className={`mb-1 text-sm font-medium sm:text-base ${isToday ? "font-bold text-[#E8007A]" : "text-slate-300"}`}>
+      <span className={`mb-1 text-sm font-medium sm:text-base ${isToday ? "font-bold text-[#E8007A]" : "text-text-primary"}`}>
         {format(day, "d")}
       </span>
 
@@ -63,7 +63,7 @@ export function CalendarDayCell({
           />
         ))}
         {actions.length > MAX_VISIBLE && (
-          <p className="px-1 text-[10px] text-slate-500">
+          <p className="px-1 text-[10px] text-text-muted">
             +{actions.length - MAX_VISIBLE} mai multe
           </p>
         )}

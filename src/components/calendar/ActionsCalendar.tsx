@@ -32,7 +32,7 @@ import { ActionDetailPanel } from "./ActionDetailPanel";
 import { DayDetailModal } from "./DayDetailModal";
 
 const STATUS_COLORS: Record<CalendarAction["status"], string> = {
-  restanta: "#94A3B8",
+  restanta: "var(--text-secondary)",
   azi: "#F59E0B",
   viitoare: "#0070F3",
   finalizata: "#22C55E",
@@ -106,7 +106,7 @@ export function ActionsCalendar({
   function colorFor(action: CalendarAction) {
     return colorMode === "status"
       ? STATUS_COLORS[action.status]
-      : STAGE_COLORS[action.stage] ?? "#94A3B8";
+      : STAGE_COLORS[action.stage] ?? "var(--text-secondary)";
   }
 
   function clearOverride(actionId: string) {
@@ -159,23 +159,23 @@ export function ActionsCalendar({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentMonth((d) => subMonths(d, 1))}
-                className="rounded-md border border-white/10 p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
+                className="rounded-md border border-border-subtle p-1.5 text-text-secondary transition hover:bg-surface-1 hover:text-text-primary"
               >
                 <ChevronLeft size={16} />
               </button>
               <button
                 onClick={() => setCurrentMonth((d) => addMonths(d, 1))}
-                className="rounded-md border border-white/10 p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-white"
+                className="rounded-md border border-border-subtle p-1.5 text-text-secondary transition hover:bg-surface-1 hover:text-text-primary"
               >
                 <ChevronRight size={16} />
               </button>
               <button
                 onClick={() => setCurrentMonth(new Date())}
-                className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+                className="rounded-md border border-border-subtle px-3 py-1.5 text-xs text-text-primary transition hover:bg-surface-1"
               >
                 Azi
               </button>
-              <h2 className="ml-2 font-heading text-lg text-white">
+              <h2 className="ml-2 font-heading text-lg text-text-primary">
                 {format(currentMonth, "MMMM yyyy", { locale: ro })}
               </h2>
             </div>
@@ -184,22 +184,22 @@ export function ActionsCalendar({
               <select
                 value={responsabilFilter}
                 onChange={(e) => setResponsabilFilter(e.target.value)}
-                className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+                className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
               >
-                <option value="" style={{ backgroundColor: "#111535" }}>
+                <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                   Toti responsabilii
                 </option>
                 {profiles.map((p) => (
-                  <option key={p.id} value={p.id} style={{ backgroundColor: "#111535" }}>
+                  <option key={p.id} value={p.id} style={{ backgroundColor: "var(--surface-1)" }}>
                     {p.full_name}
                   </option>
                 ))}
               </select>
-              <div className="flex gap-1 rounded-lg bg-white/5 p-1 text-xs">
+              <div className="flex gap-1 rounded-lg bg-surface-1 p-1 text-xs">
               <button
                 onClick={() => setColorMode("status")}
                 className={`rounded-md px-3 py-1.5 transition ${
-                  colorMode === "status" ? "bg-white/10 text-white" : "text-slate-500"
+                  colorMode === "status" ? "bg-surface-2 text-text-primary" : "text-text-muted"
                 }`}
               >
                 Culoare: Status
@@ -207,7 +207,7 @@ export function ActionsCalendar({
               <button
                 onClick={() => setColorMode("stage")}
                 className={`rounded-md px-3 py-1.5 transition ${
-                  colorMode === "stage" ? "bg-white/10 text-white" : "text-slate-500"
+                  colorMode === "stage" ? "bg-surface-2 text-text-primary" : "text-text-muted"
                 }`}
               >
                 Culoare: Stage
@@ -217,7 +217,7 @@ export function ActionsCalendar({
           </div>
 
           {/* Legenda */}
-          <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-slate-400">
+          <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-text-secondary">
             {colorMode === "status"
               ? Object.entries(STATUS_LABELS).map(([key, label]) => (
                   <span key={key} className="flex items-center gap-1.5">
@@ -236,16 +236,16 @@ export function ActionsCalendar({
                 ))}
           </div>
 
-          <p className="mb-2 text-[11px] text-slate-500">
+          <p className="mb-2 text-[11px] text-text-muted">
             Trage o actiune pe alta zi pentru a-i schimba data. Click pe o zi pentru vedere
             detaliata, click pe o actiune pentru detalii in panoul din dreapta.
           </p>
 
           {/* Grila calendar - ocupa tot spatiul disponibil pe verticala */}
-          <div className="flex h-[calc(100%-7rem)] flex-col overflow-hidden rounded-xl border border-white/10">
-            <div className="grid grid-cols-7 border-b border-white/10 bg-[#111535]">
+          <div className="flex h-[calc(100%-7rem)] flex-col overflow-hidden rounded-xl border border-border-subtle">
+            <div className="grid grid-cols-7 border-b border-border-subtle bg-surface-1">
               {weekdayLabels.map((d) => (
-                <div key={d} className="px-2 py-2 text-center text-xs font-medium text-slate-500">
+                <div key={d} className="px-2 py-2 text-center text-xs font-medium text-text-muted">
                   {d}
                 </div>
               ))}
@@ -291,7 +291,7 @@ export function ActionsCalendar({
       <DragOverlay>
         {activeAction ? (
           <div
-            className="rotate-1 truncate rounded px-1.5 py-1 text-[11px] font-medium text-white shadow-2xl"
+            className="rotate-1 truncate rounded px-1.5 py-1 text-[11px] font-medium text-text-primary shadow-2xl"
             style={{ backgroundColor: colorFor(activeAction) }}
           >
             {activeAction.numePotential}

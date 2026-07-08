@@ -14,11 +14,11 @@ export default async function CalendarPage() {
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col overflow-hidden md:h-screen">
-      <div className="flex items-center gap-3 border-b border-white/10 px-3 py-4 sm:px-6">
+      <div className="flex items-center gap-3 border-b border-border-subtle px-3 py-4 sm:px-6">
         <BackButton />
         <div>
-          <h1 className="text-lg font-heading text-white">Calendar actiuni</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-lg font-heading text-text-primary">Calendar actiuni</h1>
+          <p className="text-sm text-text-muted">
             Toate actiunile planificate, vazute pe luna calendaristica.
           </p>
         </div>

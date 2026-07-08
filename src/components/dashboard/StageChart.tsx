@@ -32,9 +32,9 @@ export function StageChart({
   selected?: string | null;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           Oportunitati pe Stage
           <InfoTooltip title="Oportunitati pe Stage" definition={KPI_DEFINITIONS.crmStageChart} />
         </p>
@@ -49,15 +49,15 @@ export function StageChart({
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
           <XAxis
             dataKey="stage"
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             angle={-20}
             textAnchor="end"
             height={50}
           />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} allowDecimals={false} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} allowDecimals={false} />
           <Tooltip
             cursor={false}
             content={({ active, payload }) => {

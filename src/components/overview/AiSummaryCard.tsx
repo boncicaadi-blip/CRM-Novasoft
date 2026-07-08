@@ -26,7 +26,7 @@ export function AiSummaryCard({ opportunityId }: { opportunityId: string }) {
       <button
         onClick={handleGenerate}
         disabled={isPending}
-        className="flex items-center gap-1.5 rounded-md border border-white/10 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-primary transition hover:bg-surface-1 disabled:opacity-50"
       >
         {isPending ? (
           <>

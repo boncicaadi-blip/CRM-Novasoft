@@ -41,18 +41,18 @@ export function KpiInfoCard({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const trendColor = trend === "up" ? "#22C55E" : trend === "down" ? "#EF4444" : "#94A3B8";
+  const trendColor = trend === "up" ? "#22C55E" : trend === "down" ? "#EF4444" : "var(--text-secondary)";
 
   return (
     <div
       ref={ref}
       onClick={onClick}
       className={`relative rounded-xl border p-4 transition ${
-        isActive ? "border-[#E8007A] bg-[#E8007A]/5" : "border-white/10 bg-white/[0.02]"
-      } ${onClick ? "cursor-pointer hover:border-white/20" : ""}`}
+        isActive ? "border-[#E8007A] bg-[#E8007A]/5" : "border-border-subtle bg-surface-1"
+      } ${onClick ? "cursor-pointer hover:border-border-strong" : ""}`}
     >
       <div className="mb-2 flex items-center justify-between">
-        <p className="flex items-center gap-1 text-xs text-slate-500">{label}</p>
+        <p className="flex items-center gap-1 text-xs text-text-muted">{label}</p>
         <div className="flex items-center gap-1.5">
           {icon && (
             <span style={{ color: accent }} className="opacity-70">
@@ -65,7 +65,7 @@ export function KpiInfoCard({
               e.stopPropagation();
               setOpen((v) => !v);
             }}
-            className="rounded-full p-0.5 text-slate-600 transition hover:bg-white/10 hover:text-slate-300"
+            className="rounded-full p-0.5 text-text-faint transition hover:bg-surface-2 hover:text-text-primary"
             title="Ce inseamna acest KPI"
           >
             <Info size={13} />
@@ -74,10 +74,10 @@ export function KpiInfoCard({
       </div>
 
       {insufficientData ? (
-        <p className="font-mono text-lg text-slate-600">Date insuficiente</p>
+        <p className="font-mono text-lg text-text-faint">Date insuficiente</p>
       ) : (
         <div className="flex items-baseline gap-1.5">
-          <p className="font-mono text-2xl font-medium text-white">{value}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{value}</p>
           {trend && trend !== "flat" && (
             <span style={{ color: trendColor }}>
               {trend === "up" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
@@ -85,19 +85,19 @@ export function KpiInfoCard({
           )}
         </div>
       )}
-      {sublabel && <p className="mt-1 text-[11px] text-slate-500">{sublabel}</p>}
+      {sublabel && <p className="mt-1 text-[11px] text-text-muted">{sublabel}</p>}
 
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-2 w-72 rounded-lg border border-white/10 bg-[#111535] p-3 text-left shadow-xl">
-          <p className="mb-1.5 text-xs font-medium text-white">{label}</p>
-          <p className="mb-2 text-[11px] leading-relaxed text-slate-300">{definition.descriere}</p>
+        <div className="absolute left-0 top-full z-30 mt-2 w-72 rounded-lg border border-border-subtle bg-surface-1 p-3 text-left shadow-xl">
+          <p className="mb-1.5 text-xs font-medium text-text-primary">{label}</p>
+          <p className="mb-2 text-[11px] leading-relaxed text-text-primary">{definition.descriere}</p>
           {definition.formula && (
-            <p className="mb-2 rounded-md bg-white/5 px-2 py-1.5 font-mono text-[10px] text-slate-400">
+            <p className="mb-2 rounded-md bg-surface-1 px-2 py-1.5 font-mono text-[10px] text-text-secondary">
               {definition.formula}
             </p>
           )}
-          <p className="text-[11px] leading-relaxed text-slate-400">
-            <span className="font-medium text-slate-300">Cum il analizezi: </span>
+          <p className="text-[11px] leading-relaxed text-text-secondary">
+            <span className="font-medium text-text-primary">Cum il analizezi: </span>
             {definition.cumAnalizezi}
           </p>
         </div>

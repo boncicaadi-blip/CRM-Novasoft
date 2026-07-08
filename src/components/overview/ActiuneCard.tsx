@@ -67,16 +67,16 @@ export function ActiuneCard({
   const responsabilActiune = profiles.find((p) => p.id === o.responsabil_actiune_id);
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
           Actiune curenta
         </p>
         <div className="flex items-center gap-1">
           {o.actiune && (
             <Link
               href="/calendar"
-              className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#0070F3]"
+              className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-[#0070F3]"
               title="Vezi in calendar"
             >
               <CalendarDays size={13} />
@@ -84,7 +84,7 @@ export function ActiuneCard({
           )}
           <button
             onClick={() => setMode("edit")}
-            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-[#E8007A]"
             title="Editeaza Actiune curenta"
           >
             <Pencil size={13} />
@@ -99,12 +99,12 @@ export function ActiuneCard({
         <InfoRow label="Data finalizare" value={fmtDate(o.data_finalizare_actiune)} />
         {o.observatii_actiune && (
           <div className="py-1.5">
-            <span className="text-xs text-slate-500">Observatii actiune</span>
-            <p className="mt-1 text-sm text-slate-300">{o.observatii_actiune}</p>
+            <span className="text-xs text-text-muted">Observatii actiune</span>
+            <p className="mt-1 text-sm text-text-primary">{o.observatii_actiune}</p>
           </div>
         )}
         {!o.actiune && (
-          <p className="py-1.5 text-xs text-slate-500">Nicio actiune programata.</p>
+          <p className="py-1.5 text-xs text-text-muted">Nicio actiune programata.</p>
         )}
       </div>
 
@@ -156,8 +156,8 @@ function EditForm({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
         Actiune curenta
       </p>
       <form ref={formRef} action={handleSubmit} className="space-y-2.5">
@@ -178,10 +178,10 @@ function EditForm({
           <select
             name="responsabil_actiune_id"
             defaultValue={o.responsabil_actiune_id ?? currentUserId}
-            className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+            className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           >
             {profiles.map((p) => (
-              <option key={p.id} value={p.id} style={{ backgroundColor: "#111535" }}>
+              <option key={p.id} value={p.id} style={{ backgroundColor: "var(--surface-1)" }}>
                 {p.full_name}
               </option>
             ))}
@@ -216,7 +216,7 @@ function EditForm({
             type="button"
             onClick={onDone}
             disabled={isPending}
-            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1"
           >
             <X size={13} />
             Anuleaza
@@ -261,7 +261,7 @@ function FinalizeForm({ o, onDone }: { o: Opportunity; onDone: () => void }) {
 
   return (
     <div className="rounded-xl border border-green-500/30 bg-green-500/[0.03] p-4">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wide text-text-muted">
         Finalizeaza: {o.actiune}
       </p>
       <form onSubmit={handleSubmit} className="space-y-2.5">
@@ -280,8 +280,8 @@ function FinalizeForm({ o, onDone }: { o: Opportunity; onDone: () => void }) {
           />
         </LabeledInput>
 
-        <div className="border-t border-white/5 pt-2.5">
-          <p className="mb-2 text-[11px] text-slate-500">Urmatorul pas (optional)</p>
+        <div className="border-t border-border-faint pt-2.5">
+          <p className="mb-2 text-[11px] text-text-muted">Urmatorul pas (optional)</p>
           <div className="grid grid-cols-2 gap-2">
             <LabeledInput label="Actiune">
               <TextInput
@@ -317,7 +317,7 @@ function FinalizeForm({ o, onDone }: { o: Opportunity; onDone: () => void }) {
             type="button"
             onClick={onDone}
             disabled={isPending}
-            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+            className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1"
           >
             <X size={13} />
             Anuleaza

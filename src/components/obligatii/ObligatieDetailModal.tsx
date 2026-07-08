@@ -94,39 +94,39 @@ export function ObligatieDetailModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-[#111535] p-5"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border-subtle bg-surface-1 p-5"
       >
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <p className="text-xs text-slate-500">Factura {obligatie.nr_factura}</p>
-            <h2 className="text-lg font-heading text-white">{obligatie.nume_furnizor}</h2>
-            <p className="text-xs text-slate-500">{obligatie.serviciu_facturat ?? "—"}</p>
+            <p className="text-xs text-text-muted">Factura {obligatie.nr_factura}</p>
+            <h2 className="text-lg font-heading text-text-primary">{obligatie.nume_furnizor}</h2>
+            <p className="text-xs text-text-muted">{obligatie.serviciu_facturat ?? "—"}</p>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-white">
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={18} />
           </button>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3 text-sm">
+        <div className="mb-4 grid grid-cols-2 gap-3 rounded-lg border border-border-subtle bg-surface-1 p-3 text-sm">
           <div>
-            <p className="text-[11px] text-slate-500">Total factura</p>
-            <p className="font-mono text-white">{formatRon(obligatie.total_factura)}</p>
+            <p className="text-[11px] text-text-muted">Total factura</p>
+            <p className="font-mono text-text-primary">{formatRon(obligatie.total_factura)}</p>
           </div>
           <div>
-            <p className="text-[11px] text-slate-500">Sold</p>
-            <p className="font-mono text-white">{formatRon(obligatie.sold)}</p>
+            <p className="text-[11px] text-text-muted">Sold</p>
+            <p className="font-mono text-text-primary">{formatRon(obligatie.sold)}</p>
           </div>
           <div>
-            <p className="text-[11px] text-slate-500">Scadenta</p>
-            <p className="text-white">
+            <p className="text-[11px] text-text-muted">Scadenta</p>
+            <p className="text-text-primary">
               {obligatie.data_scadenta
                 ? new Date(obligatie.data_scadenta).toLocaleDateString("ro-RO")
                 : "—"}
             </p>
           </div>
           <div>
-            <p className="text-[11px] text-slate-500">Status</p>
-            <p className="text-white">
+            <p className="text-[11px] text-text-muted">Status</p>
+            <p className="text-text-primary">
               {status === "platita"
                 ? "Platita"
                 : status === "restanta"
@@ -138,18 +138,18 @@ export function ObligatieDetailModal({
 
         {plati.length > 0 && (
           <div className="mb-4">
-            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-text-muted">
               Jurnal plati
             </p>
             <div className="space-y-1.5">
               {plati.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between rounded-md border border-white/10 bg-white/[0.02] px-2.5 py-1.5 text-sm"
+                  className="flex items-center justify-between rounded-md border border-border-subtle bg-surface-1 px-2.5 py-1.5 text-sm"
                 >
                   <div>
-                    <span className="font-mono text-white">{formatRon(p.valoare)}</span>
-                    <span className="ml-2 text-xs text-slate-500">
+                    <span className="font-mono text-text-primary">{formatRon(p.valoare)}</span>
+                    <span className="ml-2 text-xs text-text-muted">
                       {new Date(p.data_plata).toLocaleDateString("ro-RO")}
                       {p.observatie ? ` · ${p.observatie}` : ""}
                     </span>
@@ -177,7 +177,7 @@ export function ObligatieDetailModal({
             </p>
             <div className="flex flex-wrap items-end gap-2">
               <div>
-                <label className="mb-1 block text-[11px] text-slate-500">
+                <label className="mb-1 block text-[11px] text-text-muted">
                   Valoare (lei) — sold factura: {formatRon(obligatie.sold)}
                 </label>
                 <input
@@ -187,11 +187,11 @@ export function ObligatieDetailModal({
                   max={obligatie.sold}
                   value={valoarePropusa}
                   onChange={(e) => setValoarePropusa(e.target.value)}
-                  className="w-40 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                  className="w-40 rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                 />
               </div>
             </div>
-            <p className="mt-2 text-[11px] text-slate-500">
+            <p className="mt-2 text-[11px] text-text-muted">
               Implicit se propune soldul integral. Poti reduce valoarea daca platesti doar o
               parte in perioada curenta. Salveaza mai jos ca sa aplici modificarea.
             </p>
@@ -206,27 +206,27 @@ export function ObligatieDetailModal({
             </p>
             <div className="flex flex-wrap items-end gap-2">
               <div>
-                <label className="mb-1 block text-[11px] text-slate-500">Valoare (lei)</label>
+                <label className="mb-1 block text-[11px] text-text-muted">Valoare (lei)</label>
                 <input
                   type="number"
                   value={valoarePlata}
                   onChange={(e) => setValoarePlata(e.target.value)}
-                  className="w-32 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-green-500"
+                  className="w-32 rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-sm text-text-primary outline-none focus:border-green-500"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[11px] text-slate-500">Data</label>
+                <label className="mb-1 block text-[11px] text-text-muted">Data</label>
                 <input
                   type="date"
                   value={dataPlata}
                   onChange={(e) => setDataPlata(e.target.value)}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-sm text-white outline-none focus:border-green-500"
+                  className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-sm text-text-primary outline-none focus:border-green-500"
                 />
               </div>
               <button
                 onClick={handleMarcheazaPlatit}
                 disabled={isPending}
-                className="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-green-500 disabled:opacity-50"
+                className="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-text-primary transition hover:bg-green-500 disabled:opacity-50"
               >
                 Confirma
               </button>
@@ -236,17 +236,17 @@ export function ObligatieDetailModal({
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-[11px] text-slate-500">Tip achizitie</label>
+            <label className="mb-1 block text-[11px] text-text-muted">Tip achizitie</label>
             <select
               value={tipAchizitie}
               onChange={(e) => setTipAchizitie(e.target.value as TipAchizitie | "")}
-              className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+              className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
             >
-              <option value="" style={{ backgroundColor: "#111535" }}>
+              <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
                 —
               </option>
               {TIP_ACHIZITIE_OPTIONS.map((o) => (
-                <option key={o} value={o} style={{ backgroundColor: "#111535" }}>
+                <option key={o} value={o} style={{ backgroundColor: "var(--surface-1)" }}>
                   {o}
                 </option>
               ))}
@@ -254,21 +254,21 @@ export function ObligatieDetailModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] text-slate-500">Modalitate plata</label>
+            <label className="mb-1 block text-[11px] text-text-muted">Modalitate plata</label>
             <input
               value={modalitatePlata}
               onChange={(e) => setModalitatePlata(e.target.value)}
-              className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+              className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] text-slate-500">Observatii</label>
+            <label className="mb-1 block text-[11px] text-text-muted">Observatii</label>
             <textarea
               value={observatii}
               onChange={(e) => setObservatii(e.target.value)}
               rows={2}
-              className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]"
+              className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
             />
           </div>
         </div>

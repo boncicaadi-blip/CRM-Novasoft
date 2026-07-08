@@ -70,7 +70,7 @@ export function CalificareCard({
           </div>
           <div>
             <Checkbox name="facturabil" label="Facturabil" defaultChecked={o.facturabil} />
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-[11px] text-text-muted">
               Bifeaza cand aceasta oportunitate reprezinta o vanzare reala, facturabila - apare
               atunci in selectorul de client la Contracte (Venituri). Independent de stage - util
               pentru up-sell/cross-sell pe un client existent, fara sa treci printr-un flux nou de

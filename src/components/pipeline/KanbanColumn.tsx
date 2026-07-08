@@ -16,7 +16,7 @@ export function KanbanColumn({
   stageColor?: string;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage });
-  const color = stageColor ?? STAGE_COLORS[stage] ?? "#94A3B8";
+  const color = stageColor ?? STAGE_COLORS[stage] ?? "var(--text-secondary)";
 
   const totalValue = opportunities.reduce(
     (sum, o) => sum + (o.arr_synergo ?? 0) + (o.valoare_implementare_synergo ?? 0),
@@ -27,18 +27,18 @@ export function KanbanColumn({
     <div
       ref={setNodeRef}
       className={`flex h-full w-72 shrink-0 flex-col rounded-xl border transition ${
-        isOver ? "border-[#E8007A]/50 bg-[#E8007A]/[0.03]" : "border-white/5 bg-white/[0.015]"
+        isOver ? "border-[#E8007A]/50 bg-[#E8007A]/[0.03]" : "border-border-faint bg-white/[0.015]"
       }`}
     >
-      <div className="flex items-center justify-between border-b border-white/5 px-3 py-2.5">
+      <div className="flex items-center justify-between border-b border-border-faint px-3 py-2.5">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-sm font-medium text-white">{stage}</span>
-          <span className="rounded-full bg-white/10 px-1.5 text-[11px] text-slate-400">
+          <span className="text-sm font-medium text-text-primary">{stage}</span>
+          <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-text-secondary">
             {opportunities.length}
           </span>
         </div>
-        <span className="font-mono text-[11px] text-slate-500">
+        <span className="font-mono text-[11px] text-text-muted">
           {totalValue > 0 ? formatEurCompact(totalValue) : ""}
         </span>
       </div>
@@ -47,7 +47,7 @@ export function KanbanColumn({
           <KanbanCard key={opp.id} opportunity={opp} />
         ))}
         {opportunities.length === 0 && (
-          <p className="px-2 py-6 text-center text-xs text-slate-600">Nicio oportunitate</p>
+          <p className="px-2 py-6 text-center text-xs text-text-faint">Nicio oportunitate</p>
         )}
       </div>
     </div>

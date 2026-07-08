@@ -48,14 +48,14 @@ export function AiInsightCard({
   return (
     <div className="rounded-xl border border-[#E8007A]/20 bg-[#E8007A]/[0.03] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           <Sparkles size={15} className="text-[#E8007A]" />
           {title}
         </p>
         <div className="flex items-center gap-1.5">
           <button
             onClick={handleToggleHistory}
-            className="flex items-center gap-1 rounded-md border border-white/10 px-2 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+            className="flex items-center gap-1 rounded-md border border-border-subtle px-2 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1"
           >
             <History size={12} />
             Istoric
@@ -75,30 +75,30 @@ export function AiInsightCard({
       {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
 
       {!result && !error && !isPending && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-text-muted">
           Trimite un sumar al cifrelor curente catre Claude si primesti o interpretare - ce arata
           datele, ce riscuri sunt vizibile si ce ai putea face concret.
         </p>
       )}
 
-      {isPending && <p className="text-xs text-slate-500">Se analizeaza datele curente...</p>}
+      {isPending && <p className="text-xs text-text-muted">Se analizeaza datele curente...</p>}
 
       {result && <InsightBlock result={result} />}
 
       {showHistory && (
-        <div className="mt-4 border-t border-white/10 pt-3">
-          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <div className="mt-4 border-t border-border-subtle pt-3">
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-text-muted">
             Interpretari anterioare
           </p>
-          {isHistoryPending && <p className="text-xs text-slate-500">Se incarca istoricul...</p>}
+          {isHistoryPending && <p className="text-xs text-text-muted">Se incarca istoricul...</p>}
           {!isHistoryPending && history && history.length === 0 && (
-            <p className="text-xs text-slate-500">Nicio interpretare salvata inca.</p>
+            <p className="text-xs text-text-muted">Nicio interpretare salvata inca.</p>
           )}
           {!isHistoryPending && history && history.length > 0 && (
             <div className="max-h-96 space-y-3 overflow-y-auto">
               {history.map((h) => (
-                <div key={h.id} className="rounded-lg border border-white/5 bg-white/[0.02] p-3">
-                  <p className="mb-2 text-[11px] text-slate-500">
+                <div key={h.id} className="rounded-lg border border-border-faint bg-surface-1 p-3">
+                  <p className="mb-2 text-[11px] text-text-muted">
                     {new Date(h.creat_la).toLocaleString("ro-RO")}
                   </p>
                   <InsightBlock result={h} compact />
@@ -123,22 +123,22 @@ function InsightBlock({
   return (
     <div className="space-y-3">
       <div>
-        <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">Rezumat</p>
-        <p className={`${textSize} text-slate-200`}>{result.rezumat}</p>
+        <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-text-muted">Rezumat</p>
+        <p className={`${textSize} text-text-primary`}>{result.rezumat}</p>
       </div>
       <div>
         <p className="mb-1 flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-amber-500">
           <AlertTriangle size={11} />
           Riscuri
         </p>
-        <p className={`${textSize} text-slate-200`}>{result.riscuri}</p>
+        <p className={`${textSize} text-text-primary`}>{result.riscuri}</p>
       </div>
       <div>
         <p className="mb-1 flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-green-500">
           <ListChecks size={11} />
           Recomandari
         </p>
-        <p className={`${textSize} text-slate-200`}>{result.recomandari}</p>
+        <p className={`${textSize} text-text-primary`}>{result.recomandari}</p>
       </div>
     </div>
   );

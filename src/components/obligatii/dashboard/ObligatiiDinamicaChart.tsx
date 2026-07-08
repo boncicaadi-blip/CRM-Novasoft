@@ -14,20 +14,20 @@ interface DinamicaDatum {
 
 export function ObligatiiDinamicaChart({ data }: { data: DinamicaDatum[] }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         Dinamica obligatiilor (facturat vs. platit)
         <InfoTooltip title="Dinamica obligatiilor" definition={OBLIGATII_KPI_DEFINITIONS.dinamicaChart} />
       </p>
-      <p className="mb-3 text-[11px] text-slate-500">
+      <p className="mb-3 text-[11px] text-text-muted">
         Cat s-a primit nou in fiecare luna (dupa data facturii) fata de cat s-a platit efectiv
         (dupa data platii).
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <ComposedChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={(v) => formatRonCompact(v)} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} tickFormatter={(v) => formatRonCompact(v)} />
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
@@ -43,7 +43,7 @@ export function ObligatiiDinamicaChart({ data }: { data: DinamicaDatum[] }) {
               );
             }}
           />
-          <Legend wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
           <Bar dataKey="facturat" name="Facturat" fill="#0070F3" radius={[3, 3, 0, 0]} />
           <Line type="monotone" dataKey="platit" name="Platit" stroke="#22C55E" strokeWidth={2} dot={{ r: 3 }} />
         </ComposedChart>

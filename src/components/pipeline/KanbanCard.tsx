@@ -57,7 +57,7 @@ export function KanbanCard({
   const content = (
     <>
       <div className="mb-1.5 flex items-start justify-between gap-2">
-        <p className="text-sm font-medium leading-tight text-white">
+        <p className="text-sm font-medium leading-tight text-text-primary">
           {opportunity.nume_potential}
         </p>
         <span
@@ -70,13 +70,13 @@ export function KanbanCard({
           {opportunity.status}
         </span>
       </div>
-      <p className="mb-1.5 text-[11px] text-slate-500">
+      <p className="mb-1.5 text-[11px] text-text-muted">
         {opportunity.judet ?? "—"} · {opportunity.tip_proiect ?? "—"}
       </p>
 
       {opportunity.actiune && (
-        <p className="mb-1.5 truncate text-[11px] text-slate-400">
-          <span className="text-slate-500">Next:</span> {opportunity.actiune}
+        <p className="mb-1.5 truncate text-[11px] text-text-secondary">
+          <span className="text-text-muted">Next:</span> {opportunity.actiune}
           {opportunity.data_actiune &&
             ` · ${new Date(opportunity.data_actiune).toLocaleDateString("ro-RO")}`}
         </p>
@@ -125,7 +125,7 @@ export function KanbanCard({
         </span>
         <div className="flex items-center gap-1.5">
           <ScoreBadge o={opportunity} />
-          <span className="text-[11px] text-slate-500">
+          <span className="text-[11px] text-text-muted">
             {opportunity.profiles?.full_name?.split(" ")[0] ?? ""}
           </span>
         </div>
@@ -135,7 +135,7 @@ export function KanbanCard({
 
   if (dragHandleOnly) {
     return (
-      <div className="rounded-lg border border-[#E8007A]/40 bg-[#161B45] p-3">{content}</div>
+      <div className="rounded-lg border border-[#E8007A]/40 bg-surface-2 p-3">{content}</div>
     );
   }
 
@@ -143,7 +143,7 @@ export function KanbanCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative rounded-lg border border-white/10 bg-[#161B45] p-3 transition hover:border-white/20"
+      className="group relative rounded-lg border border-border-subtle bg-surface-2 p-3 transition hover:border-border-strong"
     >
       {/* Zona dedicata de "grab" - evita orice ambiguitate intre drag si click pe Link */}
       <button
@@ -151,7 +151,7 @@ export function KanbanCard({
         {...listeners}
         {...attributes}
         aria-label="Trage pentru a schimba stage-ul"
-        className="absolute right-1.5 top-1.5 cursor-grab rounded p-1 text-slate-600 opacity-0 transition hover:bg-white/5 hover:text-slate-300 group-hover:opacity-100 active:cursor-grabbing"
+        className="absolute right-1.5 top-1.5 cursor-grab rounded p-1 text-text-faint opacity-0 transition hover:bg-surface-1 hover:text-text-primary group-hover:opacity-100 active:cursor-grabbing"
       >
         <GripVertical size={14} />
       </button>

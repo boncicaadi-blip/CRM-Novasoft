@@ -36,21 +36,21 @@ export function AgingBar({
   }
 
   return (
-    <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="mb-5 rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
           Vechime sold (aging) — click pentru filtrare
         </p>
         {activeBucket && (
           <button
             onClick={() => onBucketClick(activeBucket)}
-            className="text-[11px] text-slate-500 underline hover:text-slate-300"
+            className="text-[11px] text-text-muted underline hover:text-text-primary"
           >
             Sterge filtrul
           </button>
         )}
       </div>
-      <div className="mb-3 flex h-3 w-full overflow-hidden rounded-full bg-white/5">
+      <div className="mb-3 flex h-3 w-full overflow-hidden rounded-full bg-surface-1">
         {BUCKETS.map((b) => {
           const value = summary[b.key] as number;
           const pct = (value / total) * 100;
@@ -80,12 +80,12 @@ export function AgingBar({
               key={b.key}
               onClick={() => handleClick(b.key)}
               className={`flex items-center gap-1.5 rounded px-1 text-xs transition ${
-                isActive ? "bg-white/10" : "hover:bg-white/5"
+                isActive ? "bg-surface-2" : "hover:bg-surface-1"
               }`}
             >
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: b.color }} />
-              <span className="text-slate-400">{b.label}</span>
-              <span className="font-mono text-slate-300">{formatRon(value)}</span>
+              <span className="text-text-secondary">{b.label}</span>
+              <span className="font-mono text-text-primary">{formatRon(value)}</span>
             </button>
           );
         })}

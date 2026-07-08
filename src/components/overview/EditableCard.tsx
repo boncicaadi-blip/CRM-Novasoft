@@ -46,13 +46,13 @@ export function EditableCard({
   }
 
   return (
-    <div className={`rounded-xl border border-white/10 bg-white/[0.02] p-4 ${className}`}>
+    <div className={`rounded-xl border border-border-subtle bg-surface-1 p-4 ${className}`}>
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{title}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">{title}</p>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
-            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-[#E8007A]"
             title={`Editeaza ${title}`}
           >
             <Pencil size={13} />
@@ -80,7 +80,7 @@ export function EditableCard({
               type="button"
               onClick={() => setEditing(false)}
               disabled={isPending}
-              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1"
             >
               <X size={13} />
               Anuleaza

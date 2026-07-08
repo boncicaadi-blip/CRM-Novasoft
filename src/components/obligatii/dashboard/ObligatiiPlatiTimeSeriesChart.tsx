@@ -9,8 +9,8 @@ import type { PlatiMonthDatum } from "@/lib/obligatii-dashboard-analytics";
 
 export function ObligatiiPlatiTimeSeriesChart({ data }: { data: PlatiMonthDatum[] }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         Evolutie plati (ultimele 12 luni)
         <InfoTooltip title="Evolutie plati" definition={OBLIGATII_KPI_DEFINITIONS.platiTimeSeriesChart} />
       </p>
@@ -22,10 +22,10 @@ export function ObligatiiPlatiTimeSeriesChart({ data }: { data: PlatiMonthDatum[
               <stop offset="100%" stopColor="#22C55E" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <YAxis
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             tickFormatter={(v) => formatRonCompact(v)}
           />
           <Tooltip

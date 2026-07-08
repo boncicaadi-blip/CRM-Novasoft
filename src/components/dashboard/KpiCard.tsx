@@ -25,7 +25,7 @@ export function KpiCard({
   const content = (
     <>
       <div className="mb-2 flex items-center justify-between">
-        <p className="flex items-center gap-1 text-xs text-slate-500">
+        <p className="flex items-center gap-1 text-xs text-text-muted">
           {label}
           {definition && (
             <span onClick={(e) => e.preventDefault()}>
@@ -39,8 +39,8 @@ export function KpiCard({
           </span>
         )}
       </div>
-      <p className="font-mono text-2xl font-medium text-white">{value}</p>
-      {sublabel && <p className="mt-1 text-[11px] text-slate-500">{sublabel}</p>}
+      <p className="font-mono text-2xl font-medium text-text-primary">{value}</p>
+      {sublabel && <p className="mt-1 text-[11px] text-text-muted">{sublabel}</p>}
     </>
   );
 
@@ -48,12 +48,12 @@ export function KpiCard({
     return (
       <Link
         href={href}
-        className="block rounded-xl border border-white/10 bg-white/[0.02] p-4 transition hover:border-white/20"
+        className="block rounded-xl border border-border-subtle bg-surface-1 p-4 transition hover:border-border-strong"
       >
         {content}
       </Link>
     );
   }
 
-  return <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">{content}</div>;
+  return <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">{content}</div>;
 }

@@ -120,8 +120,8 @@ export function ManagementDashboardClient({
     <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Management — P&amp;L simplificat</h1>
-          <p className="text-sm text-slate-500">Venituri, cheltuieli, profit si productivitate, combinate.</p>
+          <h1 className="text-lg font-heading text-text-primary">Management — P&amp;L simplificat</h1>
+          <p className="text-sm text-text-muted">Venituri, cheltuieli, profit si productivitate, combinate.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <select
@@ -135,10 +135,10 @@ export function ManagementDashboardClient({
                 setCustomTo(firstOfMonth(now).toISOString().slice(0, 10));
               }
             }}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+            className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
           >
             {PERIOD_OPTIONS.map((p) => (
-              <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+              <option key={p.value} value={p.value} style={{ backgroundColor: "var(--surface-1)" }}>
                 {p.label}
               </option>
             ))}
@@ -157,22 +157,22 @@ export function ManagementDashboardClient({
                   }
                 }}
               />
-              <span className="text-[10px] text-slate-600" title="Cu mai multe luni alese, se acopera intervalul continuu intre prima si ultima (Management arata o evolutie secventiala, nu poate sari luni).">
+              <span className="text-[10px] text-text-faint" title="Cu mai multe luni alese, se acopera intervalul continuu intre prima si ultima (Management arata o evolutie secventiala, nu poate sari luni).">
                 (interval continuu)
               </span>
-              <span className="text-[10px] text-slate-600">sau exact:</span>
+              <span className="text-[10px] text-text-faint">sau exact:</span>
               <input
                 type="date"
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
-                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
               />
-              <span className="text-xs text-slate-500">-</span>
+              <span className="text-xs text-text-muted">-</span>
               <input
                 type="date"
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
-                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
               />
             </>
           )}
@@ -182,33 +182,33 @@ export function ManagementDashboardClient({
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <button
           onClick={() => setShowComponenta((v) => !v)}
-          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+          className={`rounded-xl border p-4 text-left transition hover:border-border-strong ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-border-subtle bg-surface-1"}`}
         >
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             <TrendingUp size={13} />
             Venit realizat
             <InfoTooltip title="Venit realizat" definition={MANAGEMENT_KPI_DEFINITIONS.venitRealizat} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.venitRealizat)}</p>
-          <p className="mt-0.5 text-[10px] text-slate-600">Estimat: {formatEur(summary.venitEstimat)}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.venitRealizat)}</p>
+          <p className="mt-0.5 text-[10px] text-text-faint">Estimat: {formatEur(summary.venitEstimat)}</p>
         </button>
         <button
           onClick={() => setShowComponenta((v) => !v)}
-          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+          className={`rounded-xl border p-4 text-left transition hover:border-border-strong ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-border-subtle bg-surface-1"}`}
         >
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             <TrendingDown size={13} />
             Cheltuieli realizate
             <InfoTooltip title="Cheltuieli realizate" definition={MANAGEMENT_KPI_DEFINITIONS.cheltuieliRealizate} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.cheltuieliRealizat)}</p>
-          <p className="mt-0.5 text-[10px] text-slate-600">Estimat: {formatEur(summary.cheltuieliEstimat)}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.cheltuieliRealizat)}</p>
+          <p className="mt-0.5 text-[10px] text-text-faint">Estimat: {formatEur(summary.cheltuieliEstimat)}</p>
         </button>
         <button
           onClick={() => setShowComponenta((v) => !v)}
-          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+          className={`rounded-xl border p-4 text-left transition hover:border-border-strong ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-border-subtle bg-surface-1"}`}
         >
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             <Wallet size={13} />
             Profit NET
             <InfoTooltip title="Profit NET" definition={MANAGEMENT_KPI_DEFINITIONS.profitNet} />
@@ -216,16 +216,16 @@ export function ManagementDashboardClient({
           <p className={`font-mono text-2xl font-medium ${summary.profitRealizat >= 0 ? "text-green-400" : "text-red-400"}`}>
             {formatEur(summary.profitRealizat)}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-600">
+          <p className="mt-0.5 text-[10px] text-text-faint">
             Estimat: {formatEur(summary.profitEstimat)} ({diferentaEstimatVsRealizatProfit >= 0 ? "+" : ""}
             {formatEur(diferentaEstimatVsRealizatProfit)})
           </p>
         </button>
         <button
           onClick={() => setShowComponenta((v) => !v)}
-          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+          className={`rounded-xl border p-4 text-left transition hover:border-border-strong ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-border-subtle bg-surface-1"}`}
         >
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             <Target size={13} />
             Profit BRUT
             <InfoTooltip title="Profit BRUT" definition={MANAGEMENT_KPI_DEFINITIONS.profitBrut} />
@@ -233,10 +233,10 @@ export function ManagementDashboardClient({
           <p className={`font-mono text-2xl font-medium ${summary.profitRealizat >= 0 ? "text-green-400" : "text-red-400"}`}>
             {formatEur(summary.profitRealizat)}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-600">Identic cu Profit NET (simplificat)</p>
+          <p className="mt-0.5 text-[10px] text-text-faint">Identic cu Profit NET (simplificat)</p>
         </button>
       </div>
-      <p className="-mt-2 mb-4 text-[11px] text-slate-600">Click pe orice KPI de mai sus arata compozitia pe luni.</p>
+      <p className="-mt-2 mb-4 text-[11px] text-text-faint">Click pe orice KPI de mai sus arata compozitia pe luni.</p>
 
       <div className="mb-4">
         <AiInsightCard

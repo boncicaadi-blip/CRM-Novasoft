@@ -27,7 +27,7 @@ export function PipelineFilters({
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Cauta firma, grup, judet sau cod fiscal..."
-        className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white outline-none focus:border-[#E8007A] sm:w-64"
+        className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A] sm:w-64"
       />
       <MultiSelect label="Stage" options={stages} selected={stageFilter} onChange={onStageFilterChange} />
       <MultiSelect

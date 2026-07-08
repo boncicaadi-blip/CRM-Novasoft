@@ -18,26 +18,26 @@ export function CreanteTopClientiChart({
 }) {
   if (data.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-        <p className="mb-1 text-sm font-medium text-white">Top clienti dupa sold restant</p>
-        <p className="py-8 text-center text-xs text-slate-500">Niciun client cu sold restant.</p>
+      <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+        <p className="mb-1 text-sm font-medium text-text-primary">Top clienti dupa sold restant</p>
+        <p className="py-8 text-center text-xs text-text-muted">Niciun client cu sold restant.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">Top clienti dupa sold restant<InfoTooltip title="Top clienti dupa sold restant" definition={CREANTE_KPI_DEFINITIONS.topClientiChart} /></p>
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">Top clienti dupa sold restant<InfoTooltip title="Top clienti dupa sold restant" definition={CREANTE_KPI_DEFINITIONS.topClientiChart} /></p>
       </div>
       <ResponsiveContainer width="100%" height={Math.max(180, data.length * 32)}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={(v) => formatRonCompact(v)} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} tickFormatter={(v) => formatRonCompact(v)} />
           <YAxis
             type="category"
             dataKey="numeFirma"
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             width={130}
           />
           <Tooltip

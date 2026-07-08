@@ -38,9 +38,9 @@ export function TimeSeriesChart({
 
   if (data.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-        <p className="mb-1 text-sm font-medium text-white">Evolutie ARR in timp</p>
-        <p className="py-12 text-center text-xs text-slate-500">
+      <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+        <p className="mb-1 text-sm font-medium text-text-primary">Evolutie ARR in timp</p>
+        <p className="py-12 text-center text-xs text-text-muted">
           Nu exista inca istoric suficient. Se acumuleaza automat pe masura ce modifici oportunitati.
         </p>
       </div>
@@ -68,9 +68,9 @@ export function TimeSeriesChart({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-sm font-medium text-white">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
           Evolutie ARR in timp (din istoric)
           <InfoTooltip title="Evolutie ARR in timp" definition={KPI_DEFINITIONS.crmEvolutieArrChart} />
         </p>
@@ -84,7 +84,7 @@ export function TimeSeriesChart({
         )}
       </div>
       {onSelectRange && (
-        <p className="mb-2 text-[11px] text-slate-500">
+        <p className="mb-2 text-[11px] text-text-muted">
           Trage cu mouse-ul peste grafic pentru a selecta un interval.
         </p>
       )}
@@ -102,10 +102,10 @@ export function TimeSeriesChart({
               <stop offset="100%" stopColor="#E8007A" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <YAxis
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             tickFormatter={(v) => formatEurCompact(v)}
           />
           <Tooltip

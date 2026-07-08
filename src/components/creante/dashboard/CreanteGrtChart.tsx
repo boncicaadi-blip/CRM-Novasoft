@@ -19,27 +19,27 @@ import type { GrtMonthDatum } from "@/lib/creante-dashboard-analytics";
 
 export function CreanteGrtChart({ data }: { data: GrtMonthDatum[] }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-1 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         Dinamica targetului (GRT pe luni)
         <InfoTooltip title="Dinamica targetului (GRT)" definition={CREANTE_KPI_DEFINITIONS.grtChart} />
       </p>
-      <p className="mb-3 text-[11px] text-slate-500">
+      <p className="mb-3 text-[11px] text-text-muted">
         Bare: target setat vs. incasat efectiv. Linie: gradul de realizare (%).
       </p>
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <YAxis
             yAxisId="valoare"
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             tickFormatter={(v) => formatRonCompact(v)}
           />
           <YAxis
             yAxisId="procent"
             orientation="right"
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             tickFormatter={(v) => `${v}%`}
             domain={[0, "dataMax + 20"]}
           />
@@ -59,7 +59,7 @@ export function CreanteGrtChart({ data }: { data: GrtMonthDatum[] }) {
               );
             }}
           />
-          <Legend wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
           <Bar yAxisId="valoare" dataKey="target" name="Target" fill="#475569" radius={[3, 3, 0, 0]} />
           <Bar yAxisId="valoare" dataKey="realizat" name="Incasat" fill="#22C55E" radius={[3, 3, 0, 0]} />
           <Line

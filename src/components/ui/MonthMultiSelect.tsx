@@ -60,8 +60,8 @@ export function MonthMultiSelect({
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition ${
           selected.length > 0
-            ? "border-[#E8007A]/40 bg-[#E8007A]/10 text-white"
-            : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.06]"
+            ? "border-[#E8007A]/40 bg-[#E8007A]/10 text-text-primary"
+            : "border-border-subtle bg-surface-2 text-text-primary hover:bg-surface-2"
         }`}
       >
         {buttonLabel}
@@ -69,12 +69,12 @@ export function MonthMultiSelect({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-1 max-h-72 w-56 overflow-y-auto rounded-lg border border-white/10 bg-[#111535] p-1.5 shadow-xl">
+        <div className="absolute left-0 top-full z-30 mt-1 max-h-72 w-56 overflow-y-auto rounded-lg border border-border-subtle bg-surface-1 p-1.5 shadow-xl">
           {selected.length > 0 && (
             <button
               type="button"
               onClick={() => onChange([])}
-              className="mb-1 flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+              className="mb-1 flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1"
             >
               <X size={12} />
               Sterge selectia
@@ -83,7 +83,7 @@ export function MonthMultiSelect({
           {options.map((opt) => (
             <label
               key={opt.value}
-              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm capitalize text-slate-200 transition hover:bg-white/5"
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm capitalize text-text-primary transition hover:bg-surface-1"
             >
               <input
                 type="checkbox"

@@ -37,7 +37,7 @@ export function CalendarActionChip({
         if (!isDragging) onClick();
       }}
       title={`${action.numePotential} | ${action.actiune ?? ""}`}
-      className="cursor-grab truncate rounded px-1 py-0.5 text-[10px] font-medium text-white active:cursor-grabbing"
+      className="cursor-grab truncate rounded px-1 py-0.5 text-[10px] font-medium text-text-primary active:cursor-grabbing"
     >
       {action.numePotential}
     </div>

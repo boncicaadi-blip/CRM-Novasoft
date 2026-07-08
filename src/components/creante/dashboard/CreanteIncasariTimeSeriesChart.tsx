@@ -9,8 +9,8 @@ import type { IncasariMonthDatum } from "@/lib/creante-dashboard-analytics";
 
 export function CreanteIncasariTimeSeriesChart({ data }: { data: IncasariMonthDatum[] }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         Evolutie incasari (ultimele 12 luni)
         <InfoTooltip title="Evolutie incasari" definition={CREANTE_KPI_DEFINITIONS.incasariTimeSeriesChart} />
       </p>
@@ -22,10 +22,10 @@ export function CreanteIncasariTimeSeriesChart({ data }: { data: IncasariMonthDa
               <stop offset="100%" stopColor="#22C55E" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <YAxis
-            tick={{ fontSize: 11, fill: "#94A3B8" }}
+            tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             tickFormatter={(v) => formatRonCompact(v)}
           />
           <Tooltip

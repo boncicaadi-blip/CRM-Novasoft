@@ -34,7 +34,7 @@ const TYPE_CONFIG: Record<
   TimelineEntryType,
   { icon: typeof StickyNote; color: string; label: string }
 > = {
-  nota: { icon: StickyNote, color: "#94A3B8", label: "Nota" },
+  nota: { icon: StickyNote, color: "var(--text-secondary)", label: "Nota" },
   call: { icon: Phone, color: "#0070F3", label: "Call" },
   email: { icon: Mail, color: "#0070F3", label: "Email" },
   demo: { icon: Presentation, color: "#FBBF24", label: "Demo" },
@@ -76,9 +76,9 @@ export function TimelineCard({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 lg:col-span-5">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4 lg:col-span-5">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Timeline</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Timeline</p>
         <AiSummaryCard opportunityId={opportunityId} />
       </div>
 
@@ -87,10 +87,10 @@ export function TimelineCard({
           <select
             value={tip}
             onChange={(e) => setTip(e.target.value as TimelineEntryType)}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+            className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           >
             {MANUAL_TYPES.map((t) => (
-              <option key={t.value} value={t.value} style={{ backgroundColor: "#111535" }}>
+              <option key={t.value} value={t.value} style={{ backgroundColor: "var(--surface-1)" }}>
                 {t.label}
               </option>
             ))}
@@ -100,11 +100,11 @@ export function TimelineCard({
             value={continut}
             onChange={(e) => setContinut(e.target.value)}
             placeholder="Ce s-a discutat / context..."
-            className="flex-1 rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+            className="flex-1 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           />
           <MicButton
             targetRef={notaInputRef}
-            className="shrink-0 border border-white/10 bg-white/[0.04]"
+            className="shrink-0 border border-border-subtle bg-surface-2"
           />
           <button
             type="submit"
@@ -117,7 +117,7 @@ export function TimelineCard({
         {error && <p className="text-xs text-red-400">{error}</p>}
       </form>
 
-      <div className="max-h-[400px] space-y-3 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent">
+      <div className="max-h-[400px] space-y-3 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-surface-2 [&::-webkit-scrollbar-track]:bg-transparent">
         {entries.map((entry) => {
           const config = TYPE_CONFIG[entry.tip];
           const Icon = config.icon;
@@ -134,7 +134,7 @@ export function TimelineCard({
                   <span className="text-xs font-medium" style={{ color: config.color }}>
                     {config.label}
                   </span>
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-[11px] text-text-muted">
                     {new Date(entry.created_at).toLocaleString("ro-RO", {
                       day: "2-digit",
                       month: "2-digit",
@@ -144,13 +144,13 @@ export function TimelineCard({
                     })}
                   </span>
                   {entry.profiles?.full_name && (
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-text-muted">
                       · {entry.profiles.full_name}
                     </span>
                   )}
                 </div>
                 {entry.continut && (
-                  <p className="mt-0.5 whitespace-pre-line text-sm text-slate-300">
+                  <p className="mt-0.5 whitespace-pre-line text-sm text-text-primary">
                     {entry.continut}
                   </p>
                 )}
@@ -159,7 +159,7 @@ export function TimelineCard({
           );
         })}
         {entries.length === 0 && (
-          <p className="py-6 text-center text-xs text-slate-500">
+          <p className="py-6 text-center text-xs text-text-muted">
             Niciun eveniment inca. Adauga prima nota sau interactiune.
           </p>
         )}

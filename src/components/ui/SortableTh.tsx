@@ -63,7 +63,7 @@ export function SortableTh({
       {sortKey && onSort ? (
         <button
           onClick={() => onSort(sortKey)}
-          className={`flex w-full items-center gap-1 ${alignClass} text-left transition hover:text-white`}
+          className={`flex w-full items-center gap-1 ${alignClass} text-left transition hover:text-text-primary`}
         >
           {label}
           {isSorted ? (

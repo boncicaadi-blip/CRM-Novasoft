@@ -43,10 +43,10 @@ export default async function OpportunityOverviewPage({
 
   const stageColor = nomenclatoare["stage"]?.find((s) => s.valoare === o.stage)?.culoare
     ?? STAGE_COLORS[o.stage]
-    ?? "#94A3B8";
+    ?? "var(--text-secondary)";
   const statusColor = nomenclatoare["status"]?.find((s) => s.valoare === o.status)?.culoare
     ?? STATUS_COLORS[o.status]
-    ?? "#94A3B8";
+    ?? "var(--text-secondary)";
 
   return (
     <div className="px-3 py-4 sm:px-6">
@@ -54,8 +54,8 @@ export default async function OpportunityOverviewPage({
         <div>
           <BackLink label="Inapoi" />
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-heading text-white">{o.nume_potential}</h1>
-            <span className="font-mono text-xs text-slate-500">{o.opportunity_code}</span>
+            <h1 className="text-lg font-heading text-text-primary">{o.nume_potential}</h1>
+            <span className="font-mono text-xs text-text-muted">{o.opportunity_code}</span>
             <span
               className="rounded-full px-2 py-0.5 text-[11px] font-medium"
               style={{ backgroundColor: `${stageColor}20`, color: stageColor }}
@@ -69,12 +69,12 @@ export default async function OpportunityOverviewPage({
               {o.status}
             </span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">{o.nume_grup}</p>
+          <p className="mt-1 text-xs text-text-muted">{o.nume_grup}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href={`/oportunitati/${o.id}/istoric`}
-            className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-sm text-slate-300 transition hover:bg-white/5"
+            className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 text-sm text-text-primary transition hover:bg-surface-1"
           >
             <History size={14} />
             Istoric complet
@@ -131,7 +131,7 @@ export default async function OpportunityOverviewPage({
         <TimelineCard opportunityId={o.id} entries={timeline} />
       </div>
 
-      <p className="mt-4 text-[11px] text-slate-600">
+      <p className="mt-4 text-[11px] text-text-faint">
         Ultima actualizare: {new Date(o.updated_at).toLocaleString("ro-RO")}
       </p>
     </div>
@@ -141,15 +141,15 @@ export default async function OpportunityOverviewPage({
 function KpiMini({
   label,
   value,
-  accent = "#94A3B8",
+  accent = "var(--text-secondary)",
 }: {
   label: string;
   value: string;
   accent?: string;
 }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3">
-      <p className="text-[11px] text-slate-500">{label}</p>
+    <div className="rounded-lg border border-border-subtle bg-surface-1 p-3">
+      <p className="text-[11px] text-text-muted">{label}</p>
       <p className="font-mono text-lg" style={{ color: accent }}>
         {value}
       </p>

@@ -142,8 +142,8 @@ export function CheltuieliDashboardClient({
     <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Dashboard Cheltuieli</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-lg font-heading text-text-primary">Dashboard Cheltuieli</h1>
+          <p className="text-sm text-text-muted">
             {filtered.length} din {inPeriodList.length} linii{hasFilter ? " (filtrate)" : ""}
           </p>
         </div>
@@ -161,10 +161,10 @@ export function CheltuieliDashboardClient({
                 setCustomTo(end.toISOString().slice(0, 10));
               }
             }}
-            className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+            className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
           >
             {PERIOD_OPTIONS.map((p) => (
-              <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+              <option key={p.value} value={p.value} style={{ backgroundColor: "var(--surface-1)" }}>
                 {p.label}
               </option>
             ))}
@@ -172,19 +172,19 @@ export function CheltuieliDashboardClient({
           {period === "custom" && (
             <>
               <MonthMultiSelect selected={customMonths} onChange={setCustomMonths} />
-              <span className="text-[10px] text-slate-600">sau interval:</span>
+              <span className="text-[10px] text-text-faint">sau interval:</span>
               <input
                 type="date"
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
-                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
               />
-              <span className="text-xs text-slate-500">-</span>
+              <span className="text-xs text-text-muted">-</span>
               <input
                 type="date"
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
-                className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
               />
             </>
           )}
@@ -216,7 +216,7 @@ export function CheltuieliDashboardClient({
           )}
           <Link
             href="/venituri-cheltuieli/cheltuieli"
-            className="rounded-md border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+            className="rounded-md border border-border-subtle px-3 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1"
           >
             Vezi lista completa →
           </Link>
@@ -226,31 +226,31 @@ export function CheltuieliDashboardClient({
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <button
           onClick={() => setShowComponenta((v) => !v)}
-          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+          className={`rounded-xl border p-4 text-left transition hover:border-border-strong ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-border-subtle bg-surface-1"}`}
         >
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             <PiggyBank size={13} />
             Prognozat (tot ce e in perioada)
             <InfoTooltip title="Prognozat" definition={CHELTUIELI_KPI_DEFINITIONS.prognozat} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.prognozat)}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.prognozat)}</p>
         </button>
         <button
           onClick={() => setShowComponenta((v) => !v)}
-          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+          className={`rounded-xl border p-4 text-left transition hover:border-border-strong ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-border-subtle bg-surface-1"}`}
         >
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             <TrendingDown size={13} />
             Realizat
             <InfoTooltip title="Realizat" definition={CHELTUIELI_KPI_DEFINITIONS.realizat} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.realizat)}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.realizat)}</p>
         </button>
         <button
           onClick={() => setShowComponenta((v) => !v)}
-          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+          className={`rounded-xl border p-4 text-left transition hover:border-border-strong ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-border-subtle bg-surface-1"}`}
         >
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             Diferenta (pana in luna curenta)
             <InfoTooltip title="Diferenta (YTD)" definition={CHELTUIELI_KPI_DEFINITIONS.diferentaYtd} />
           </p>
@@ -258,24 +258,24 @@ export function CheltuieliDashboardClient({
             {summary.diferenta >= 0 ? "+" : ""}
             {formatEur(summary.diferenta)}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-600">
+          <p className="mt-0.5 text-[10px] text-text-faint">
             Fata de prognozat {formatEur(summary.prognozatPanaAcum)} — nu include lunile viitoare
           </p>
         </button>
         <button
           onClick={() => setShowComponenta((v) => !v)}
-          className={`rounded-xl border p-4 text-left transition hover:border-white/20 ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-white/10 bg-white/[0.02]"}`}
+          className={`rounded-xl border p-4 text-left transition hover:border-border-strong ${showComponenta ? "border-[#E8007A]/40 bg-[#E8007A]/[0.03]" : "border-border-subtle bg-surface-1"}`}
         >
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             <Target size={13} />
             Grad realizare (pana acum)
           </p>
-          <p className="font-mono text-2xl font-medium text-white">
+          <p className="font-mono text-2xl font-medium text-text-primary">
             {summary.grt !== null ? `${Math.round(summary.grt)}%` : "—"}
           </p>
         </button>
       </div>
-      <p className="-mt-2 mb-4 text-[11px] text-slate-600">Click pe orice KPI de mai sus arata din ce e compus.</p>
+      <p className="-mt-2 mb-4 text-[11px] text-text-faint">Click pe orice KPI de mai sus arata din ce e compus.</p>
 
       <div className="mb-4">
         <AiInsightCard

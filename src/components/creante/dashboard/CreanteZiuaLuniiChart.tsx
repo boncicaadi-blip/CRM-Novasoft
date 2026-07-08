@@ -9,16 +9,16 @@ import type { ZiLunaDatum } from "@/lib/creante-dashboard-analytics";
 
 export function CreanteZiuaLuniiChart({ data }: { data: ZiLunaDatum[] }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         In ce zile ale lunii se incaseaza (istoric)
         <InfoTooltip title="Zilele lunii" definition={CREANTE_KPI_DEFINITIONS.ziuaLunii} />
       </p>
       <ResponsiveContainer width="100%" height={260}>
         <ComposedChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="zi" tick={{ fontSize: 10, fill: "#94A3B8" }} interval={0} />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} tickFormatter={(v) => formatRonCompact(v)} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="zi" tick={{ fontSize: 10, fill: "var(--text-secondary)" }} interval={0} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} tickFormatter={(v) => formatRonCompact(v)} />
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;

@@ -20,7 +20,7 @@ const FIELDS = [
   "data_revenire",
 ];
 
-const optionStyle = { backgroundColor: "#111535", color: "#F1F5F9" };
+const optionStyle = { backgroundColor: "var(--surface-1)", color: "var(--text-primary)" };
 
 function fmtDate(value: string | null) {
   if (!value) return null;
@@ -56,9 +56,9 @@ export function PipelineStatusCard({
   const [probability, setProbability] = useState(o.probability ?? 0);
 
   const stageColor =
-    stages.find((s) => s.id === stageId)?.culoare ?? STAGE_COLORS[o.stage] ?? "#94A3B8";
+    stages.find((s) => s.id === stageId)?.culoare ?? STAGE_COLORS[o.stage] ?? "var(--text-secondary)";
   const statusColor =
-    statusuri.find((s) => s.id === statusId)?.culoare ?? STATUS_COLORS[o.status] ?? "#94A3B8";
+    statusuri.find((s) => s.id === statusId)?.culoare ?? STATUS_COLORS[o.status] ?? "var(--text-secondary)";
 
   const currentStatusValoare = statusuri.find((s) => s.id === statusId)?.valoare ?? o.status;
   const substatusOptions = SUBSTATUS_SUGGESTIONS[currentStatusValoare] ?? [];
@@ -89,15 +89,15 @@ export function PipelineStatusCard({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
           Pipeline & status
         </p>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
-            className="rounded-md p-1 text-slate-500 transition hover:bg-white/5 hover:text-[#E8007A]"
+            className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-[#E8007A]"
             title="Editeaza Pipeline & status"
           >
             <Pencil size={13} />
@@ -125,7 +125,7 @@ export function PipelineStatusCard({
                 name="stage_id"
                 value={stageId}
                 onChange={(e) => handleStageChange(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
               >
                 {/* Daca stage_id curent nu se gaseste in lista (date vechi/desincronizate),
                     aratam valoarea text reala ca opțiune, in loc sa cadem silentios pe
@@ -154,7 +154,7 @@ export function PipelineStatusCard({
                 name="status_id"
                 value={statusId}
                 onChange={(e) => setStatusId(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
               >
                 {!statusuri.some((s) => s.id === statusId) && statusId && (
                   <option value={statusId} style={optionStyle}>
@@ -175,7 +175,7 @@ export function PipelineStatusCard({
               <select
                 name="motiv_pierdere_id"
                 defaultValue={o.motiv_pierdere_id ?? ""}
-                className="w-full rounded-md border border-[#E8007A]/40 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                className="w-full rounded-md border border-[#E8007A]/40 bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
               >
                 <option value="" style={optionStyle}>
                   Selecteaza...
@@ -195,7 +195,7 @@ export function PipelineStatusCard({
                 <select
                   name="motiv_amanare_id"
                   defaultValue={o.motiv_amanare_id ?? ""}
-                  className="w-full rounded-md border border-[#E8007A]/40 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+                  className="w-full rounded-md border border-[#E8007A]/40 bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                 >
                   <option value="" style={optionStyle}>
                     Selecteaza...
@@ -223,7 +223,7 @@ export function PipelineStatusCard({
               name="substatus"
               list="substatus-suggestions-inline"
               defaultValue={o.substatus ?? ""}
-              className="w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#E8007A]"
+              className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
             />
             <datalist id="substatus-suggestions-inline">
               {substatusOptions.map((s) => (
@@ -268,7 +268,7 @@ export function PipelineStatusCard({
               type="button"
               onClick={() => setEditing(false)}
               disabled={isPending}
-              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-white/5"
+              className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-secondary transition hover:bg-surface-1"
             >
               <X size={13} />
               Anuleaza

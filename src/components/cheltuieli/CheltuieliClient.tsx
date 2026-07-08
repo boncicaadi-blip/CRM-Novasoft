@@ -92,13 +92,13 @@ function inPeriod(
 }
 
 const selectClass =
-  "w-full rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-2 text-sm text-white outline-none focus:border-[#E8007A]";
+  "w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]";
 const inputClass = selectClass;
-const labelClass = "mb-1 block text-[11px] text-slate-500";
+const labelClass = "mb-1 block text-[11px] text-text-muted";
 
 function NomOption({ n }: { n: Nomenclator }) {
   return (
-    <option value={n.valoare} style={{ backgroundColor: "#111535" }}>
+    <option value={n.valoare} style={{ backgroundColor: "var(--surface-1)" }}>
       {n.valoare}
     </option>
   );
@@ -135,16 +135,16 @@ function CheltuieliChart({ linii }: { linii: CheltuialaLinie[] }) {
   if (data.length === 0) return null;
 
   return (
-    <div className="mb-5 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="mb-5 rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <p className="mb-3 flex items-center gap-1.5 text-sm font-medium text-text-primary">
         Prognozat vs. Realizat, pe perioada selectata
         <InfoTooltip title="Prognozat vs. Realizat" definition={CHELTUIELI_KPI_DEFINITIONS.evolutiePrognozatRealizat} />
       </p>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-          <YAxis tick={{ fontSize: 11, fill: "#94A3B8" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
+          <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
@@ -160,7 +160,7 @@ function CheltuieliChart({ linii }: { linii: CheltuialaLinie[] }) {
               );
             }}
           />
-          <Legend wrapperStyle={{ fontSize: 11, color: "#94A3B8" }} />
+          <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-secondary)" }} />
           <Bar dataKey="prognozat" name="Prognozat" fill="#475569" radius={[3, 3, 0, 0]} />
           <Bar dataKey="realizat" name="Realizat" fill="#F97316" radius={[3, 3, 0, 0]} />
         </BarChart>
@@ -249,8 +249,8 @@ export function CheltuieliClient({
     <div className="px-3 py-4 sm:px-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-white">Cheltuieli</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-lg font-heading text-text-primary">Cheltuieli</h1>
+          <p className="text-sm text-text-muted">
             Contracte de cheltuiala (recurente si nerecurente), buget vs. realizat. EUR, fara TVA.
           </p>
         </div>
@@ -259,7 +259,7 @@ export function CheltuieliClient({
             <button
               onClick={handleSync}
               disabled={isPending}
-              className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-2 text-xs font-medium text-text-primary transition hover:bg-surface-1 disabled:opacity-50"
             >
               <RefreshCw size={13} />
               Genereaza linii lipsa
@@ -267,7 +267,7 @@ export function CheltuieliClient({
             {viewMode === "cheltuieli" && (
               <button
                 onClick={() => setShowManualForm(true)}
-                className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+                className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-2 text-xs font-medium text-text-primary transition hover:bg-surface-1"
               >
                 <Plus size={14} />
                 Cheltuiala manuala
@@ -281,27 +281,27 @@ export function CheltuieliClient({
               Contract nou
             </button>
           </div>
-          {syncMessage && <p className="text-xs text-slate-500">{syncMessage}</p>}
+          {syncMessage && <p className="text-xs text-text-muted">{syncMessage}</p>}
         </div>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             Prognozat (buget)
             <InfoTooltip title="Prognozat" definition={CHELTUIELI_KPI_DEFINITIONS.prognozat} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.prognozat)}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.prognozat)}</p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             Realizat
             <InfoTooltip title="Realizat" definition={CHELTUIELI_KPI_DEFINITIONS.realizat} />
           </p>
-          <p className="font-mono text-2xl font-medium text-white">{formatEur(summary.realizat)}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.realizat)}</p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
             Diferenta (pana in luna curenta)
             <InfoTooltip title="Diferenta (YTD)" definition={CHELTUIELI_KPI_DEFINITIONS.diferentaYtd} />
           </p>
@@ -311,18 +311,18 @@ export function CheltuieliClient({
             {summary.diferenta >= 0 ? "+" : ""}
             {formatEur(summary.diferenta)}
           </p>
-          <p className="mt-0.5 text-[10px] text-slate-600">Nu include lunile viitoare</p>
+          <p className="mt-0.5 text-[10px] text-text-faint">Nu include lunile viitoare</p>
         </div>
       </div>
 
       <CheltuieliChart linii={filteredLinii} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex items-center rounded-md border border-white/10 p-0.5">
+        <div className="flex items-center rounded-md border border-border-subtle p-0.5">
           <button
             onClick={() => setViewMode("cheltuieli")}
             className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition ${
-              viewMode === "cheltuieli" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "cheltuieli" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
             }`}
           >
             <Wallet size={13} />
@@ -331,7 +331,7 @@ export function CheltuieliClient({
           <button
             onClick={() => setViewMode("contracte")}
             className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition ${
-              viewMode === "contracte" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+              viewMode === "contracte" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
             }`}
           >
             <FileText size={13} />
@@ -353,10 +353,10 @@ export function CheltuieliClient({
                   setCustomTo(end.toISOString().slice(0, 10));
                 }
               }}
-              className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
             >
               {PERIOD_OPTIONS.map((p) => (
-                <option key={p.value} value={p.value} style={{ backgroundColor: "#111535" }}>
+                <option key={p.value} value={p.value} style={{ backgroundColor: "var(--surface-1)" }}>
                   {p.label}
                 </option>
               ))}
@@ -364,19 +364,19 @@ export function CheltuieliClient({
             {period === "custom" && (
               <>
                 <MonthMultiSelect selected={customMonths} onChange={setCustomMonths} />
-                <span className="text-[10px] text-slate-600">sau interval:</span>
+                <span className="text-[10px] text-text-faint">sau interval:</span>
                 <input
                   type="date"
                   value={customFrom}
                   onChange={(e) => setCustomFrom(e.target.value)}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                  className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
                 />
-                <span className="text-xs text-slate-500">-</span>
+                <span className="text-xs text-text-muted">-</span>
                 <input
                   type="date"
                   value={customTo}
                   onChange={(e) => setCustomTo(e.target.value)}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-white outline-none focus:border-[#E8007A]"
+                  className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-xs text-text-primary outline-none focus:border-[#E8007A]"
                 />
               </>
             )}
@@ -385,9 +385,9 @@ export function CheltuieliClient({
         <select
           value={filterIncadrare}
           onChange={(e) => setFilterIncadrare(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toate incadrarile
           </option>
           {incadrareOptions.map((n) => (
@@ -397,9 +397,9 @@ export function CheltuieliClient({
         <select
           value={filterClasa}
           onChange={(e) => setFilterClasa(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toate clasele
           </option>
           {clasaOptions.map((n) => (
@@ -409,15 +409,15 @@ export function CheltuieliClient({
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-xs font-medium text-white outline-none focus:border-[#E8007A]"
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
-          <option value="" style={{ backgroundColor: "#111535" }}>
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toate statusurile
           </option>
-          <option value="Activ" style={{ backgroundColor: "#111535" }}>
+          <option value="Activ" style={{ backgroundColor: "var(--surface-1)" }}>
             Activ
           </option>
-          <option value="Inactiv" style={{ backgroundColor: "#111535" }}>
+          <option value="Inactiv" style={{ backgroundColor: "var(--surface-1)" }}>
             Inactiv
           </option>
         </select>
@@ -597,7 +597,7 @@ function CheltuieliTable({
     <div>
       {checkedIds.size > 0 && (
         <div className="mb-2 flex items-center gap-2 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2">
-          <span className="text-xs text-slate-300">{checkedIds.size} selectate</span>
+          <span className="text-xs text-text-primary">{checkedIds.size} selectate</span>
           <button
             onClick={handleBulkPlatit}
             disabled={isPending}
@@ -616,16 +616,16 @@ function CheltuieliTable({
           </button>
         </div>
       )}
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
         <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-[10px] uppercase text-text-muted">
               <th className="w-8 px-3 py-2">
                 <input
                   type="checkbox"
                   checked={sorted.length > 0 && checkedIds.size === sorted.length}
                   onChange={toggleCheckAll}
-                  className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                  className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                 />
               </th>
               <SortableTh label="Incadrare" sortKey="incadrare" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.incadrare} onResize={(w) => setColWidths((c) => ({ ...c, incadrare: w }))} />
@@ -643,16 +643,16 @@ function CheltuieliTable({
               const isEditing = editingId === l.id;
               const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
               return (
-                <tr key={l.id} className="border-b border-white/5 hover:bg-white/[0.03]">
+                <tr key={l.id} className="border-b border-border-faint hover:bg-surface-1">
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={checkedIds.has(l.id)}
                       onChange={() => toggleCheck(l.id)}
-                      className="h-3.5 w-3.5 rounded border-white/20 bg-white/[0.04]"
+                      className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                     />
                   </td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">
                     {isEditing ? (
                       <select value={incadrare} onChange={(e) => setIncadrare(e.target.value)} className={selectClass}>
                         {incadrareOptions.map((n) => (
@@ -663,7 +663,7 @@ function CheltuieliTable({
                       l.incadrare
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">
                     {isEditing ? (
                       <select value={clasa} onChange={(e) => setClasa(e.target.value)} className={selectClass}>
                         {clasaOptions.map((n) => (
@@ -676,20 +676,20 @@ function CheltuieliTable({
                   </td>
                   <td className="px-3 py-2">
                     {contract ? (
-                      <span className={contract.status_contract === "Activ" ? "text-green-400" : "text-slate-500"}>
+                      <span className={contract.status_contract === "Activ" ? "text-green-400" : "text-text-muted"}>
                         {contract.status_contract}
                       </span>
                     ) : (
-                      <span className="text-slate-600">Manual</span>
+                      <span className="text-text-faint">Manual</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-400">
+                  <td className="px-3 py-2 text-text-secondary">
                     {isEditing ? (
                       <input
                         type="month"
                         value={luna}
                         onChange={(e) => setLuna(e.target.value)}
-                        className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-sm text-white outline-none focus:border-[#E8007A]"
+                        className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
                       new Date(l.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })
@@ -702,10 +702,10 @@ function CheltuieliTable({
                         step="0.01"
                         value={valoarePrognozata}
                         onChange={(e) => setValoarePrognozata(e.target.value)}
-                        className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
+                        className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-right text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
-                      <span className="font-mono text-slate-300">{formatEur(l.valoare_prognozata)}</span>
+                      <span className="font-mono text-text-primary">{formatEur(l.valoare_prognozata)}</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -715,10 +715,10 @@ function CheltuieliTable({
                         step="0.01"
                         value={valoareRealizata}
                         onChange={(e) => setValoareRealizata(e.target.value)}
-                        className="w-24 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-right text-sm text-white outline-none focus:border-[#E8007A]"
+                        className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-right text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
-                      <span className="font-mono text-white">
+                      <span className="font-mono text-text-primary">
                         {l.valoare_realizata !== null ? formatEur(l.valoare_realizata) : "—"}
                       </span>
                     )}
@@ -738,7 +738,7 @@ function CheltuieliTable({
                     ) : l.platit ? (
                       <Check size={14} className="mx-auto text-green-400" />
                     ) : (
-                      <span className="text-slate-600">—</span>
+                      <span className="text-text-faint">—</span>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -753,7 +753,7 @@ function CheltuieliTable({
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="rounded-md p-1 text-slate-500 hover:bg-white/5"
+                          className="rounded-md p-1 text-text-muted hover:bg-surface-1"
                         >
                           <X size={14} />
                         </button>
@@ -762,13 +762,13 @@ function CheltuieliTable({
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => startEdit(l)}
-                          className="rounded-md p-1 text-slate-500 hover:bg-white/5 hover:text-[#E8007A]"
+                          className="rounded-md p-1 text-text-muted hover:bg-surface-1 hover:text-[#E8007A]"
                         >
                           <Pencil size={13} />
                         </button>
                         <button
                           onClick={() => handleDelete(l.id)}
-                          className="rounded-md p-1 text-slate-600 hover:bg-red-500/10 hover:text-red-400"
+                          className="rounded-md p-1 text-text-faint hover:bg-red-500/10 hover:text-red-400"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -780,7 +780,7 @@ function CheltuieliTable({
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={9} className="px-3 py-8 text-center text-sm text-text-muted">
                   Nicio cheltuiala pentru filtrul curent.
                 </td>
               </tr>
@@ -788,7 +788,7 @@ function CheltuieliTable({
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
           {[25, 50, 100, "toate" as const].map((size) => (
@@ -801,7 +801,7 @@ function CheltuieliTable({
               className={`rounded-md px-2 py-1 font-medium transition ${
                 pageSize === size
                   ? "bg-[#E8007A] text-[#0B0D1A]"
-                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+                  : "border border-border-subtle text-text-secondary hover:bg-surface-1"
               }`}
             >
               {size === "toate" ? "Toate" : size}
@@ -818,7 +818,7 @@ function CheltuieliTable({
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronLeft size={14} />
             </button>
@@ -828,7 +828,7 @@ function CheltuieliTable({
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronRight size={14} />
             </button>
@@ -889,10 +889,10 @@ function ContracteCheltuieliTable({
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
         <table className="w-full table-fixed text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-white/[0.02] text-left text-[10px] uppercase text-slate-500">
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-[10px] uppercase text-text-muted">
               <SortableTh label="Incadrare" sortKey="incadrare" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
               <SortableTh label="Clasa" sortKey="clasa" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
               <SortableTh label="Tip / Frecventa" sortKey="tipFrecventa" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} />
@@ -908,23 +908,23 @@ function ContracteCheltuieliTable({
               <tr
                 key={c.id}
                 onClick={() => onEdit(c)}
-                className="cursor-pointer border-b border-white/5 hover:bg-white/[0.03]"
+                className="cursor-pointer border-b border-border-faint hover:bg-surface-1"
               >
-                <td className="px-3 py-2 text-slate-400">{c.incadrare}</td>
-                <td className="px-3 py-2 text-slate-400">{c.clasa}</td>
-                <td className="px-3 py-2 text-slate-400">
+                <td className="px-3 py-2 text-text-secondary">{c.incadrare}</td>
+                <td className="px-3 py-2 text-text-secondary">{c.clasa}</td>
+                <td className="px-3 py-2 text-text-secondary">
                   {c.tip_cheltuiala} / {c.frecventa}
                   {c.frecventa === "Nerecurenta" && c.nr_rate > 1 && (
-                    <span className="ml-1 text-[10px] text-slate-500">({c.nr_rate}x)</span>
+                    <span className="ml-1 text-[10px] text-text-muted">({c.nr_rate}x)</span>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right font-mono text-white">{formatEur(c.valoare_lunara)}</td>
-                <td className="px-3 py-2 text-slate-400">{new Date(c.data_inceput).toLocaleDateString("ro-RO")}</td>
-                <td className="px-3 py-2 text-slate-400">
+                <td className="px-3 py-2 text-right font-mono text-text-primary">{formatEur(c.valoare_lunara)}</td>
+                <td className="px-3 py-2 text-text-secondary">{new Date(c.data_inceput).toLocaleDateString("ro-RO")}</td>
+                <td className="px-3 py-2 text-text-secondary">
                   {c.data_sfarsit ? new Date(c.data_sfarsit).toLocaleDateString("ro-RO") : "Nedeterminat"}
                 </td>
                 <td className="px-3 py-2">
-                  <span className={c.status_contract === "Activ" ? "text-green-400" : "text-slate-500"}>
+                  <span className={c.status_contract === "Activ" ? "text-green-400" : "text-text-muted"}>
                     {c.status_contract}
                   </span>
                 </td>
@@ -932,7 +932,7 @@ function ContracteCheltuieliTable({
                   <button
                     onClick={() => handleDelete(c.id)}
                     disabled={isPending}
-                    className="rounded-md p-1 text-slate-600 hover:bg-red-500/10 hover:text-red-400"
+                    className="rounded-md p-1 text-text-faint hover:bg-red-500/10 hover:text-red-400"
                   >
                     <Trash2 size={13} />
                   </button>
@@ -941,7 +941,7 @@ function ContracteCheltuieliTable({
             ))}
             {contracte.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-3 py-8 text-center text-sm text-text-muted">
                   Niciun contract de cheltuiala inca.
                 </td>
               </tr>
@@ -949,7 +949,7 @@ function ContracteCheltuieliTable({
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
         <div className="flex items-center gap-1.5">
           <span>Randuri pe pagina:</span>
           {[25, 50, 100, "toate" as const].map((size) => (
@@ -962,7 +962,7 @@ function ContracteCheltuieliTable({
               className={`rounded-md px-2 py-1 font-medium transition ${
                 pageSize === size
                   ? "bg-[#E8007A] text-[#0B0D1A]"
-                  : "border border-white/10 text-slate-400 hover:bg-white/5"
+                  : "border border-border-subtle text-text-secondary hover:bg-surface-1"
               }`}
             >
               {size === "toate" ? "Toate" : size}
@@ -979,7 +979,7 @@ function ContracteCheltuieliTable({
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronLeft size={14} />
             </button>
@@ -989,7 +989,7 @@ function ContracteCheltuieliTable({
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-white/10 p-1 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
             >
               <ChevronRight size={14} />
             </button>
@@ -1088,19 +1088,19 @@ function ContractCheltuialaFormModal({
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-white/10 bg-[#111535] p-5"
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border-subtle bg-surface-1 p-5"
       >
         <div className="mb-4 flex items-start justify-between">
-          <h2 className="text-lg font-heading text-white">
+          <h2 className="text-lg font-heading text-text-primary">
             {contract ? "Editeaza contract cheltuiala" : "Contract cheltuiala nou"}
           </h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white">
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={18} />
           </button>
         </div>
 
         {contract && (
-          <p className="mb-3 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2 text-[11px] text-slate-300">
+          <p className="mb-3 rounded-md border border-[#E8007A]/20 bg-[#E8007A]/5 px-3 py-2 text-[11px] text-text-primary">
             La salvare, toate liniile acestui contract se regenereaza dupa noile setari. Realizatul
             deja inregistrat se pastreaza, acolo unde perioadele se suprapun.
           </p>
@@ -1139,10 +1139,10 @@ function ContractCheltuialaFormModal({
                 onChange={(e) => setTipCheltuiala(e.target.value as TipCheltuiala)}
                 className={selectClass}
               >
-                <option value="Fixe" style={{ backgroundColor: "#111535" }}>
+                <option value="Fixe" style={{ backgroundColor: "var(--surface-1)" }}>
                   Fixe
                 </option>
-                <option value="Variabile" style={{ backgroundColor: "#111535" }}>
+                <option value="Variabile" style={{ backgroundColor: "var(--surface-1)" }}>
                   Variabile
                 </option>
               </select>
@@ -1154,10 +1154,10 @@ function ContractCheltuialaFormModal({
                 onChange={(e) => setFrecventa(e.target.value as FrecventaCheltuiala)}
                 className={selectClass}
               >
-                <option value="Recurenta" style={{ backgroundColor: "#111535" }}>
+                <option value="Recurenta" style={{ backgroundColor: "var(--surface-1)" }}>
                   Recurenta
                 </option>
-                <option value="Nerecurenta" style={{ backgroundColor: "#111535" }}>
+                <option value="Nerecurenta" style={{ backgroundColor: "var(--surface-1)" }}>
                   Nerecurenta
                 </option>
               </select>
@@ -1165,7 +1165,7 @@ function ContractCheltuialaFormModal({
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-1.5 text-xs text-slate-400">
+            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
               <input
                 type="checkbox"
                 checked={investitie}
@@ -1174,7 +1174,7 @@ function ContractCheltuialaFormModal({
               />
               Investitie
             </label>
-            <label className="flex items-center gap-1.5 text-xs text-slate-400">
+            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
               <input
                 type="checkbox"
                 checked={repartizare}
@@ -1226,7 +1226,7 @@ function ContractCheltuialaFormModal({
                     className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
                       durationMode === opt.value
                         ? "bg-[#E8007A] text-[#0B0D1A]"
-                        : "border border-white/10 text-slate-400 hover:bg-white/5"
+                        : "border border-border-subtle text-text-secondary hover:bg-surface-1"
                     }`}
                   >
                     {opt.label}
@@ -1242,7 +1242,7 @@ function ContractCheltuialaFormModal({
                 />
               )}
               {durationMode === "un_an" && (
-                <p className="mt-1 text-[11px] text-slate-500">
+                <p className="mt-1 text-[11px] text-text-muted">
                   Se genereaza automat pana la {addMonthsToDateStr(dataInceput, 12)}.
                 </p>
               )}
@@ -1258,7 +1258,7 @@ function ContractCheltuialaFormModal({
                 onChange={(e) => setNrRate(e.target.value)}
                 className={inputClass}
               />
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] text-text-muted">
                 Se genereaza {nrRate || 1} {Number(nrRate) > 1 ? "linii lunare" : "linie"}, cu valoarea
                 impartita egal ({formatEur(Number(valoare || 0) / Math.max(1, Number(nrRate) || 1))} fiecare).
               </p>
@@ -1273,10 +1273,10 @@ function ContractCheltuialaFormModal({
                 onChange={(e) => setStatusContract(e.target.value as StatusContractCheltuiala)}
                 className={selectClass}
               >
-                <option value="Activ" style={{ backgroundColor: "#111535" }}>
+                <option value="Activ" style={{ backgroundColor: "var(--surface-1)" }}>
                   Activ
                 </option>
-                <option value="Inactiv" style={{ backgroundColor: "#111535" }}>
+                <option value="Inactiv" style={{ backgroundColor: "var(--surface-1)" }}>
                   Inactiv
                 </option>
               </select>
@@ -1352,11 +1352,11 @@ function ManualCheltuialaFormModal({
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-xl border border-white/10 bg-[#111535] p-5"
+        className="w-full max-w-md rounded-xl border border-border-subtle bg-surface-1 p-5"
       >
         <div className="mb-4 flex items-start justify-between">
-          <h2 className="text-lg font-heading text-white">Cheltuiala manuala</h2>
-          <button onClick={onClose} className="text-slate-500 hover:text-white">
+          <h2 className="text-lg font-heading text-text-primary">Cheltuiala manuala</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary">
             <X size={18} />
           </button>
         </div>
@@ -1391,10 +1391,10 @@ function ManualCheltuialaFormModal({
               onChange={(e) => setFrecventa(e.target.value as FrecventaCheltuiala)}
               className={selectClass}
             >
-              <option value="Recurenta" style={{ backgroundColor: "#111535" }}>
+              <option value="Recurenta" style={{ backgroundColor: "var(--surface-1)" }}>
                 Recurenta
               </option>
-              <option value="Nerecurenta" style={{ backgroundColor: "#111535" }}>
+              <option value="Nerecurenta" style={{ backgroundColor: "var(--surface-1)" }}>
                 Nerecurenta
               </option>
             </select>

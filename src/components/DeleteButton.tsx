@@ -11,7 +11,7 @@ export function DeleteButton({ id }: { id: string }) {
   if (confirming) {
     return (
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-slate-400">Sigur stergi?</span>
+        <span className="text-text-secondary">Sigur stergi?</span>
         <button
           onClick={() => startTransition(() => deleteOpportunityAction(id))}
           disabled={isPending}
@@ -21,7 +21,7 @@ export function DeleteButton({ id }: { id: string }) {
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="rounded-md px-3 py-1.5 text-slate-400 hover:bg-white/5"
+          className="rounded-md px-3 py-1.5 text-text-secondary hover:bg-surface-1"
         >
           Anuleaza
         </button>
@@ -32,7 +32,7 @@ export function DeleteButton({ id }: { id: string }) {
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="flex items-center gap-1.5 rounded-md border border-white/10 px-3 py-1.5 text-sm text-slate-400 transition hover:border-red-500/30 hover:text-red-400"
+      className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 text-sm text-text-secondary transition hover:border-red-500/30 hover:text-red-400"
     >
       <Trash2 size={14} />
       Sterge

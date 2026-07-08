@@ -160,7 +160,7 @@ export function Sidebar({
       {/* Header mobil (sub lg) - logo + utilizator + logout, navigarea e in bottom bar.
           Pragul e lg (1024px), nu md (768px) - multe telefoane mari, culcate,
           trec de 768px latime si "sareau" gresit pe layout-ul de desktop. */}
-      <header className="flex items-center justify-between border-b border-white/10 bg-[#111535] px-4 py-3 lg:hidden">
+      <header className="flex items-center justify-between border-b border-border-subtle bg-surface-1 px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <Image
             src="/icon-192.png"
@@ -169,7 +169,7 @@ export function Sidebar({
             height={28}
             className="rounded-lg"
           />
-          <p className="font-heading text-sm text-white">NovaSales</p>
+          <p className="font-heading text-sm text-text-primary">NovaSales</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -182,14 +182,14 @@ export function Sidebar({
           <Link
             href="/profil"
             title="Profilul meu"
-            className="rounded-md p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+            className="rounded-md p-1.5 text-text-secondary transition hover:bg-surface-1 hover:text-text-primary"
           >
             <User size={16} />
           </Link>
           <button
             onClick={handleLogout}
             title="Deconectare"
-            className="rounded-md p-1.5 text-slate-400 transition hover:bg-white/5 hover:text-slate-200"
+            className="rounded-md p-1.5 text-text-secondary transition hover:bg-surface-1 hover:text-text-primary"
           >
             <LogOut size={16} />
           </button>
@@ -200,7 +200,7 @@ export function Sidebar({
         <button
           onClick={() => setCollapsed(false)}
           title="Deschide meniul"
-          className="fixed left-2 top-3 z-40 hidden rounded-md border border-white/10 bg-[#111535] p-2 text-slate-400 shadow-lg transition hover:text-white lg:block"
+          className="fixed left-2 top-3 z-40 hidden rounded-md border border-border-subtle bg-surface-1 p-2 text-text-secondary shadow-lg transition hover:text-text-primary lg:block"
         >
           <PanelLeftOpen size={16} />
         </button>
@@ -210,7 +210,7 @@ export function Sidebar({
           Se poate restrange complet (butonul din antet) - util pe tablete
           in landscape sau daca vrei mai mult spatiu pentru continut. */}
       <aside
-        className={`hidden h-screen flex-col border-r border-white/10 bg-[#111535] py-4 transition-all duration-200 lg:flex ${
+        className={`hidden h-screen flex-col border-r border-border-subtle bg-surface-1 py-4 transition-all duration-200 lg:flex ${
           collapsed ? "w-0 overflow-hidden px-0" : "w-60 px-3"
         }`}
       >
@@ -225,14 +225,14 @@ export function Sidebar({
               priority
             />
             <div>
-              <p className="font-heading text-sm leading-tight text-white">NovaSales</p>
-              <p className="text-[11px] leading-tight text-slate-500">Novasoft CRM</p>
+              <p className="font-heading text-sm leading-tight text-text-primary">NovaSales</p>
+              <p className="text-[11px] leading-tight text-text-muted">Novasoft CRM</p>
             </div>
           </div>
           <button
             onClick={() => setCollapsed(true)}
             title="Restrange meniul"
-            className="shrink-0 rounded-md p-1.5 text-slate-500 transition hover:bg-white/5 hover:text-slate-200"
+            className="shrink-0 rounded-md p-1.5 text-text-muted transition hover:bg-surface-1 hover:text-text-primary"
           >
             <PanelLeftClose size={16} />
           </button>
@@ -257,8 +257,8 @@ export function Sidebar({
                   onClick={() => setOpenGroupId(group.id)}
                   className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
                     groupHasActive
-                      ? "text-white font-medium"
-                      : "text-slate-400 hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
+                      ? "text-text-primary font-medium"
+                      : "text-text-secondary hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
                   }`}
                 >
                   <GroupIcon size={17} />
@@ -269,7 +269,7 @@ export function Sidebar({
                   />
                 </button>
                 {isOpen && (
-                  <div className="ml-2 space-y-0.5 border-l border-white/10 pl-3">
+                  <div className="ml-2 space-y-0.5 border-l border-border-subtle pl-3">
                     {group.items.map((item) => {
                       const isActive = isNavItemActive(pathname, item.href);
                       const Icon = item.icon;
@@ -279,8 +279,8 @@ export function Sidebar({
                           href={item.href}
                           className={`flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition ${
                             isActive
-                              ? "bg-white/10 text-white font-medium"
-                              : "text-slate-400 hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
+                              ? "bg-surface-2 text-text-primary font-medium"
+                              : "text-text-secondary hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
                           }`}
                         >
                           <Icon size={15} />
@@ -295,13 +295,13 @@ export function Sidebar({
           })}
         </nav>
 
-        <div className="relative border-t border-white/10 pt-3">
+        <div className="relative border-t border-border-subtle pt-3">
           {menuOpen && (
-            <div className="absolute bottom-full left-0 mb-1 w-full rounded-lg border border-white/10 bg-[#161B45] p-1 shadow-xl">
+            <div className="absolute bottom-full left-0 mb-1 w-full rounded-lg border border-border-subtle bg-surface-2 p-1 shadow-xl">
               <Link
                 href="/profil"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-primary transition hover:bg-surface-1 hover:text-text-primary"
               >
                 <User size={15} />
                 Profilul meu
@@ -311,7 +311,7 @@ export function Sidebar({
                   <Link
                     href="/setari/utilizatori"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-primary transition hover:bg-surface-1 hover:text-text-primary"
                   >
                     <Users size={15} />
                     Utilizatori
@@ -319,7 +319,7 @@ export function Sidebar({
                   <Link
                     href="/setari/integrari"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-primary transition hover:bg-surface-1 hover:text-text-primary"
                   >
                     <Plug size={15} />
                     Integrari
@@ -327,7 +327,7 @@ export function Sidebar({
                   <Link
                     href="/setari/comercial"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-primary transition hover:bg-surface-1 hover:text-text-primary"
                   >
                     <Target size={15} />
                     Comercial
@@ -335,7 +335,7 @@ export function Sidebar({
                   <Link
                     href="/setari/angajati"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-primary transition hover:bg-surface-1 hover:text-text-primary"
                   >
                     <Users size={15} />
                     Angajati
@@ -343,7 +343,7 @@ export function Sidebar({
                   <Link
                     href="/setari/nomenclatoare"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-primary transition hover:bg-surface-1 hover:text-text-primary"
                   >
                     <Settings size={15} />
                     Nomenclatoare
@@ -351,7 +351,7 @@ export function Sidebar({
                   <Link
                     href="/setari/consum-ai"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-primary transition hover:bg-surface-1 hover:text-text-primary"
                   >
                     <Sparkles size={15} />
                     Consum AI
@@ -360,33 +360,33 @@ export function Sidebar({
               )}
             </div>
           )}
-          <div className="flex items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-white/5">
+          <div className="flex items-center gap-2 rounded-md px-2 py-1.5 transition hover:bg-surface-1">
             <button
               onClick={() => setMenuOpen((v) => !v)}
               className="flex flex-1 items-center gap-2 text-left"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-medium text-slate-200">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-xs font-medium text-text-primary">
                 {userName.charAt(0).toUpperCase()}
               </div>
-              <p className="flex-1 truncate text-sm text-slate-300">{userName}</p>
+              <p className="flex-1 truncate text-sm text-text-primary">{userName}</p>
             </button>
             <button
               onClick={handleLogout}
               title="Deconectare"
-              className="rounded-md p-1.5 text-slate-500 transition hover:bg-white/5 hover:text-slate-200"
+              className="rounded-md p-1.5 text-text-muted transition hover:bg-surface-1 hover:text-text-primary"
             >
               <LogOut size={15} />
             </button>
           </div>
           {deployVersion && (
-            <p className="mt-1 px-2 text-[10px] text-slate-600">Versiunea {deployVersion}</p>
+            <p className="mt-1 px-2 text-[10px] text-text-faint">Versiunea {deployVersion}</p>
           )}
-          <p className="px-2 text-[10px] text-slate-600">Creat de Adrian Boncica</p>
+          <p className="px-2 text-[10px] text-text-faint">Creat de Adrian Boncica</p>
         </div>
       </aside>
 
       {/* Bottom nav mobil (sub md) - 3 categorii mari; tap deschide submeniul categoriei */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/10 bg-[#111535] pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-border-subtle bg-surface-1 pb-[env(safe-area-inset-bottom)] lg:hidden">
         {visibleGroups.map((group) => {
           const GroupIcon = group.icon;
           const isActive = group.id === activeGroupId;
@@ -395,7 +395,7 @@ export function Sidebar({
               key={group.id}
               onClick={() => setMobileSheetGroupId(group.id)}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] transition ${
-                isActive ? "text-[#E8007A]" : "text-slate-400"
+                isActive ? "text-[#E8007A]" : "text-text-secondary"
               }`}
             >
               <GroupIcon size={20} />
@@ -413,16 +413,16 @@ export function Sidebar({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full rounded-t-2xl border-t border-white/10 bg-[#111535] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+            className="w-full rounded-t-2xl border-t border-border-subtle bg-surface-1 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
           >
             <div className="mb-3 flex items-center justify-between">
-              <p className="flex items-center gap-2 text-sm font-medium text-white">
+              <p className="flex items-center gap-2 text-sm font-medium text-text-primary">
                 <mobileSheetGroup.icon size={17} />
                 {mobileSheetGroup.label}
               </p>
               <button
                 onClick={() => setMobileSheetGroupId(null)}
-                className="rounded-md p-1 text-slate-500 hover:text-white"
+                className="rounded-md p-1 text-text-muted hover:text-text-primary"
               >
                 <X size={18} />
               </button>
@@ -438,8 +438,8 @@ export function Sidebar({
                     onClick={() => setMobileSheetGroupId(null)}
                     className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition ${
                       isActive
-                        ? "bg-white/10 text-white font-medium"
-                        : "text-slate-300 hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
+                        ? "bg-surface-2 text-text-primary font-medium"
+                        : "text-text-primary hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
                     }`}
                   >
                     <Icon size={17} />
