@@ -80,3 +80,13 @@ body {
   font-style: italic;
   font-weight: 700;
 }
+
+/* Folosit de ExpandableChart (buton de marire pe grafice) - graficele
+   Recharts au o inaltime fixa in cod (ex. 260px), setata ca stil inline pe
+   .recharts-responsive-container. Regula de mai jos o suprascrie doar in
+   interiorul ferestrei marite (nu afecteaza graficele normale de pe pagina),
+   ca sa arate cu adevarat mari, nu doar zoom-uite vizual - Recharts
+   detecteaza singur noua inaltime si redeseneaza graficul corect la ea. */
+.chart-expanded-modal .recharts-responsive-container {
+  height: min(66vh, 720px) !important;
+}

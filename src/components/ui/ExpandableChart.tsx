@@ -1,64 +1,33 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
 
 /**
- * Infasoara orice grafic (sau card cu grafic) si adauga un buton de marire
- * (colt dreapta-sus, apare la hover) care il afiseaza pe tot ecranul, marit
- * proportional - ca in Power BI. Functioneaza cu ORICE continut, fara sa
- * ceara modificari in componenta de grafic infasurata (scaleaza vizual prin
- * CSS transform, nu recalculeaza dimensiunile interne). Fiindca graficele
- * Recharts sunt SVG (vectoriale), scalarea ramane perfect clara la orice
- * marime - nu se pixeleaza precum o imagine.
+ * Buton de marire (colt dreapta-sus, apare la hover) care deschide graficul
+ * intr-o fereastra mare, aproape pe tot ecranul - ca in Power BI.
  *
- * Fereastra marita se randeaza printr-un portal direct in <body>, NU in
- * locul unde e definita in arborele de componente. Asta e important: daca
- * am lasat-o "in loc" (ex. in interiorul unui card care poate fi tras/mutat
- * cu drag-and-drop - vezi DashboardChartGrid), orice `transform` aplicat de
- * un parinte (inclusiv temporar, in timpul unui drag) ar fi rupt
- * pozitionarea `fixed` a ferestrei marite (devine relativa la acel parinte,
- * nu la ecran) - de-asta graficul marit parea "la fel ca inainte". Portalul
- * elimina complet acest risc, indiferent unde e folosita componenta.
+ * Fereastra se randeaza printr-un portal direct in <body>, complet separat
+ * de locul unde e definit graficul in pagina - asta il fereste de orice ar
+ * putea sa-i strice pozitionarea (scroll, alti parinti, drag-and-drop etc).
+ *
+ * Marirea NU se face prin scalare vizuala (CSS transform), care depindea de
+ * masuratori JS fragile si nu dadea rezultate consistente. In schimb, cardul
+ * primeste pur si simplu o latime si inaltime mari prin CSS, iar clasa
+ * "chart-expanded-modal" (definita in globals.css) forteaza graficele
+ * Recharts din interior sa fie si ele mai inalte - Recharts detecteaza
+ * singur noua marime (prin ResizeObserver intern) si redeseneaza graficul
+ * la marimea corecta, nu doar il mareste vizual ca pe o poza.
  */
 export function ExpandableChart({ children }: { children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(false);
-  const [scale, setScale] = useState(1);
-  const [grown, setGrown] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Portalul (createPortal) are nevoie de document.body, care nu exista pe
-  // server - "mounted" devine true abia dupa montare in client, moment din
-  // care e sigur sa randam portalul. Pattern standard pentru portaluri.
+  // server - "mounted" devine true abia dupa montare in client.
   // eslint-disable-next-line react-hooks/set-state-in-effect -- vezi comentariul de mai sus
   useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    if (!expanded || !containerRef.current) return;
-
-    function recalcScale() {
-      const el = containerRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      const maxWidth = window.innerWidth * 0.94;
-      const maxHeight = window.innerHeight * 0.88;
-      setScale(Math.min(maxWidth / rect.width, maxHeight / rect.height, 3.5));
-    }
-
-    recalcScale();
-    // Dublu rAF: primul frame se picteaza la scara 1 (grown=false), apoi
-    // tranzitia CSS anima spre scara calculata - efect de "crestere" placut,
-    // ca in Power BI, in loc sa apara brusc la marimea finala.
-    const grow = requestAnimationFrame(() => requestAnimationFrame(() => setGrown(true)));
-    window.addEventListener("resize", recalcScale);
-    return () => {
-      window.removeEventListener("resize", recalcScale);
-      cancelAnimationFrame(grow);
-    };
-  }, [expanded]);
 
   useEffect(() => {
     if (!expanded) return;
@@ -68,11 +37,6 @@ export function ExpandableChart({ children }: { children: React.ReactNode }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [expanded]);
-
-  function close() {
-    setGrown(false);
-    setExpanded(false);
-  }
 
   return (
     <div className="group relative">
@@ -86,17 +50,17 @@ export function ExpandableChart({ children }: { children: React.ReactNode }) {
       >
         <Maximize2 size={14} />
       </button>
-      <div ref={containerRef}>{children}</div>
+      {children}
 
       {mounted &&
         expanded &&
         createPortal(
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
-            onClick={close}
+            onClick={() => setExpanded(false)}
           >
             <button
-              onClick={close}
+              onClick={() => setExpanded(false)}
               title="Inchide (Esc)"
               className="absolute right-5 top-5 rounded-md border border-border-subtle bg-surface-2 p-2 text-text-primary shadow-lg transition hover:bg-surface-1"
             >
@@ -107,8 +71,7 @@ export function ExpandableChart({ children }: { children: React.ReactNode }) {
             </p>
             <div
               onClick={(e) => e.stopPropagation()}
-              className="origin-center transition-transform duration-200 ease-out"
-              style={{ transform: `scale(${grown ? scale : 1})` }}
+              className="chart-expanded-modal max-h-[88vh] w-[94vw] max-w-[1500px] overflow-auto"
             >
               {children}
             </div>
