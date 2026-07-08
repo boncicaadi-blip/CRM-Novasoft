@@ -149,4 +149,19 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     descriere: "Numarul de oportunitati noi introduse in pipeline in fiecare luna.",
     cumAnalizezi: "Alimentarea pipeline-ului (partea de sus a canalului) e constanta lunar?",
   },
+  plTotalVenituri: {
+    descriere: "Suma veniturilor (recurente + nerecurente) pentru perioada si filtrul selectat (Estimat/Realizat).",
+    formula: "Suma venit_estimat sau venit_realizat din liniile de Venituri, pentru perioada selectata",
+    cumAnalizezi: "Cat venit ai planificat sau ai realizat efectiv in perioada aleasa?",
+  },
+  plTotalCosturi: {
+    descriere: "Suma tuturor costurilor, pe toate grupele (Incadrare), pentru perioada si filtrul selectat.",
+    formula: "Suma valoare_prognozata sau valoare_realizata din liniile de Cheltuieli, pentru perioada selectata",
+    cumAnalizezi: "Cat cost ai planificat sau ai realizat efectiv in perioada aleasa?",
+  },
+  plProfit: {
+    descriere: "Diferenta dintre Total Venituri si Total Costuri, pentru perioada si filtrul selectat.",
+    formula: "Total Venituri - Total Costuri",
+    cumAnalizezi: "Esti pe profit sau pe pierdere in perioada aleasa, la nivelul de detaliu ales (Estimat/Realizat)?",
+  },
 };

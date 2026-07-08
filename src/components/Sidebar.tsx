@@ -95,7 +95,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Management",
     icon: LayoutDashboard,
     moduleKey: "management",
-    items: [{ href: "/management", label: "Rapoarte generale", icon: LayoutDashboard }],
+    items: [
+      { href: "/management", label: "Rapoarte generale", icon: LayoutDashboard },
+      { href: "/management/pl", label: "P&L detaliat", icon: FileBarChart },
+    ],
   },
 ];
 
@@ -108,7 +111,8 @@ function isNavItemActive(pathname: string, href: string): boolean {
     href === "/creante" ||
     href === "/obligatii" ||
     href === "/venituri-cheltuieli" ||
-    href === "/rapoarte"
+    href === "/rapoarte" ||
+    href === "/management"
   ) {
     return pathname === href;
   }
