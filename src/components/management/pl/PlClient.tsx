@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState, Fragment } from "react";
-import { ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { useMemo, useState, useEffect, Fragment } from "react";
+import { createPortal } from "react-dom";
+import { ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet, X } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { VenituriComponentaList } from "@/components/venituri/dashboard/VenituriComponentaList";
@@ -49,14 +50,31 @@ export function PlClient({
   const [showRealizat, setShowRealizat] = useState(true);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Portalul (createPortal) are nevoie de document.body, disponibil doar
+  // dupa montare in client.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- vezi comentariul de mai sus
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!selection) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setSelection(null);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [selection]);
 
   const availableYears = useMemo(() => {
     const years = new Set<number>();
     for (const l of venituriLinii) years.add(Number(l.luna.slice(0, 4)));
     for (const l of cheltuieliLinii) years.add(Number(l.luna.slice(0, 4)));
-    years.add(new Date().getFullYear());
+    if (years.size === 0) years.add(new Date().getFullYear());
     return [...years].sort((a, b) => b - a);
   }, [venituriLinii, cheltuieliLinii]);
+
+  const effectiveSelectedYear = availableYears.includes(Number(selectedYear)) ? selectedYear : String(availableYears[0]);
 
   const { from, to } = useMemo(() => {
     const now = new Date();
@@ -71,7 +89,7 @@ export function PlClient({
       return { from: new Date(now.getFullYear(), 0, 1), to: new Date(now.getFullYear(), 11, 1) };
     }
     if (period === "an") {
-      const y = Number(selectedYear) || now.getFullYear();
+      const y = Number(effectiveSelectedYear) || now.getFullYear();
       return { from: new Date(y, 0, 1), to: new Date(y, 11, 1) };
     }
     if (period === "custom" && customFrom && customTo) {
@@ -80,7 +98,7 @@ export function PlClient({
     const toateLunile = [...venituriLinii.map((l) => l.luna), ...cheltuieliLinii.map((l) => l.luna)].sort();
     if (toateLunile.length === 0) return { from: firstOfMonth(now), to: firstOfMonth(now) };
     return { from: firstOfMonth(new Date(toateLunile[0])), to: firstOfMonth(new Date(toateLunile[toateLunile.length - 1])) };
-  }, [period, selectedYear, customFrom, customTo, venituriLinii, cheltuieliLinii]);
+  }, [period, effectiveSelectedYear, customFrom, customTo, venituriLinii, cheltuieliLinii]);
 
   const report = useMemo(
     () => buildPlReport(venituriLinii, cheltuieliLinii, incadrareOrdine, from, to),
@@ -269,7 +287,7 @@ export function PlClient({
         </select>
         {period === "an" && (
           <select
-            value={selectedYear}
+            value={effectiveSelectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
             className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
           >
@@ -364,11 +382,11 @@ export function PlClient({
           Bifeaza cel putin Estimat sau Realizat ca sa vezi tabelul.
         </p>
       ) : (
-        <div className="mb-4 max-h-[70vh] overflow-auto rounded-xl border border-border-subtle">
+        <div className="mb-4 overflow-x-auto rounded-xl border border-border-subtle">
           <table className="w-full border-collapse text-sm">
-            <thead className="sticky top-0 z-20">
+            <thead>
               <tr className="border-b border-border-subtle bg-surface-1">
-                <th className="sticky left-0 z-30 bg-surface-1 px-3 py-2 text-left text-xs font-medium text-text-muted">
+                <th className="sticky left-0 z-10 bg-surface-1 px-3 py-2 text-left text-xs font-medium text-text-muted">
                   Linie
                 </th>
                 {report.luni.map((luna) => (
@@ -385,7 +403,7 @@ export function PlClient({
                 </th>
               </tr>
               <tr className="border-b border-border-subtle bg-surface-1">
-                <th className="sticky left-0 z-30 bg-surface-1 px-3 py-1 text-left text-[10px] text-text-faint" />
+                <th className="sticky left-0 z-10 bg-surface-1 px-3 py-1 text-left text-[10px] text-text-faint" />
                 {report.luni.map((luna) => (
                   <Fragment key={luna.luna}>
                     {showEstimat && (
@@ -457,26 +475,43 @@ export function PlClient({
         </div>
       )}
 
-      {selection && (
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs text-text-muted">
-              Compozitie: <span className="text-text-secondary">{selection.label}</span>
-              {selection.luna && (
-                <span className="text-text-secondary"> · {report.luni.find((l) => l.luna === selection.luna)?.label}</span>
-              )}
-            </p>
-            <button onClick={() => setSelection(null)} className="text-xs text-text-muted hover:text-text-primary">
-              Inchide
-            </button>
-          </div>
-          {selection.kind === "venit" ? (
-            <VenituriComponentaList linii={selectionLinii as VenitLinie[]} />
-          ) : (
-            <CheltuieliComponentaList linii={selectionLinii as CheltuialaLinie[]} />
-          )}
-        </div>
-      )}
+      {mounted &&
+        selection &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+            onClick={() => setSelection(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-xl border border-border-subtle bg-surface-1 shadow-2xl"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+                <p className="text-sm text-text-muted">
+                  Compozitie: <span className="font-medium text-text-primary">{selection.label}</span>
+                  {selection.luna && (
+                    <span className="text-text-secondary"> · {report.luni.find((l) => l.luna === selection.luna)?.label}</span>
+                  )}
+                </p>
+                <button
+                  onClick={() => setSelection(null)}
+                  title="Inchide (Esc)"
+                  className="rounded-md p-1.5 text-text-muted transition hover:bg-surface-2 hover:text-text-primary"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="overflow-y-auto p-4">
+                {selection.kind === "venit" ? (
+                  <VenituriComponentaList linii={selectionLinii as VenitLinie[]} />
+                ) : (
+                  <CheltuieliComponentaList linii={selectionLinii as CheltuialaLinie[]} />
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
