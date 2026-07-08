@@ -1,6 +1,7 @@
 "use server";
 
 import { fetchAnafCompanyInfo } from "@/lib/anaf";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Cauta date de identificare ale firmei dupa CUI - nume, judet, oras,
@@ -13,6 +14,15 @@ import { fetchAnafCompanyInfo } from "@/lib/anaf";
  * categorie pe cont).
  */
 export async function lookupAnafCompanyAction(cui: string) {
+  // Datele sunt oricum publice (acelasi lucru il obtii direct de pe ANAF),
+  // dar cerem totusi un user autentificat, ca sa nu expunem un apel gratuit
+  // catre API-ul extern oricui nimereste peste actiune.
+  const supabase = await createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData?.user) {
+    return { success: false as const, error: "Trebuie sa fii autentificat." };
+  }
+
   const { data, error } = await fetchAnafCompanyInfo(cui);
 
   if (!data) {
