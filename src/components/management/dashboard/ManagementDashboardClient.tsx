@@ -6,6 +6,7 @@ import { formatEur } from "@/lib/format";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { ExpandableChart } from "@/components/ui/ExpandableChart";
+import { DashboardChartGrid, type DashboardChartItem } from "@/components/ui/DashboardChartGrid";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { generateManagementInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { MANAGEMENT_KPI_DEFINITIONS } from "@/lib/management-kpi-definitions";
@@ -115,6 +116,96 @@ export function ManagementDashboardClient({
   }));
 
   const diferentaEstimatVsRealizatProfit = summary.profitRealizat - summary.profitEstimat;
+
+  const managementChartItems: DashboardChartItem[] = [
+    {
+      id: "venit-evolutie",
+      defaultSize: "md",
+      node: (
+        <ExpandableChart>
+          <VenituriEvolutieChart
+            title="Evolutie Venit (Estimat vs. Realizat)"
+            data={venitChartData}
+            color="#22C55E"
+            gradientId="mgmtVenit"
+          />
+        </ExpandableChart>
+      ),
+    },
+    {
+      id: "cheltuieli-evolutie",
+      defaultSize: "md",
+      node: (
+        <ExpandableChart>
+          <VenituriEvolutieChart
+            title="Evolutie Cheltuieli (Estimat vs. Realizat)"
+            data={cheltuieliChartData}
+            color="#F97316"
+            gradientId="mgmtCheltuieli"
+          />
+        </ExpandableChart>
+      ),
+    },
+    {
+      id: "profit-evolutie",
+      defaultSize: "lg",
+      node: (
+        <ExpandableChart>
+          <VenituriEvolutieChart
+            title="Evolutie Profit (Estimat vs. Realizat)"
+            data={profitChartData}
+            color="#A855F7"
+            gradientId="mgmtProfit"
+          />
+        </ExpandableChart>
+      ),
+    },
+    {
+      id: "productivitate-angajat",
+      defaultSize: "sm",
+      node: (
+        <ExpandableChart>
+          <ManagementLineChart
+            title="Productivitate angajat (Venit/Angajat)"
+            data={productivitateData}
+            formatValue={formatEur}
+            color="#22C55E"
+            definition={MANAGEMENT_KPI_DEFINITIONS.productivitateAngajat}
+          />
+        </ExpandableChart>
+      ),
+    },
+    {
+      id: "cost-per-angajat",
+      defaultSize: "sm",
+      node: (
+        <ExpandableChart>
+          <ManagementLineChart
+            title="Cost per angajat"
+            data={costPerAngajatData}
+            formatValue={formatEur}
+            color="#F97316"
+            definition={MANAGEMENT_KPI_DEFINITIONS.costPerAngajat}
+          />
+        </ExpandableChart>
+      ),
+    },
+    {
+      id: "pondere-venit-recurent",
+      defaultSize: "sm",
+      node: (
+        <ExpandableChart>
+          <ManagementLineChart
+            title="Pondere venit recurent"
+            data={ponderesRecurentData}
+            formatValue={(v) => `${Math.round(v)}%`}
+            color="#0070F3"
+            definition={MANAGEMENT_KPI_DEFINITIONS.ponderesVenitRecurent}
+          />
+        </ExpandableChart>
+      ),
+    },
+  ];
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -251,65 +342,10 @@ export function ManagementDashboardClient({
         </div>
       )}
 
-      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ExpandableChart>
-          <VenituriEvolutieChart
-            title="Evolutie Venit (Estimat vs. Realizat)"
-            data={venitChartData}
-            color="#22C55E"
-            gradientId="mgmtVenit"
-          />
-        </ExpandableChart>
-        <ExpandableChart>
-          <VenituriEvolutieChart
-            title="Evolutie Cheltuieli (Estimat vs. Realizat)"
-            data={cheltuieliChartData}
-            color="#F97316"
-            gradientId="mgmtCheltuieli"
-          />
-        </ExpandableChart>
-      </div>
-
-      <div className="mb-4">
-        <ExpandableChart>
-          <VenituriEvolutieChart
-            title="Evolutie Profit (Estimat vs. Realizat)"
-            data={profitChartData}
-            color="#A855F7"
-            gradientId="mgmtProfit"
-          />
-        </ExpandableChart>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <ExpandableChart>
-          <ManagementLineChart
-            title="Productivitate angajat (Venit/Angajat)"
-            data={productivitateData}
-            formatValue={formatEur}
-            color="#22C55E"
-            definition={MANAGEMENT_KPI_DEFINITIONS.productivitateAngajat}
-          />
-        </ExpandableChart>
-        <ExpandableChart>
-          <ManagementLineChart
-            title="Cost per angajat"
-            data={costPerAngajatData}
-            formatValue={formatEur}
-            color="#F97316"
-            definition={MANAGEMENT_KPI_DEFINITIONS.costPerAngajat}
-          />
-        </ExpandableChart>
-        <ExpandableChart>
-          <ManagementLineChart
-            title="Pondere venit recurent"
-            data={ponderesRecurentData}
-            formatValue={(v) => `${Math.round(v)}%`}
-            color="#0070F3"
-            definition={MANAGEMENT_KPI_DEFINITIONS.ponderesVenitRecurent}
-          />
-        </ExpandableChart>
-      </div>
+      <p className="mb-2 text-[11px] text-text-faint">
+        Tine apasat pe iconita <span className="font-medium text-text-secondary">⠿</span> pentru a muta un grafic, sau pe eticheta S/M/L pentru a-i schimba marimea.
+      </p>
+      <DashboardChartGrid storageKey="management-charts-v1" items={managementChartItems} />
 
       {angajati.length === 0 && (
         <p className="mt-4 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-300">

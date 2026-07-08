@@ -8,20 +8,42 @@ import { Maximize2, X } from "lucide-react";
  * (colt dreapta-sus, apare la hover) care il afiseaza pe tot ecranul, marit
  * proportional - ca in Power BI. Functioneaza cu ORICE continut, fara sa
  * ceara modificari in componenta de grafic infasurata (scaleaza vizual prin
- * CSS transform, nu recalculeaza dimensiunile interne ale graficului).
+ * CSS transform, nu recalculeaza dimensiunile interne). Fiindca graficele
+ * Recharts sunt SVG (vectoriale), scalarea ramane perfect clara la orice
+ * marime - nu se pixeleaza precum o imagine.
+ *
+ * Recalculeaza scara si la redimensionarea ferestrei cat timp e deschis, ca
+ * sa ramana corect si daca utilizatorul schimba marimea ferestrei browser-ului.
  */
 export function ExpandableChart({ children }: { children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(false);
   const [scale, setScale] = useState(1);
+  const [grown, setGrown] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!expanded || !containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-    const scaleX = (window.innerWidth * 0.9) / rect.width;
-    const scaleY = (window.innerHeight * 0.85) / rect.height;
-    setScale(Math.min(scaleX, scaleY, 2.5));
+
+    function recalcScale() {
+      const el = containerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const maxWidth = window.innerWidth * 0.94;
+      const maxHeight = window.innerHeight * 0.88;
+      setScale(Math.min(maxWidth / rect.width, maxHeight / rect.height, 3.5));
+    }
+
+    recalcScale();
+    // Dublu rAF: primul frame se picteaza la scara 1 (grown=false), apoi
+    // tranzitia CSS anima spre scara calculata - efect de "crestere" placut,
+    // ca in Power BI, in loc sa apara brusc la marimea finala.
+    const grow = requestAnimationFrame(() => requestAnimationFrame(() => setGrown(true)));
+    window.addEventListener("resize", recalcScale);
+    return () => {
+      window.removeEventListener("resize", recalcScale);
+      cancelAnimationFrame(grow);
+    };
   }, [expanded]);
 
   useEffect(() => {
@@ -32,6 +54,11 @@ export function ExpandableChart({ children }: { children: React.ReactNode }) {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [expanded]);
+
+  function close() {
+    setGrown(false);
+    setExpanded(false);
+  }
 
   return (
     <div className="group relative">
@@ -46,17 +73,24 @@ export function ExpandableChart({ children }: { children: React.ReactNode }) {
 
       {expanded && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-8"
-          onClick={() => setExpanded(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+          onClick={close}
         >
           <button
-            onClick={() => setExpanded(false)}
+            onClick={close}
             title="Inchide (Esc)"
-            className="absolute right-4 top-4 rounded-md border border-border-subtle bg-surface-2 p-2 text-text-primary transition hover:bg-surface-2"
+            className="absolute right-5 top-5 rounded-md border border-border-subtle bg-surface-2 p-2 text-text-primary shadow-lg transition hover:bg-surface-1"
           >
             <X size={20} />
           </button>
-          <div onClick={(e) => e.stopPropagation()} style={{ transform: `scale(${scale})` }}>
+          <p className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 text-xs text-white/50">
+            Esc sau click in afara pentru a inchide
+          </p>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="origin-center transition-transform duration-200 ease-out"
+            style={{ transform: `scale(${grown ? scale : 1})` }}
+          >
             {children}
           </div>
         </div>
