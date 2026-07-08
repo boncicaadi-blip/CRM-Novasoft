@@ -56,12 +56,13 @@ const NAV_GROUPS: NavGroup[] = [
     icon: GitBranch,
     moduleKey: "crm",
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/pipeline", label: "Pipeline", icon: GitBranch },
-      { href: "/actiuni", label: "Actiuni", icon: ListChecks },
-      { href: "/calendar", label: "Calendar", icon: CalendarDays },
-      { href: "/dashboard/harta", label: "Harta", icon: Map },
-      { href: "/rapoarte", label: "Raport Comercial", icon: FileBarChart },
+      { href: "/pipeline", label: "Pipeline", icon: GitBranch, submodule: "pipeline" },
+      { href: "/actiuni", label: "Actiuni", icon: ListChecks, submodule: "actiuni" },
+      { href: "/calendar", label: "Calendar", icon: CalendarDays, submodule: "calendar" },
+      { href: "/dashboard/harta", label: "Harta", icon: Map, submodule: "harta" },
+      { href: "/dashboard", label: "Dashboard Comercial", icon: LayoutDashboard, submodule: "dashboard" },
+      { href: "/rapoarte", label: "Raport Comercial", icon: FileBarChart, submodule: "raport_comercial" },
+      { href: "/rapoarte/lunar", label: "Raport Comercial Lunar", icon: FileBarChart, submodule: "raport_comercial_lunar" },
     ],
   },
   {
@@ -94,10 +95,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Management",
     icon: LayoutDashboard,
     moduleKey: "management",
-    items: [
-      { href: "/management", label: "Rapoarte generale", icon: LayoutDashboard },
-      { href: "/management/raport-lunar", label: "Raport comercial lunar", icon: FileBarChart },
-    ],
+    items: [{ href: "/management", label: "Rapoarte generale", icon: LayoutDashboard }],
   },
 ];
 
@@ -105,7 +103,13 @@ const NAV_GROUPS: NavGroup[] = [
  * la fel pentru /venituri-cheltuieli, care e prefix pentru Dashboard/Harta/
  * Cheltuieli (toate rute proprii, nu sub-pagini ale Venituri). */
 function isNavItemActive(pathname: string, href: string): boolean {
-  if (href === "/dashboard" || href === "/creante" || href === "/obligatii" || href === "/venituri-cheltuieli") {
+  if (
+    href === "/dashboard" ||
+    href === "/creante" ||
+    href === "/obligatii" ||
+    href === "/venituri-cheltuieli" ||
+    href === "/rapoarte"
+  ) {
     return pathname === href;
   }
   return pathname.startsWith(href);
@@ -260,7 +264,7 @@ export function Sidebar({
                   onClick={() => setOpenGroupId(group.id)}
                   className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
                     groupHasActive
-                      ? "text-text-primary font-medium"
+                      ? "text-[#E8007A] font-medium"
                       : "text-text-secondary hover:bg-[#E8007A]/10 hover:text-[#E8007A]"
                   }`}
                 >

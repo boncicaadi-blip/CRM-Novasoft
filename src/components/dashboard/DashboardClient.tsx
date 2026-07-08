@@ -109,7 +109,7 @@ export function DashboardClient({
     <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-heading text-text-primary">Dashboard</h1>
+          <h1 className="text-lg font-heading text-text-primary">Dashboard Comercial</h1>
           <p className="text-sm text-text-muted">
             {filtered.length} din {opportunities.length} oportunitati
             {filtered.length !== opportunities.length ? " (filtrate)" : ""}

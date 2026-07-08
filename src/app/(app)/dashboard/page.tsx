@@ -5,7 +5,7 @@ import { STAGES } from "@/lib/constants";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function DashboardPage() {
-  await requireModuleAccess("crm");
+  await requireModuleAccess("crm", "dashboard");
 
   const [opportunities, history, allNomenclatoare] = await Promise.all([
     getOpportunities(),

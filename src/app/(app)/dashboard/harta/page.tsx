@@ -6,7 +6,7 @@ import type { FeatureCollection, Geometry } from "geojson";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function MapDashboardPage() {
-  await requireModuleAccess("crm");
+  await requireModuleAccess("crm", "harta");
 
   const [opportunities, geoJsonRaw] = await Promise.all([
     getOpportunities(),

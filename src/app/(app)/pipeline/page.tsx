@@ -5,7 +5,7 @@ import { STAGES } from "@/lib/constants";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function PipelinePage() {
-  await requireModuleAccess("crm");
+  await requireModuleAccess("crm", "pipeline");
 
   const [opportunities, allNomenclatoare] = await Promise.all([
     getOpportunities(),

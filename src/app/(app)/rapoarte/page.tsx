@@ -6,7 +6,7 @@ import { RaportComercialClient } from "@/components/rapoarte/RaportComercialClie
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 
 export default async function RaportComercialPage() {
-  await requireModuleAccess("crm");
+  await requireModuleAccess("crm", "raport_comercial");
 
   const oSaptamanaInUrma = new Date();
   oSaptamanaInUrma.setDate(oSaptamanaInUrma.getDate() - 7);

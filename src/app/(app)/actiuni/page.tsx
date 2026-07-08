@@ -16,7 +16,7 @@ export default async function ActiuniPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
-  await requireModuleAccess("crm");
+  await requireModuleAccess("crm", "actiuni");
 
   const [opportunities, profiles] = await Promise.all([getOpportunities(), getProfiles()]);
   const { filter } = await searchParams;

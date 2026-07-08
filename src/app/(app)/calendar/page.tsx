@@ -6,7 +6,7 @@ import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { BackButton } from "@/components/BackButton";
 
 export default async function CalendarPage() {
-  await requireModuleAccess("crm");
+  await requireModuleAccess("crm", "calendar");
 
   const [opportunities, profiles] = await Promise.all([getOpportunities(), getProfiles()]);
   const actions = buildCalendarActions(opportunities);

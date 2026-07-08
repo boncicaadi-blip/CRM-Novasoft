@@ -15,6 +15,15 @@ export const ALL_MODULES: ModuleKey[] = ["crm", "creante_obligatii", "venituri_c
  * nu apare aici (CRM, Management) nu are inca granularitate de submodul -
  * acces se da doar la nivel de modul intreg. */
 export const SUBMODULES: Partial<Record<ModuleKey, { key: string; label: string }[]>> = {
+  crm: [
+    { key: "pipeline", label: "Pipeline" },
+    { key: "actiuni", label: "Actiuni" },
+    { key: "calendar", label: "Calendar" },
+    { key: "harta", label: "Harta" },
+    { key: "dashboard", label: "Dashboard Comercial" },
+    { key: "raport_comercial", label: "Raport Comercial" },
+    { key: "raport_comercial_lunar", label: "Raport Comercial Lunar" },
+  ],
   venituri_cheltuieli: [
     { key: "venituri", label: "Venituri" },
     { key: "venituri_dashboard", label: "Dashboard Venituri" },
