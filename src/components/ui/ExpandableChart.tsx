@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
 
 /**
@@ -12,14 +13,27 @@ import { Maximize2, X } from "lucide-react";
  * Recharts sunt SVG (vectoriale), scalarea ramane perfect clara la orice
  * marime - nu se pixeleaza precum o imagine.
  *
- * Recalculeaza scara si la redimensionarea ferestrei cat timp e deschis, ca
- * sa ramana corect si daca utilizatorul schimba marimea ferestrei browser-ului.
+ * Fereastra marita se randeaza printr-un portal direct in <body>, NU in
+ * locul unde e definita in arborele de componente. Asta e important: daca
+ * am lasat-o "in loc" (ex. in interiorul unui card care poate fi tras/mutat
+ * cu drag-and-drop - vezi DashboardChartGrid), orice `transform` aplicat de
+ * un parinte (inclusiv temporar, in timpul unui drag) ar fi rupt
+ * pozitionarea `fixed` a ferestrei marite (devine relativa la acel parinte,
+ * nu la ecran) - de-asta graficul marit parea "la fel ca inainte". Portalul
+ * elimina complet acest risc, indiferent unde e folosita componenta.
  */
 export function ExpandableChart({ children }: { children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(false);
   const [scale, setScale] = useState(1);
   const [grown, setGrown] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Portalul (createPortal) are nevoie de document.body, care nu exista pe
+  // server - "mounted" devine true abia dupa montare in client, moment din
+  // care e sigur sa randam portalul. Pattern standard pentru portaluri.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- vezi comentariul de mai sus
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!expanded || !containerRef.current) return;
@@ -63,38 +77,44 @@ export function ExpandableChart({ children }: { children: React.ReactNode }) {
   return (
     <div className="group relative">
       <button
-        onClick={() => setExpanded(true)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setExpanded(true);
+        }}
         title="Mareste graficul"
-        className="absolute right-2 top-2 z-10 rounded-md bg-black/30 p-1.5 text-text-primary opacity-0 backdrop-blur-sm transition group-hover:opacity-100 hover:bg-black/50 hover:text-text-primary"
+        className="absolute right-2 top-2 z-20 rounded-md bg-black/30 p-1.5 text-text-primary opacity-0 backdrop-blur-sm transition group-hover:opacity-100 hover:bg-black/50 hover:text-text-primary"
       >
         <Maximize2 size={14} />
       </button>
       <div ref={containerRef}>{children}</div>
 
-      {expanded && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
-          onClick={close}
-        >
-          <button
-            onClick={close}
-            title="Inchide (Esc)"
-            className="absolute right-5 top-5 rounded-md border border-border-subtle bg-surface-2 p-2 text-text-primary shadow-lg transition hover:bg-surface-1"
-          >
-            <X size={20} />
-          </button>
-          <p className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 text-xs text-white/50">
-            Esc sau click in afara pentru a inchide
-          </p>
+      {mounted &&
+        expanded &&
+        createPortal(
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="origin-center transition-transform duration-200 ease-out"
-            style={{ transform: `scale(${grown ? scale : 1})` }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+            onClick={close}
           >
-            {children}
-          </div>
-        </div>
-      )}
+            <button
+              onClick={close}
+              title="Inchide (Esc)"
+              className="absolute right-5 top-5 rounded-md border border-border-subtle bg-surface-2 p-2 text-text-primary shadow-lg transition hover:bg-surface-1"
+            >
+              <X size={20} />
+            </button>
+            <p className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 text-xs text-white/50">
+              Esc sau click in afara pentru a inchide
+            </p>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="origin-center transition-transform duration-200 ease-out"
+              style={{ transform: `scale(${grown ? scale : 1})` }}
+            >
+              {children}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
