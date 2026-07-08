@@ -124,4 +124,29 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     descriere: "Evolutia ARR-ului activ in timp, pe baza istoricului de schimbari al oportunitatilor.",
     cumAnalizezi: "Arata daca pipeline-ul creste sau scade in timp - un trend descendent sustinut merita investigat.",
   },
+  raportLunarPipelineEvolutie: {
+    descriere: "Pipeline-ul total activ la finalul fiecarei luni, reconstruit din istoricul de modificari.",
+    formula: "Pipeline Total Activ, calculat la ultima zi a fiecarei luni",
+    cumAnalizezi: "Pipeline-ul creste consistent de la o luna la alta, sau stagneaza?",
+  },
+  raportLunarForecastEvolutie: {
+    descriere: "Forecast-ul total (pipeline ponderat cu probabilitatea) la finalul fiecarei luni.",
+    formula: "Forecast Total, calculat la ultima zi a fiecarei luni",
+    cumAnalizezi: "Estimarea realista de venit viitor urmeaza aceeasi tendinta ca pipeline-ul brut?",
+  },
+  raportLunarCastigatVsTarget: {
+    descriere:
+      "Valoarea oportunitatilor devenite Castigata in fiecare luna (prima data la care au ajuns la acest status), comparata cu targetul lunar (target anual / 12).",
+    formula: "Suma (ARR + licenta on-premise + implementare) pentru oportunitatile castigate in luna respectiva",
+    cumAnalizezi: "Ce luni au atins sau depasit targetul, si care au ramas sub el?",
+  },
+  raportLunarRataCastig: {
+    descriere: "Numarul de oportunitati castigate vs. pierdute in fiecare luna (prima data la care au ajuns la statusul respectiv).",
+    formula: "Nr. castigate / (Nr. castigate + Nr. pierdute) in luna",
+    cumAnalizezi: "Rata de conversie se imbunatateste sau se inrautateste in timp?",
+  },
+  raportLunarOportunitatiNoi: {
+    descriere: "Numarul de oportunitati noi introduse in pipeline in fiecare luna.",
+    cumAnalizezi: "Alimentarea pipeline-ului (partea de sus a canalului) e constanta lunar?",
+  },
 };

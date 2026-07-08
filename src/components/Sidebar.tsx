@@ -94,7 +94,10 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Management",
     icon: LayoutDashboard,
     moduleKey: "management",
-    items: [{ href: "/management", label: "Rapoarte generale", icon: LayoutDashboard }],
+    items: [
+      { href: "/management", label: "Rapoarte generale", icon: LayoutDashboard },
+      { href: "/management/raport-lunar", label: "Raport comercial lunar", icon: FileBarChart },
+    ],
   },
 ];
 

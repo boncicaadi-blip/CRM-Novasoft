@@ -78,3 +78,52 @@ export async function getPipelineSnapshotAt(targetDate: Date): Promise<PipelineS
 }
 
 export { EMPTY_SNAPSHOT };
+
+export interface RaportLunarRow {
+  lunaStart: string; // ISO date (prima zi a lunii)
+  pipelineTotalActiv: number;
+  forecastTotal: number;
+  castigatTotal: number;
+  nrCastigate: number;
+  nrPierdute: number;
+  nrOportunitatiNoi: number;
+  targetLunar: number | null;
+}
+
+/**
+ * B-13: evolutia lunara (ultimele `monthsBack` luni calendaristice) pentru
+ * raportul comercial lunar din Management. Reutilizeaza mecanismul deja
+ * existent de reconstructie din istoric (get_pipeline_snapshot_at), nu
+ * necesita niciun camp nou de completat manual.
+ */
+export async function getRaportLunar(monthsBack = 12): Promise<RaportLunarRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_raport_lunar", { months_back: monthsBack });
+
+  if (error) {
+    console.error("getRaportLunar error:", error.message);
+    return [];
+  }
+
+  const rows = (data ?? []) as {
+    luna_start: string;
+    pipeline_total_activ: number | null;
+    forecast_total: number | null;
+    castigat_total: number | null;
+    nr_castigate: number | null;
+    nr_pierdute: number | null;
+    nr_oportunitati_noi: number | null;
+    target_lunar: number | null;
+  }[];
+
+  return rows.map((row) => ({
+    lunaStart: row.luna_start,
+    pipelineTotalActiv: row.pipeline_total_activ ?? 0,
+    forecastTotal: row.forecast_total ?? 0,
+    castigatTotal: row.castigat_total ?? 0,
+    nrCastigate: row.nr_castigate ?? 0,
+    nrPierdute: row.nr_pierdute ?? 0,
+    nrOportunitatiNoi: row.nr_oportunitati_noi ?? 0,
+    targetLunar: row.target_lunar,
+  }));
+}
