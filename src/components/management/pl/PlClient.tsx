@@ -5,9 +5,11 @@ import { createPortal } from "react-dom";
 import { ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet, X } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { VenituriComponentaList } from "@/components/venituri/dashboard/VenituriComponentaList";
 import { CheltuieliComponentaList } from "@/components/cheltuieli/dashboard/CheltuieliComponentaList";
+import { generatePlInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { formatEur } from "@/lib/format";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { buildPlReport, type PlGrupValoare } from "@/lib/pl-analytics";
@@ -388,6 +390,14 @@ export function PlClient({
           icon={<Wallet size={16} />}
           accent="#0070F3"
           definition={KPI_DEFINITIONS.plProfit}
+        />
+      </div>
+
+      <div className="mb-4">
+        <AiInsightCard
+          title="Interpretare AI (Claude)"
+          generateAction={generatePlInsightAction}
+          historyAction={() => getAiInsightHistoryAction("pl_insight")}
         />
       </div>
 

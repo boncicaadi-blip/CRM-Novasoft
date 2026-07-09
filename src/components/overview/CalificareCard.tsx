@@ -2,7 +2,7 @@
 
 import { EditableCard } from "@/components/overview/EditableCard";
 import { InfoRow, LabeledInput } from "@/components/overview/InfoCard";
-import { TextInput, Select, Checkbox } from "@/components/form/fields";
+import { TextInput, TextArea, Select, Checkbox } from "@/components/form/fields";
 import { DA_NU_NUSTIU } from "@/lib/constants";
 import type { Opportunity } from "@/types/opportunity";
 
@@ -15,9 +15,17 @@ const FIELDS = [
   "contabilitate_interna",
   "solutie_contabilitate",
   "mai_multe_firme_grup",
+  "nr_societati_suplimentare",
+  "nume_societati_suplimentare",
+  "furnizori_combustibil_1",
+  "furnizori_combustibil_2",
+  "furnizori_combustibil_3",
+  "furnizori_gps_1",
+  "furnizori_gps_2",
   "nr_vehicule",
   "interes_planificator",
   "potential_fonduri_europene",
+  "detalii_suplimentare_software",
 ];
 
 function yesNo(value: boolean) {
@@ -46,9 +54,17 @@ export function CalificareCard({
           <InfoRow label="Contabilitate interna" value={o.contabilitate_interna} />
           <InfoRow label="Solutie contabilitate" value={o.solutie_contabilitate} />
           <InfoRow label="Mai multe firme in grup" value={yesNo(o.mai_multe_firme_grup)} />
+          <InfoRow label="Nr societati suplimentare" value={o.nr_societati_suplimentare} />
+          <InfoRow label="Nume societati suplimentare" value={o.nume_societati_suplimentare} />
+          <InfoRow label="Furnizor combustibil 1" value={o.furnizori_combustibil_1} />
+          <InfoRow label="Furnizor combustibil 2" value={o.furnizori_combustibil_2} />
+          <InfoRow label="Furnizor combustibil 3" value={o.furnizori_combustibil_3} />
+          <InfoRow label="Furnizor GPS 1" value={o.furnizori_gps_1} />
+          <InfoRow label="Furnizor GPS 2" value={o.furnizori_gps_2} />
           <InfoRow label="Nr vehicule" value={o.nr_vehicule} />
           <InfoRow label="Interes planificator" value={yesNo(o.interes_planificator)} />
           <InfoRow label="Potential fonduri europene" value={yesNo(o.potential_fonduri_europene)} />
+          <InfoRow label="Detalii suplimentare solutie software" value={o.detalii_suplimentare_software} />
         </>
       }
       editContent={
@@ -99,6 +115,27 @@ export function CalificareCard({
             label="Mai multe firme in grup"
             defaultChecked={o.mai_multe_firme_grup}
           />
+          <LabeledInput label="Nr societati suplimentare">
+            <TextInput type="number" name="nr_societati_suplimentare" defaultValue={o.nr_societati_suplimentare ?? ""} />
+          </LabeledInput>
+          <LabeledInput label="Nume societati suplimentare">
+            <TextInput name="nume_societati_suplimentare" defaultValue={o.nume_societati_suplimentare ?? ""} />
+          </LabeledInput>
+          <LabeledInput label="Furnizor combustibil 1">
+            <TextInput name="furnizori_combustibil_1" defaultValue={o.furnizori_combustibil_1 ?? ""} />
+          </LabeledInput>
+          <LabeledInput label="Furnizor combustibil 2">
+            <TextInput name="furnizori_combustibil_2" defaultValue={o.furnizori_combustibil_2 ?? ""} />
+          </LabeledInput>
+          <LabeledInput label="Furnizor combustibil 3">
+            <TextInput name="furnizori_combustibil_3" defaultValue={o.furnizori_combustibil_3 ?? ""} />
+          </LabeledInput>
+          <LabeledInput label="Furnizor GPS 1">
+            <TextInput name="furnizori_gps_1" defaultValue={o.furnizori_gps_1 ?? ""} />
+          </LabeledInput>
+          <LabeledInput label="Furnizor GPS 2">
+            <TextInput name="furnizori_gps_2" defaultValue={o.furnizori_gps_2 ?? ""} />
+          </LabeledInput>
           <LabeledInput label="Nr vehicule">
             <TextInput type="number" name="nr_vehicule" defaultValue={o.nr_vehicule ?? ""} />
           </LabeledInput>
@@ -112,6 +149,9 @@ export function CalificareCard({
             label="Potential fonduri europene"
             defaultChecked={o.potential_fonduri_europene}
           />
+          <LabeledInput label="Detalii suplimentare solutie software">
+            <TextArea name="detalii_suplimentare_software" defaultValue={o.detalii_suplimentare_software ?? ""} />
+          </LabeledInput>
         </>
       }
     />

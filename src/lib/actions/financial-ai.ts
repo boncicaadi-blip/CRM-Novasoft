@@ -16,9 +16,13 @@ import {
   buildCheltuieliInsightPrompt,
   buildManagementInsightSystemPrompt,
   buildManagementInsightPrompt,
+  buildPlInsightSystemPrompt,
+  buildPlInsightPrompt,
   parseFinancialInsightResponse,
   type FinancialInsightResult,
 } from "@/lib/ai/financial-prompts";
+import { getNomenclatoare } from "@/lib/data/nomenclatoare";
+import { buildPlReport } from "@/lib/pl-analytics";
 import { getCreante, getCreanteIncasari, getCreanteTargetsLunare } from "@/lib/data/creante";
 import { computeCreanteSummary } from "@/lib/creante-analytics";
 import { groupByAgingCreante, topRiscCreante, buildGrtSeries } from "@/lib/creante-dashboard-analytics";
@@ -384,6 +388,59 @@ export async function generateManagementInsightAction(): Promise<{
       prompt: buildManagementInsightPrompt(sumar),
       maxTokens: 4000,
       onUsage: (usage) => logAiUsage(supabase, "management_insight", usage),
+    });
+    return { success: true, data: parseFinancialInsightResponse(raw) };
+  } catch (err) {
+    return handleAiError(err);
+  }
+}
+
+async function buildPlSummaryText(): Promise<string> {
+  const [venituriLinii, cheltuieliLinii, nomenclatoare] = await Promise.all([
+    getVenituriLinii(),
+    getCheltuieliLinii(),
+    getNomenclatoare(),
+  ]);
+  const incadrareOrdine = (nomenclatoare.cheltuiala_incadrare ?? []).map((n) => n.valoare);
+
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const report = buildPlReport(venituriLinii, cheltuieliLinii, incadrareOrdine, from, now);
+
+  const grupeSortate = [...report.costuriGrupe].sort((a, b) => b.totalRealizat - a.totalRealizat);
+
+  const lines = [
+    `Ultimele 12 luni:`,
+    `Total Venituri: realizat ${formatEur(report.totalVenituri.totalRealizat)} (estimat ${formatEur(report.totalVenituri.totalEstimat)})`,
+    `  - din care Recurente: realizat ${formatEur(report.venituri.linii[0]?.totalRealizat ?? 0)}, Nerecurente: realizat ${formatEur(report.venituri.linii[1]?.totalRealizat ?? 0)}`,
+    `Total Costuri: realizat ${formatEur(report.totalCosturi.totalRealizat)} (estimat ${formatEur(report.totalCosturi.totalEstimat)})`,
+    `Profit: realizat ${formatEur(report.profit.totalRealizat)} (estimat ${formatEur(report.profit.totalEstimat)})`,
+    ``,
+    `Costuri pe grupe (Incadrare), realizat vs. estimat, sortate descrescator dupa realizat:`,
+    ...grupeSortate.map(
+      (g) =>
+        `- ${g.incadrare}: realizat ${formatEur(g.totalRealizat)} (estimat ${formatEur(g.totalEstimat)})`
+    ),
+  ];
+
+  return lines.join("\n");
+}
+
+export async function generatePlInsightAction(): Promise<{
+  success: boolean;
+  message?: string;
+  data?: FinancialInsightResult;
+}> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
+
+  try {
+    const sumar = await buildPlSummaryText();
+    const raw = await askClaude({
+      system: buildPlInsightSystemPrompt(),
+      prompt: buildPlInsightPrompt(sumar),
+      maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "pl_insight", usage),
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {

@@ -53,6 +53,15 @@ export function buildManagementInsightPrompt(sumar: string): string {
   return `Sumarul de Management (P&L simplificat), la data curenta:\n\n${sumar}`;
 }
 
+export function buildPlInsightSystemPrompt(): string {
+  return `Esti un asistent financiar intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar detaliat P&L (Venituri pe tip, Costuri pe grupe de Incadrare/Clasa, Estimat vs. Realizat) si trebuie sa produci o interpretare utila pentru administrator - unde se duc banii, ce grupe de cost se abat cel mai mult de la estimat, si ce ar merita investigat.
+${REGULI_COMUNE}`;
+}
+
+export function buildPlInsightPrompt(sumar: string): string {
+  return `Sumarul P&L detaliat, la data curenta:\n\n${sumar}`;
+}
+
 export function buildVenituriInsightSystemPrompt(): string {
   return `Esti un asistent financiar intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar al situatiei de Venituri (buget estimat vs. realizat, din contracte si vanzari) si trebuie sa produci o interpretare utila pentru administrator.
 ${REGULI_COMUNE}`;

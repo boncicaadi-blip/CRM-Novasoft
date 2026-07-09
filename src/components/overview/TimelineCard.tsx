@@ -76,7 +76,7 @@ export function TimelineCard({
   }
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4 lg:col-span-5">
+    <div className="rounded-xl border border-border-subtle bg-surface-1 p-4 lg:col-span-2">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Timeline</p>
         <AiSummaryCard opportunityId={opportunityId} />
