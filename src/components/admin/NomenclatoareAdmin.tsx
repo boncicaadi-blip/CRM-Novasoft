@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Trash2, EyeOff, Eye, GripVertical } from "lucide-react";
+import { Plus, Trash2, EyeOff, Eye, GripVertical, AlertTriangle } from "lucide-react";
 import { NOMENCLATOR_CATEGORII } from "@/lib/constants";
 import {
   createNomenclatorAction,
@@ -19,12 +19,19 @@ export function NomenclatoareAdmin({ items }: { items: Nomenclator[] }) {
     .filter((i) => i.categorie === activeTab)
     .sort((a, b) => a.ordine - b.ordine);
 
+  const parentOptions = categorieInfo.parentCategorie
+    ? items.filter((i) => i.categorie === categorieInfo.parentCategorie && i.activ).sort((a, b) => a.ordine - b.ordine)
+    : null;
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
       {/* Tab-uri categorii: scroll orizontal pe mobil, lista verticala pe desktop */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 lg:w-56 lg:shrink-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0">
         {NOMENCLATOR_CATEGORII.map((cat) => {
           const count = items.filter((i) => i.categorie === cat.value && i.activ).length;
+          const neincadrate = cat.parentCategorie
+            ? items.filter((i) => i.categorie === cat.value && i.activ && !i.parent_id).length
+            : 0;
           return (
             <button
               key={cat.value}
@@ -35,7 +42,14 @@ export function NomenclatoareAdmin({ items }: { items: Nomenclator[] }) {
                   : "text-text-secondary hover:bg-surface-1"
               }`}
             >
-              {cat.label}
+              <span className="flex items-center gap-1.5">
+                {cat.label}
+                {neincadrate > 0 && (
+                  <span title={`${neincadrate} fara incadrare parinte`}>
+                    <AlertTriangle size={11} className="text-amber-500" />
+                  </span>
+                )}
+              </span>
               <span className="rounded-full bg-surface-2 px-1.5 text-[11px] text-text-secondary">
                 {count}
               </span>
@@ -46,7 +60,20 @@ export function NomenclatoareAdmin({ items }: { items: Nomenclator[] }) {
 
       {/* Lista valorilor pentru categoria selectata */}
       <div className="flex-1">
-        <AddNomenclatorForm categorie={activeTab} hasColor={categorieInfo.hasColor} hasProbability={categorieInfo.hasProbability} />
+        {categorieInfo.parentCategorie && (
+          <p className="mb-3 text-xs text-text-muted">
+            Fiecare valoare de aici apartine unei categorii părinte ({" "}
+            {NOMENCLATOR_CATEGORII.find((c) => c.value === categorieInfo.parentCategorie)?.label} ) - alege-o la
+            adaugare/editare, ca formularul de Cheltuieli sa poata filtra corect. Valorile marcate cu{" "}
+            <AlertTriangle size={11} className="inline text-amber-500" /> nu au inca o incadrare parinte setata.
+          </p>
+        )}
+        <AddNomenclatorForm
+          categorie={activeTab}
+          hasColor={categorieInfo.hasColor}
+          hasProbability={categorieInfo.hasProbability}
+          parentOptions={parentOptions}
+        />
         <div className="mt-4 space-y-1.5">
           {categoryItems.map((item) => (
             <NomenclatorRow
@@ -54,6 +81,7 @@ export function NomenclatoareAdmin({ items }: { items: Nomenclator[] }) {
               item={item}
               hasColor={categorieInfo.hasColor}
               hasProbability={categorieInfo.hasProbability}
+              parentOptions={parentOptions}
             />
           ))}
           {categoryItems.length === 0 && (
@@ -67,14 +95,45 @@ export function NomenclatoareAdmin({ items }: { items: Nomenclator[] }) {
   );
 }
 
+function ParentSelect({
+  parentOptions,
+  defaultValue,
+}: {
+  parentOptions: Nomenclator[];
+  defaultValue?: string | null;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-[11px] text-text-muted">Incadrare parinte</label>
+      <select
+        name="parent_id"
+        required
+        defaultValue={defaultValue ?? ""}
+        className="w-full sm:w-48 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
+      >
+        <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
+          Selecteaza...
+        </option>
+        {parentOptions.map((p) => (
+          <option key={p.id} value={p.id} style={{ backgroundColor: "var(--surface-1)" }}>
+            {p.valoare}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function AddNomenclatorForm({
   categorie,
   hasColor,
   hasProbability,
+  parentOptions,
 }: {
   categorie: string;
   hasColor: boolean;
   hasProbability: boolean;
+  parentOptions: Nomenclator[] | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -113,6 +172,7 @@ function AddNomenclatorForm({
           className="w-full sm:w-48 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
       </div>
+      {parentOptions && <ParentSelect parentOptions={parentOptions} />}
       {hasColor && (
         <div>
           <label className="mb-1 block text-[11px] text-text-muted">Culoare</label>
@@ -169,10 +229,12 @@ function NomenclatorRow({
   item,
   hasColor,
   hasProbability,
+  parentOptions,
 }: {
   item: Nomenclator;
   hasColor: boolean;
   hasProbability: boolean;
+  parentOptions: Nomenclator[] | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -193,6 +255,8 @@ function NomenclatorRow({
     startTransition(() => deleteNomenclatorAction(item.id));
   }
 
+  const parentLabel = parentOptions?.find((p) => p.id === item.parent_id)?.valoare ?? null;
+
   if (editing) {
     return (
       <form
@@ -205,6 +269,7 @@ function NomenclatorRow({
           required
           className="w-full sm:w-48 rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
         />
+        {parentOptions && <ParentSelect parentOptions={parentOptions} defaultValue={item.parent_id} />}
         {hasColor && (
           <input
             type="color"
@@ -264,6 +329,19 @@ function NomenclatorRow({
       <button onClick={() => setEditing(true)} className="flex-1 text-left text-sm text-text-primary hover:text-[#E8007A]">
         {item.valoare}
       </button>
+      {parentOptions && (
+        parentLabel ? (
+          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-secondary">{parentLabel}</span>
+        ) : (
+          <span
+            title="Fara incadrare parinte - editeaza si asigneaza una"
+            className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-500"
+          >
+            <AlertTriangle size={11} />
+            neincadrat
+          </span>
+        )
+      )}
       {hasProbability && item.probability !== null && (
         <span className="text-xs text-text-muted">{Math.round(item.probability * 100)}%</span>
       )}

@@ -104,6 +104,28 @@ function NomOption({ n }: { n: Nomenclator }) {
   );
 }
 
+/**
+ * Filtreaza optiunile de Clasa dupa Incadrarea selectata (relatia
+ * parinte-copil din nomenclatoare). Clasele fara parinte setat inca
+ * (neincadrate) raman mereu vizibile, indiferent de Incadrare, ca sa nu
+ * dispara silentios pana Adi le asigneaza o incadrare din Setari ->
+ * Nomenclatoare. `alwaysIncludeValoare` pastreaza vizibila si valoarea
+ * curenta a unei linii existente, chiar daca nu (mai) se potriveste cu
+ * Incadrarea aleasa - util la editare, ca sa nu "dispara" valoarea salvata.
+ */
+function clasaOptionsForIncadrare(
+  clasaOptions: Nomenclator[],
+  incadrareOptions: Nomenclator[],
+  incadrareValoare: string,
+  alwaysIncludeValoare?: string
+): Nomenclator[] {
+  const incadrareId = incadrareOptions.find((i) => i.valoare === incadrareValoare)?.id;
+  if (!incadrareId) return clasaOptions;
+  return clasaOptions.filter(
+    (c) => !c.parent_id || c.parent_id === incadrareId || c.valoare === alwaysIncludeValoare
+  );
+}
+
 interface LunaChartDatum {
   luna: string;
   label: string;
@@ -654,7 +676,16 @@ function CheltuieliTable({
                   </td>
                   <td className="px-3 py-2 text-text-secondary">
                     {isEditing ? (
-                      <select value={incadrare} onChange={(e) => setIncadrare(e.target.value)} className={selectClass}>
+                      <select
+                        value={incadrare}
+                        onChange={(e) => {
+                          const nou = e.target.value;
+                          setIncadrare(nou);
+                          const filtrate = clasaOptionsForIncadrare(clasaOptions, incadrareOptions, nou, clasa);
+                          if (!filtrate.some((c) => c.valoare === clasa)) setClasa(filtrate[0]?.valoare ?? "");
+                        }}
+                        className={selectClass}
+                      >
                         {incadrareOptions.map((n) => (
                           <NomOption key={n.id} n={n} />
                         ))}
@@ -666,7 +697,7 @@ function CheltuieliTable({
                   <td className="px-3 py-2 text-text-secondary">
                     {isEditing ? (
                       <select value={clasa} onChange={(e) => setClasa(e.target.value)} className={selectClass}>
-                        {clasaOptions.map((n) => (
+                        {clasaOptionsForIncadrare(clasaOptions, incadrareOptions, incadrare, l.clasa).map((n) => (
                           <NomOption key={n.id} n={n} />
                         ))}
                       </select>
@@ -1022,7 +1053,11 @@ function ContractCheltuialaFormModal({
 }) {
   const [isPending, startTransition] = useTransition();
   const [incadrare, setIncadrare] = useState(contract?.incadrare ?? incadrareOptions[0]?.valoare ?? "");
-  const [clasa, setClasa] = useState(contract?.clasa ?? clasaOptions[0]?.valoare ?? "");
+  const [clasa, setClasa] = useState(
+    contract?.clasa ??
+      clasaOptionsForIncadrare(clasaOptions, incadrareOptions, incadrareOptions[0]?.valoare ?? "")[0]?.valoare ??
+      ""
+  );
   const [detaliu, setDetaliu] = useState(contract?.detaliu ?? "");
   const [tipCheltuiala, setTipCheltuiala] = useState<TipCheltuiala>(contract?.tip_cheltuiala ?? "Fixe");
   const [frecventa, setFrecventa] = useState<FrecventaCheltuiala>(contract?.frecventa ?? "Recurenta");
@@ -1110,7 +1145,16 @@ function ContractCheltuialaFormModal({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Incadrare *</label>
-              <select value={incadrare} onChange={(e) => setIncadrare(e.target.value)} className={selectClass}>
+              <select
+                value={incadrare}
+                onChange={(e) => {
+                  const nou = e.target.value;
+                  setIncadrare(nou);
+                  const filtrate = clasaOptionsForIncadrare(clasaOptions, incadrareOptions, nou);
+                  if (!filtrate.some((c) => c.valoare === clasa)) setClasa(filtrate[0]?.valoare ?? "");
+                }}
+                className={selectClass}
+              >
                 {incadrareOptions.map((n) => (
                   <NomOption key={n.id} n={n} />
                 ))}
@@ -1119,7 +1163,7 @@ function ContractCheltuialaFormModal({
             <div>
               <label className={labelClass}>Clasa *</label>
               <select value={clasa} onChange={(e) => setClasa(e.target.value)} className={selectClass}>
-                {clasaOptions.map((n) => (
+                {clasaOptionsForIncadrare(clasaOptions, incadrareOptions, incadrare).map((n) => (
                   <NomOption key={n.id} n={n} />
                 ))}
               </select>
@@ -1319,7 +1363,9 @@ function ManualCheltuialaFormModal({
 }) {
   const [isPending, startTransition] = useTransition();
   const [incadrare, setIncadrare] = useState(incadrareOptions[0]?.valoare ?? "");
-  const [clasa, setClasa] = useState(clasaOptions[0]?.valoare ?? "");
+  const [clasa, setClasa] = useState(
+    clasaOptionsForIncadrare(clasaOptions, incadrareOptions, incadrareOptions[0]?.valoare ?? "")[0]?.valoare ?? ""
+  );
   const [detaliu, setDetaliu] = useState("");
   const [frecventa, setFrecventa] = useState<FrecventaCheltuiala>("Nerecurenta");
   const [valoarePrognozata, setValoarePrognozata] = useState("");
@@ -1365,7 +1411,16 @@ function ManualCheltuialaFormModal({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className={labelClass}>Incadrare *</label>
-              <select value={incadrare} onChange={(e) => setIncadrare(e.target.value)} className={selectClass}>
+              <select
+                value={incadrare}
+                onChange={(e) => {
+                  const nou = e.target.value;
+                  setIncadrare(nou);
+                  const filtrate = clasaOptionsForIncadrare(clasaOptions, incadrareOptions, nou);
+                  if (!filtrate.some((c) => c.valoare === clasa)) setClasa(filtrate[0]?.valoare ?? "");
+                }}
+                className={selectClass}
+              >
                 {incadrareOptions.map((n) => (
                   <NomOption key={n.id} n={n} />
                 ))}
@@ -1374,7 +1429,7 @@ function ManualCheltuialaFormModal({
             <div>
               <label className={labelClass}>Clasa *</label>
               <select value={clasa} onChange={(e) => setClasa(e.target.value)} className={selectClass}>
-                {clasaOptions.map((n) => (
+                {clasaOptionsForIncadrare(clasaOptions, incadrareOptions, incadrare).map((n) => (
                   <NomOption key={n.id} n={n} />
                 ))}
               </select>

@@ -207,7 +207,9 @@ export type NomenclatorCategorie =
   | "tip_venit_contract"
   | "stadiu_contract"
   | "status_contract"
-  | "modalitate_facturare";
+  | "modalitate_facturare"
+  | "cheltuiala_incadrare"
+  | "cheltuiala_clasa";
 
 export interface Nomenclator {
   id: string;
@@ -215,6 +217,8 @@ export interface Nomenclator {
   valoare: string;
   culoare: string | null;
   probability: number | null;
+  /** Doar pentru categorii ierarhice (ex. cheltuiala_clasa) - id-ul parintelui (ex. randul din cheltuiala_incadrare). */
+  parent_id: string | null;
   ordine: number;
   activ: boolean;
   created_at: string;

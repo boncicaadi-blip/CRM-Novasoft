@@ -45,6 +45,7 @@ export async function createNomenclator(payload: {
   valoare: string;
   culoare?: string | null;
   probability?: number | null;
+  parent_id?: string | null;
   ordine?: number;
 }) {
   const supabase = await createClient();
@@ -62,7 +63,7 @@ export async function createNomenclator(payload: {
 
 export async function updateNomenclator(
   id: string,
-  payload: Partial<Pick<Nomenclator, "valoare" | "culoare" | "probability" | "ordine" | "activ">>
+  payload: Partial<Pick<Nomenclator, "valoare" | "culoare" | "probability" | "parent_id" | "ordine" | "activ">>
 ) {
   const supabase = await createClient();
   const { data, error } = await supabase

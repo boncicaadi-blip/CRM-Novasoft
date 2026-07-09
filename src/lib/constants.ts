@@ -128,7 +128,14 @@ export const PROBABILITY_BY_STAGE: Record<string, number> = {
 };
 
 // Etichete prietenoase pentru categoriile de nomenclator (afisate in pagina de administrare)
-export const NOMENCLATOR_CATEGORII: { value: string; label: string; hasColor: boolean; hasProbability: boolean }[] = [
+export const NOMENCLATOR_CATEGORII: {
+  value: string;
+  label: string;
+  hasColor: boolean;
+  hasProbability: boolean;
+  /** Daca e setat, aceasta categorie e un "copil" ierarhic al categoriei numite aici (ex: cheltuiala_clasa e copil al cheltuiala_incadrare). */
+  parentCategorie?: string;
+}[] = [
   { value: "stage", label: "Stage (etape pipeline)", hasColor: true, hasProbability: true },
   { value: "status", label: "Status", hasColor: true, hasProbability: false },
   { value: "domeniu_activitate", label: "Domeniul de activitate", hasColor: false, hasProbability: false },
@@ -143,4 +150,12 @@ export const NOMENCLATOR_CATEGORII: { value: string; label: string; hasColor: bo
   { value: "venit_serviciu", label: "Venituri: Serviciu", hasColor: false, hasProbability: false },
   { value: "modalitate_facturare", label: "Venituri: Modalitate facturare", hasColor: false, hasProbability: false },
   { value: "stadiu_contract", label: "Venituri: Stadiu contract", hasColor: false, hasProbability: false },
+  { value: "cheltuiala_incadrare", label: "Cheltuieli: Incadrare (grup)", hasColor: false, hasProbability: false },
+  {
+    value: "cheltuiala_clasa",
+    label: "Cheltuieli: Clasa (subincadrare)",
+    hasColor: false,
+    hasProbability: false,
+    parentCategorie: "cheltuiala_incadrare",
+  },
 ];

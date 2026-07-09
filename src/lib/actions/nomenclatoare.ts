@@ -36,6 +36,7 @@ export async function createNomenclatorAction(formData: FormData) {
   const culoare = (formData.get("culoare") as string) || null;
   const probabilityRaw = formData.get("probability") as string;
   const probability = probabilityRaw ? Number(probabilityRaw) : null;
+  const parentId = (formData.get("parent_id") as string) || null;
   const ordineRaw = formData.get("ordine") as string;
   const ordine = ordineRaw ? Number(ordineRaw) : 0;
 
@@ -43,7 +44,7 @@ export async function createNomenclatorAction(formData: FormData) {
     throw new Error("Categoria si valoarea sunt obligatorii.");
   }
 
-  await createNomenclator({ categorie, valoare, culoare, probability, ordine });
+  await createNomenclator({ categorie, valoare, culoare, probability, parent_id: parentId, ordine });
   revalidatePath("/setari/nomenclatoare");
   revalidatePath("/oportunitati/noua");
 }
@@ -55,10 +56,11 @@ export async function updateNomenclatorAction(id: string, formData: FormData) {
   const culoare = (formData.get("culoare") as string) || null;
   const probabilityRaw = formData.get("probability") as string;
   const probability = probabilityRaw ? Number(probabilityRaw) : null;
+  const parentId = (formData.get("parent_id") as string) || null;
   const ordineRaw = formData.get("ordine") as string;
   const ordine = ordineRaw ? Number(ordineRaw) : 0;
 
-  await updateNomenclator(id, { valoare, culoare, probability, ordine });
+  await updateNomenclator(id, { valoare, culoare, probability, parent_id: parentId, ordine });
   revalidatePath("/setari/nomenclatoare");
 }
 
