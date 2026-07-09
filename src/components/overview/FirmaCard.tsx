@@ -20,6 +20,7 @@ const FIELDS = [
   "oras",
   "nr_angajati",
   "cifra_afaceri",
+  "nr_vehicule",
 ];
 
 const optionStyle = { backgroundColor: "var(--surface-1)", color: "var(--text-primary)" };
@@ -139,6 +140,9 @@ export function FirmaCard({
           <LabeledInput label="Cifra de afaceri (EUR, manual)">
             <MoneyInput name="cifra_afaceri" defaultValue={o.cifra_afaceri ?? 0} />
           </LabeledInput>
+          <LabeledInput label="Nr vehicule">
+            <TextInput type="number" name="nr_vehicule" defaultValue={o.nr_vehicule ?? ""} />
+          </LabeledInput>
 
           {error && (
             <p className="rounded-md bg-red-500/10 px-2.5 py-2 text-xs text-red-400">{error}</p>
@@ -176,6 +180,7 @@ export function FirmaCard({
           <InfoRow label="Oras" value={o.oras} />
           <InfoRow label="Nr angajati" value={o.nr_angajati} />
           <InfoRow label="Cifra de afaceri" value={o.cifra_afaceri ? formatEur(o.cifra_afaceri) : null} />
+          <InfoRow label="Nr vehicule" value={o.nr_vehicule} />
         </div>
       )}
     </div>
