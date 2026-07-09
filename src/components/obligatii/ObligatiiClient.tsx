@@ -41,7 +41,9 @@ import {
   toggleProposSprePlataAction,
   deleteObligatiiAction,
   deleteAllObligatiiAction,
+  marcheazaPlatiteBulkAction,
 } from "@/lib/actions/obligatii";
+import { getTodayISO } from "@/lib/date";
 import type { Obligatie, ObligatiiImportBatch, ObligatiePlata } from "@/types/obligatii";
 
 type StatusFilter = "toate" | "restanta" | "la_zi" | "platita";
@@ -298,6 +300,21 @@ export function ObligatiiClient({
     startTransition(async () => {
       const result = await deleteObligatiiAction(Array.from(checkedIds));
       if (result.success) setCheckedIds(new Set());
+    });
+  }
+
+  function handlePlateasaSelected() {
+    if (checkedIds.size === 0) return;
+    if (
+      !confirm(
+        `Platesti integral ${checkedIds.size} facturi selectate, cu data de azi? Pentru o plata partiala, intra individual pe factura respectiva.`
+      )
+    )
+      return;
+    startTransition(async () => {
+      const result = await marcheazaPlatiteBulkAction(Array.from(checkedIds), getTodayISO());
+      if (result.success) setCheckedIds(new Set());
+      else if (result.message) alert(result.message);
     });
   }
 
@@ -645,14 +662,24 @@ export function ObligatiiClient({
           Sterge tot
         </button>
         {checkedIds.size > 0 && (
-          <button
-            onClick={handleDeleteSelected}
-            disabled={isPending}
-            className="ml-auto flex items-center gap-1.5 rounded-md bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
-          >
-            <Trash2 size={13} />
-            Sterge {checkedIds.size} selectate
-          </button>
+          <>
+            <button
+              onClick={handlePlateasaSelected}
+              disabled={isPending}
+              className="ml-auto flex items-center gap-1.5 rounded-md bg-green-500/10 px-2.5 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/20 disabled:opacity-50"
+            >
+              <Wallet size={13} />
+              Plateste {checkedIds.size} selectate
+            </button>
+            <button
+              onClick={handleDeleteSelected}
+              disabled={isPending}
+              className="flex items-center gap-1.5 rounded-md bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+            >
+              <Trash2 size={13} />
+              Sterge {checkedIds.size} selectate
+            </button>
+          </>
         )}
       </div>
 

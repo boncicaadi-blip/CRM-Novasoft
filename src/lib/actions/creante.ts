@@ -501,6 +501,48 @@ export async function marcheazaIncasatAction(
   return { success: true };
 }
 
+/**
+ * Incasare in bloc - pentru cazul in care se incaseaza mai multe facturi
+ * simultan (acelasi client sau clienti diferiti). Fiecare factura selectata
+ * se incaseaza INTEGRAL (sold-ul ei curent, citit proaspat din baza de
+ * date). Daca o factura trebuie incasata doar partial, se lasa nebifata
+ * aici si se trateaza individual, din fisa facturii.
+ */
+export async function marcheazaIncasateBulkAction(
+  ids: string[],
+  dataIncasare: string
+): Promise<{ success: boolean; message?: string; nrProcesate?: number }> {
+  const { supabase, userId, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot marca incasari." };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { data: creante, error: fetchError } = await supabase
+    .from("creante")
+    .select("id, sold")
+    .in("id", ids);
+
+  if (fetchError) return { success: false, message: fetchError.message };
+
+  const deIncasat = (creante ?? []).filter((c) => Number(c.sold) !== 0);
+  if (deIncasat.length === 0) {
+    return { success: false, message: "Facturile selectate sunt deja incasate integral." };
+  }
+
+  const rows = deIncasat.map((c) => ({
+    creanta_id: c.id,
+    valoare: Number(c.sold),
+    data_incasare: dataIncasare,
+    observatie: "Incasare in bloc (selectie multipla)",
+    creat_de: userId,
+  }));
+
+  const { error: insertError } = await supabase.from("creante_incasari").insert(rows);
+  if (insertError) return { success: false, message: insertError.message };
+
+  revalidatePath("/creante");
+  return { success: true, nrProcesate: rows.length };
+}
+
 export async function undoIncasareAction(
   incasareId: string
 ): Promise<{ success: boolean; message?: string }> {

@@ -40,7 +40,8 @@ import {
   type PeriodFilter,
   type AgingBucket,
 } from "@/lib/creante-analytics";
-import { toggleProposSpreIncasareAction, deleteCreanteAction, deleteAllCreanteAction } from "@/lib/actions/creante";
+import { toggleProposSpreIncasareAction, deleteCreanteAction, deleteAllCreanteAction, marcheazaIncasateBulkAction } from "@/lib/actions/creante";
+import { getTodayISO } from "@/lib/date";
 import { syncPartnersAction } from "@/lib/actions/partners";
 import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
 import type { ClientOption } from "@/lib/data/venituri";
@@ -131,7 +132,7 @@ export function CreanteClient({
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [customMonths, setCustomMonths] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("restanta");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("la_zi");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Creanta | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
@@ -335,6 +336,27 @@ export function CreanteClient({
     startTransition(async () => {
       const result = await deleteCreanteAction(Array.from(checkedIds));
       if (result.success) setCheckedIds(new Set());
+    });
+  }
+
+  function handleIncaseazaSelected() {
+    if (checkedIds.size === 0) return;
+    if (
+      !confirm(
+        `Incasezi integral ${checkedIds.size} facturi selectate, cu data de azi? Pentru o incasare partiala, intra individual pe factura respectiva.`
+      )
+    )
+      return;
+    startTransition(async () => {
+      const result = await marcheazaIncasateBulkAction(Array.from(checkedIds), getTodayISO());
+      if (result.success) {
+        setCheckedIds(new Set());
+        setSyncMessage(
+          result.nrProcesate ? `${result.nrProcesate} facturi incasate integral.` : "Nicio factura de incasat in selectie."
+        );
+      } else {
+        setSyncMessage(result.message ?? "Eroare la incasare in bloc.");
+      }
     });
   }
 
@@ -751,14 +773,24 @@ export function CreanteClient({
           Sterge tot
         </button>
         {checkedIds.size > 0 && (
-          <button
-            onClick={handleDeleteSelected}
-            disabled={isPending}
-            className="ml-auto flex items-center gap-1.5 rounded-md bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
-          >
-            <Trash2 size={13} />
-            Sterge {checkedIds.size} selectate
-          </button>
+          <>
+            <button
+              onClick={handleIncaseazaSelected}
+              disabled={isPending}
+              className="ml-auto flex items-center gap-1.5 rounded-md bg-green-500/10 px-2.5 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/20 disabled:opacity-50"
+            >
+              <Wallet size={13} />
+              Incaseaza {checkedIds.size} selectate
+            </button>
+            <button
+              onClick={handleDeleteSelected}
+              disabled={isPending}
+              className="flex items-center gap-1.5 rounded-md bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
+            >
+              <Trash2 size={13} />
+              Sterge {checkedIds.size} selectate
+            </button>
+          </>
         )}
       </div>
 

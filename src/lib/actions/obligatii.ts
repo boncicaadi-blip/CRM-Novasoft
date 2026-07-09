@@ -363,6 +363,48 @@ export async function marcheazaPlatitAction(
   return { success: true };
 }
 
+/**
+ * Plata in bloc - pentru cazul in care se platesc mai multe facturi
+ * simultan (acelasi furnizor sau furnizori diferiti). Fiecare factura
+ * selectata se plateste INTEGRAL (sold-ul ei curent, citit proaspat din
+ * baza de date). Daca o factura trebuie platita doar partial, se lasa
+ * nebifata aici si se trateaza individual, din fisa facturii.
+ */
+export async function marcheazaPlatiteBulkAction(
+  ids: string[],
+  dataPlata: string
+): Promise<{ success: boolean; message?: string; nrProcesate?: number }> {
+  const { supabase, userId, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot marca plati." };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { data: obligatii, error: fetchError } = await supabase
+    .from("obligatii")
+    .select("id, sold")
+    .in("id", ids);
+
+  if (fetchError) return { success: false, message: fetchError.message };
+
+  const dePlatit = (obligatii ?? []).filter((o) => Number(o.sold) > 0);
+  if (dePlatit.length === 0) {
+    return { success: false, message: "Facturile selectate sunt deja platite integral." };
+  }
+
+  const rows = dePlatit.map((o) => ({
+    obligatie_id: o.id,
+    valoare: Number(o.sold),
+    data_plata: dataPlata,
+    observatie: "Plata in bloc (selectie multipla)",
+    creat_de: userId,
+  }));
+
+  const { error: insertError } = await supabase.from("obligatii_plati").insert(rows);
+  if (insertError) return { success: false, message: insertError.message };
+
+  revalidatePath("/obligatii");
+  return { success: true, nrProcesate: rows.length };
+}
+
 export async function undoPlataAction(
   plataId: string
 ): Promise<{ success: boolean; message?: string }> {
