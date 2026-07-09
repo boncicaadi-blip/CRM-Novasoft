@@ -244,3 +244,15 @@ export interface TimelineEntry {
   created_at: string;
   profiles?: { full_name: string } | null;
 }
+
+export interface OpportunityOferta {
+  id: string;
+  opportunity_id: string;
+  versiune: number;
+  nume_fisier: string;
+  storage_path: string;
+  marime_bytes: number | null;
+  creat_de: string | null;
+  creat_la: string;
+  profiles?: { full_name: string } | null;
+}

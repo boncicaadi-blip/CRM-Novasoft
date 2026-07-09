@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet, X } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { VenituriComponentaList } from "@/components/venituri/dashboard/VenituriComponentaList";
 import { CheltuieliComponentaList } from "@/components/cheltuieli/dashboard/CheltuieliComponentaList";
@@ -144,6 +145,22 @@ export function PlClient({
     );
   }, [selection, venituriLinii, cheltuieliLinii, report.luni]);
 
+  const selectionTotals = useMemo(() => {
+    if (!selection) return { estimat: 0, realizat: 0 };
+    if (selection.kind === "venit") {
+      const linii = selectionLinii as VenitLinie[];
+      return {
+        estimat: linii.reduce((s, l) => s + l.venit_estimat, 0),
+        realizat: linii.reduce((s, l) => s + (l.venit_realizat ?? 0), 0),
+      };
+    }
+    const linii = selectionLinii as CheltuialaLinie[];
+    return {
+      estimat: linii.reduce((s, l) => s + l.valoare_prognozata, 0),
+      realizat: linii.reduce((s, l) => s + (l.valoare_realizata ?? 0), 0),
+    };
+  }, [selection, selectionLinii]);
+
   function AmountButton({ value, onClick }: { value: number; onClick: () => void }) {
     return (
       <button type="button" onClick={onClick} className="w-full text-right transition hover:text-[#E8007A] hover:underline">
@@ -248,14 +265,10 @@ export function PlClient({
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5">
           <h1 className="text-lg font-heading text-text-primary">P&amp;L detaliat</h1>
-          <p className="text-sm text-text-muted">
-            Venituri si costuri pe grupe (Incadrare) si linii (Clasa), calculate automat din Venituri/Cheltuieli. Editezi
-            grupele/liniile din Setari → Nomenclatoare (Incadrare Cheltuieli / Clasa Cheltuieli). Click pe orice suma
-            pentru a vedea din ce se compune.
-          </p>
+          <InfoTooltip title="P&L detaliat" definition={KPI_DEFINITIONS.plPageHelp} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -273,7 +286,7 @@ export function PlClient({
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <select
           value={period}
           onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
@@ -350,7 +363,7 @@ export function PlClient({
         </label>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <KpiInfoCard
           label="Total Venituri"
           value={formatEur(showRealizat ? report.totalVenituri.totalRealizat : report.totalVenituri.totalEstimat)}
@@ -370,6 +383,7 @@ export function PlClient({
         <KpiInfoCard
           label="Profit"
           value={formatEur(showRealizat ? report.profit.totalRealizat : report.profit.totalEstimat)}
+          valueColor={(showRealizat ? report.profit.totalRealizat : report.profit.totalEstimat) >= 0 ? "#22C55E" : "#EF4444"}
           sublabel={showEstimat && showRealizat ? `Estimat: ${formatEur(report.profit.totalEstimat)}` : undefined}
           icon={<Wallet size={16} />}
           accent="#0070F3"
@@ -500,6 +514,19 @@ export function PlClient({
                 >
                   <X size={18} />
                 </button>
+              </div>
+              <div className="flex items-center gap-4 border-b border-border-subtle bg-surface-2 px-4 py-2.5 text-sm">
+                {showEstimat && (
+                  <p className="text-text-secondary">
+                    Total estimat: <span className="font-mono font-medium text-text-primary">{formatEur(selectionTotals.estimat)}</span>
+                  </p>
+                )}
+                {showRealizat && (
+                  <p className="text-text-secondary">
+                    Total realizat: <span className="font-mono font-medium text-text-primary">{formatEur(selectionTotals.realizat)}</span>
+                  </p>
+                )}
+                <span className="ml-auto text-xs text-text-muted">{selectionLinii.length} inregistrari</span>
               </div>
               <div className="overflow-y-auto p-4">
                 {selection.kind === "venit" ? (

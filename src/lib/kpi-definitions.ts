@@ -164,4 +164,9 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     formula: "Total Venituri - Total Costuri",
     cumAnalizezi: "Esti pe profit sau pe pierdere in perioada aleasa, la nivelul de detaliu ales (Estimat/Realizat)?",
   },
+  plPageHelp: {
+    descriere:
+      "Venituri si costuri pe grupe (Incadrare) si linii (Clasa), calculate automat din Venituri/Cheltuieli. Editezi grupele/liniile din Setari → Nomenclatoare (Incadrare Cheltuieli / Clasa Cheltuieli).",
+    cumAnalizezi: "Click pe orice suma din tabel pentru a vedea din ce se compune.",
+  },
 };

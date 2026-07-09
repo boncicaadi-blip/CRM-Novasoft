@@ -7,6 +7,7 @@ import type { KpiDefinition } from "@/lib/kpi-definitions";
 export function KpiInfoCard({
   label,
   value,
+  valueColor,
   sublabel,
   icon,
   accent = "#E8007A",
@@ -18,6 +19,8 @@ export function KpiInfoCard({
 }: {
   label: string;
   value: string;
+  /** Culoare optionala pentru valoare (ex: rosu/verde pentru profit negativ/pozitiv). Implicit ramane text-primary. */
+  valueColor?: string;
   sublabel?: string;
   icon?: ReactNode;
   accent?: string;
@@ -77,7 +80,9 @@ export function KpiInfoCard({
         <p className="font-mono text-lg text-text-faint">Date insuficiente</p>
       ) : (
         <div className="flex items-baseline gap-1.5">
-          <p className="font-mono text-2xl font-medium text-text-primary">{value}</p>
+          <p className="font-mono text-2xl font-medium text-text-primary" style={valueColor ? { color: valueColor } : undefined}>
+            {value}
+          </p>
           {trend && trend !== "flat" && (
             <span style={{ color: trendColor }}>
               {trend === "up" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}

@@ -5,6 +5,7 @@ import { BackLink } from "@/components/BackLink";
 import { getOpportunity, getProfiles } from "@/lib/data/opportunities";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { getTimeline } from "@/lib/data/timeline";
+import { getOferteOportunitate } from "@/lib/data/oferte";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
@@ -17,6 +18,7 @@ import { ActiuneCard } from "@/components/overview/ActiuneCard";
 import { PricingCard } from "@/components/overview/PricingCard";
 import { SursaCard } from "@/components/overview/SursaCard";
 import { TimelineCard } from "@/components/overview/TimelineCard";
+import { OferteCard } from "@/components/overview/OferteCard";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import type { Opportunity } from "@/types/opportunity";
 
@@ -39,7 +41,7 @@ export default async function OpportunityOverviewPage({
 
   if (!o) notFound();
 
-  const timeline = await getTimeline(id);
+  const [timeline, oferte] = await Promise.all([getTimeline(id), getOferteOportunitate(id)]);
 
   const stageColor = nomenclatoare["stage"]?.find((s) => s.valoare === o.stage)?.culoare
     ?? STAGE_COLORS[o.stage]
@@ -122,6 +124,7 @@ export default async function OpportunityOverviewPage({
           currentUserId={userId}
         />
         <PricingCard o={o} tipuriProiect={valori(nomenclatoare["tip_proiect"])} />
+        <OferteCard opportunityId={o.id} oferte={oferte} />
       </div>
 
       {/* Sursa & Context (ingusta) + Timeline (lata) - rand separat, grid de
