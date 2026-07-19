@@ -196,7 +196,7 @@ export function PlClient({
       report.luni.map((l) => ({ label: l.label, estimat: perLuna[l.luna].estimat, realizat: perLuna[l.luna].realizat }));
 
     rows.push(
-      <tr key={grup.incadrare} className={`border-b border-border-subtle ${isVenituri ? "bg-green-500/[0.06]" : "bg-surface-2"}`}>
+      <tr key={grup.incadrare} className={`border-b border-border-subtle ${isVenituri ? "bg-[#132420]" : "bg-surface-2"}`}>
         <td className="sticky left-0 z-10 bg-inherit px-3 py-2">
           <div className="flex items-center gap-1.5">
             <button
@@ -209,7 +209,7 @@ export function PlClient({
             <button
               onClick={() => setChartSelection({ label: grup.incadrare, data: buildChartData(grup.perLuna) })}
               title="Vezi graficul acestei linii"
-              className="shrink-0 text-text-faint transition hover:text-[#E8007A]"
+              className="shrink-0 text-text-secondary transition hover:text-[#E8007A]"
             >
               <BarChart3 size={13} />
             </button>
@@ -265,7 +265,7 @@ export function PlClient({
                     })
                   }
                   title="Vezi graficul acestei linii"
-                  className="shrink-0 text-text-faint transition hover:text-[#E8007A]"
+                  className="shrink-0 text-text-secondary transition hover:text-[#E8007A]"
                 >
                   <BarChart3 size={12} />
                 </button>

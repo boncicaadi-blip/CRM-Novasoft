@@ -43,7 +43,7 @@ export async function approveUserAction(
 export async function updateUserAction(
   userId: string,
   fullName: string,
-  role: "admin" | "user",
+  role: "admin" | "editor" | "viewer",
   moduleAccess: string[],
   submoduleAccess: string[] = []
 ): Promise<{ success: boolean; message?: string }> {

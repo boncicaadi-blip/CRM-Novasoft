@@ -9,7 +9,7 @@ import type { Profile } from "@/types/opportunity";
 export function UserRow({ user }: { user: Profile }) {
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(user.full_name);
-  const [role, setRole] = useState<"admin" | "user">(user.role);
+  const [role, setRole] = useState<"admin" | "editor" | "viewer">(user.role);
   const [moduleAccess, setModuleAccess] = useState<string[]>(user.module_access ?? ["crm"]);
   const [submoduleAccess, setSubmoduleAccess] = useState<string[]>(user.submodule_access ?? []);
   const [isPending, startTransition] = useTransition();
@@ -68,18 +68,21 @@ export function UserRow({ user }: { user: Profile }) {
             />
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value as "admin" | "user")}
+              onChange={(e) => setRole(e.target.value as "admin" | "editor" | "viewer")}
               className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-sm text-text-primary outline-none focus:border-[#E8007A]"
             >
-              <option value="user" style={{ backgroundColor: "var(--surface-1)" }}>
-                Utilizator
+              <option value="viewer" style={{ backgroundColor: "var(--surface-1)" }}>
+                Vizualizator
+              </option>
+              <option value="editor" style={{ backgroundColor: "var(--surface-1)" }}>
+                Editor
               </option>
               <option value="admin" style={{ backgroundColor: "var(--surface-1)" }}>
                 Administrator
               </option>
             </select>
 
-            {role === "user" && (
+            {role !== "admin" && (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[11px] text-text-muted">Module:</span>
                 {ALL_MODULES.map((m) => (
@@ -98,7 +101,7 @@ export function UserRow({ user }: { user: Profile }) {
                 ))}
               </div>
             )}
-            {role === "user" &&
+            {role !== "admin" &&
               ALL_MODULES.map((m) => {
                 const submodules = SUBMODULES[m];
                 if (!submodules || moduleAccess.includes(m)) return null;
@@ -122,6 +125,12 @@ export function UserRow({ user }: { user: Profile }) {
                   </div>
                 );
               })}
+            {role === "viewer" && (
+              <p className="w-full pl-1 text-[11px] text-amber-500">
+                Vizualizatorul poate doar sa vada modulele bifate mai sus - nu poate edita, adauga sau sterge nimic,
+                nicaieri.
+              </p>
+            )}
             {role === "admin" && (
               <span className="text-[11px] text-text-muted">
                 Adminii au acces automat la toate modulele.
@@ -159,12 +168,16 @@ export function UserRow({ user }: { user: Profile }) {
       <td className="px-3 py-2.5">
         <span
           className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-            user.role === "admin" ? "bg-[#E8007A]/20 text-[#E8007A]" : "bg-surface-2 text-text-primary"
+            user.role === "admin"
+              ? "bg-[#E8007A]/20 text-[#E8007A]"
+              : user.role === "editor"
+                ? "bg-surface-2 text-text-primary"
+                : "bg-amber-500/15 text-amber-500"
           }`}
         >
-          {user.role === "admin" ? "Administrator" : "Utilizator"}
+          {user.role === "admin" ? "Administrator" : user.role === "editor" ? "Editor" : "Vizualizator"}
         </span>
-        {user.role === "user" && (
+        {user.role !== "admin" && (
           <span className="ml-2 text-[11px] text-text-muted">
             {[
               ...(user.module_access ?? []).map((m) => MODULE_LABELS[m as ModuleKey] ?? m),

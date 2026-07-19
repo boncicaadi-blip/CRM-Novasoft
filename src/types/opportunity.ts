@@ -169,7 +169,7 @@ export interface Profile {
   id: string;
   full_name: string;
   email: string;
-  role: "admin" | "user";
+  role: "admin" | "editor" | "viewer";
   theme: "light" | "dark" | "system";
   approved: boolean;
   module_access: string[];
