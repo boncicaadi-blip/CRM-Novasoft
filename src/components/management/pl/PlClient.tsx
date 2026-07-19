@@ -2,17 +2,18 @@
 
 import { useMemo, useState, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet, X } from "lucide-react";
+import { ChevronRight, ChevronDown, TrendingUp, TrendingDown, Wallet, X, BarChart3 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { VenituriComponentaList } from "@/components/venituri/dashboard/VenituriComponentaList";
 import { CheltuieliComponentaList } from "@/components/cheltuieli/dashboard/CheltuieliComponentaList";
+import { PlLineChart, type PlLineChartDatum } from "@/components/management/pl/PlLineChart";
 import { generatePlInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { formatEur } from "@/lib/format";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
-import { buildPlReport, type PlGrupValoare } from "@/lib/pl-analytics";
+import { buildPlReport, type PlGrupValoare, type PlValoare } from "@/lib/pl-analytics";
 import type { VenitLinie } from "@/types/venituri";
 import type { CheltuialaLinie } from "@/types/cheltuieli";
 
@@ -30,6 +31,11 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
 type Selection =
   | { kind: "venit"; tipVenit: "Recurent" | "Nerecurent" | null; luna: string | null; label: string }
   | { kind: "cost"; incadrare: string; clasa: string | null; luna: string | null; label: string };
+
+interface ChartSelection {
+  label: string;
+  data: PlLineChartDatum[];
+}
 
 function firstOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -53,6 +59,7 @@ export function PlClient({
   const [showRealizat, setShowRealizat] = useState(true);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [chartSelection, setChartSelection] = useState<ChartSelection | null>(null);
   const [mounted, setMounted] = useState(false);
 
   // Portalul (createPortal) are nevoie de document.body, disponibil doar
@@ -61,13 +68,16 @@ export function PlClient({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (!selection) return;
+    if (!selection && !chartSelection) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setSelection(null);
+      if (e.key === "Escape") {
+        setSelection(null);
+        setChartSelection(null);
+      }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selection]);
+  }, [selection, chartSelection]);
 
   const availableYears = useMemo(() => {
     const years = new Set<number>();
@@ -182,16 +192,28 @@ export function PlClient({
       return { kind: "cost", incadrare: grup.incadrare, clasa: null, luna, label: grup.incadrare };
     };
 
+    const buildChartData = (perLuna: Record<string, PlValoare>): PlLineChartDatum[] =>
+      report.luni.map((l) => ({ label: l.label, estimat: perLuna[l.luna].estimat, realizat: perLuna[l.luna].realizat }));
+
     rows.push(
       <tr key={grup.incadrare} className={`border-b border-border-subtle ${isVenituri ? "bg-green-500/[0.06]" : "bg-surface-2"}`}>
         <td className="sticky left-0 z-10 bg-inherit px-3 py-2">
-          <button
-            onClick={() => toggleGroup(grup.incadrare)}
-            className="flex items-center gap-1.5 text-left text-sm font-medium text-text-primary"
-          >
-            {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-            {grup.incadrare}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => toggleGroup(grup.incadrare)}
+              className="flex items-center gap-1.5 text-left text-sm font-medium text-text-primary"
+            >
+              {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+              {grup.incadrare}
+            </button>
+            <button
+              onClick={() => setChartSelection({ label: grup.incadrare, data: buildChartData(grup.perLuna) })}
+              title="Vezi graficul acestei linii"
+              className="shrink-0 text-text-faint transition hover:text-[#E8007A]"
+            >
+              <BarChart3 size={13} />
+            </button>
+          </div>
         </td>
         {report.luni.map((luna) => (
           <Fragment key={luna.luna}>
@@ -232,7 +254,23 @@ export function PlClient({
 
         rows.push(
           <tr key={`${grup.incadrare}-${linie.clasa}`} className="border-b border-border-faint">
-            <td className="sticky left-0 z-10 bg-surface-1 py-1.5 pl-8 pr-3 text-sm text-text-secondary">{linie.clasa}</td>
+            <td className="sticky left-0 z-10 bg-surface-1 py-1.5 pl-8 pr-3 text-sm text-text-secondary">
+              <div className="flex items-center gap-1.5">
+                <span>{linie.clasa}</span>
+                <button
+                  onClick={() =>
+                    setChartSelection({
+                      label: isVenituri ? linie.clasa : `${grup.incadrare} · ${linie.clasa}`,
+                      data: buildChartData(linie.perLuna),
+                    })
+                  }
+                  title="Vezi graficul acestei linii"
+                  className="shrink-0 text-text-faint transition hover:text-[#E8007A]"
+                >
+                  <BarChart3 size={12} />
+                </button>
+              </div>
+            </td>
             {report.luni.map((luna) => (
               <Fragment key={luna.luna}>
                 {showEstimat && (
@@ -544,6 +582,37 @@ export function PlClient({
                 ) : (
                   <CheltuieliComponentaList linii={selectionLinii as CheltuialaLinie[]} />
                 )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {mounted &&
+        chartSelection &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+            onClick={() => setChartSelection(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl rounded-xl border border-border-subtle bg-surface-1 shadow-2xl"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+                <p className="text-sm text-text-muted">
+                  Grafic: <span className="font-medium text-text-primary">{chartSelection.label}</span>
+                </p>
+                <button
+                  onClick={() => setChartSelection(null)}
+                  title="Inchide (Esc)"
+                  className="rounded-md p-1.5 text-text-muted transition hover:bg-surface-2 hover:text-text-primary"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-4">
+                <PlLineChart data={chartSelection.data} />
               </div>
             </div>
           </div>,
