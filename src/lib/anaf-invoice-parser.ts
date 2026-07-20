@@ -70,7 +70,13 @@ export function parseAnafInvoiceXml(xml: string): ParsedAnafInvoice | null {
     const supplierParty = invoice.AccountingSupplierParty?.Party;
     const customerParty = invoice.AccountingCustomerParty?.Party;
 
-    const valoareText = textOf(invoice.LegalMonetaryTotal?.PayableAmount);
+    // Valoarea totala a facturii = TaxInclusiveAmount (BT-112, totalul cu
+    // TVA). PayableAmount (BT-115) e suma RAMASA de plata - poate fi 0
+    // pentru facturi deja achitate integral (ex. bonuri fiscale/POS, gen
+    // LIDL), ceea ce ar da gresit "valoare 0" desi factura are o valoare
+    // reala. Cadem pe PayableAmount doar daca TaxInclusiveAmount lipseste.
+    const valoareText =
+      textOf(invoice.LegalMonetaryTotal?.TaxInclusiveAmount) ?? textOf(invoice.LegalMonetaryTotal?.PayableAmount);
 
     // Scadenta poate aparea fie direct pe Invoice (cbc:DueDate - cel mai
     // comun in CIUS-RO), fie in interiorul PaymentMeans (mai rar).

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getTodayAndOverdueOpportunities } from "@/lib/data/opportunities";
+import { getAnafFacturiNoiCount } from "@/lib/data/anaf";
 import { Sidebar } from "@/components/Sidebar";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DailySummaryPopup } from "@/components/DailySummaryPopup";
@@ -37,6 +38,8 @@ export default async function AppLayout({
   }
 
   const todayOpportunities = await getTodayAndOverdueOpportunities();
+  const isAdmin = profile?.role === "admin";
+  const anafFacturiNoiCount = isAdmin ? await getAnafFacturiNoiCount() : 0;
 
   // Vercel expune automat SHA-ul commit-ului curent la build (fara
   // configurare suplimentara) - afisam ultimele 7 caractere, identic cu ce
@@ -61,10 +64,11 @@ export default async function AppLayout({
       <DailySummaryPopup opportunities={todayOpportunities} />
       <Sidebar
         userName={profile?.full_name ?? data.user.email ?? "Utilizator"}
-        isAdmin={profile?.role === "admin"}
+        isAdmin={isAdmin}
         moduleAccess={profile?.module_access ?? ["crm"]}
         submoduleAccess={profile?.submodule_access ?? []}
         deployVersion={deployVersion}
+        anafFacturiNoiCount={anafFacturiNoiCount}
       />
       <main className="flex-1 overflow-y-auto pb-14 lg:pb-0">{children}</main>
     </div>

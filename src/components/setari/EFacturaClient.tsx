@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Upload, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { importAnafFacturiAction, syncAnafFacturiAction } from "@/lib/actions/anaf-sync";
+import { importAnafFacturiAction, syncAnafFacturiAction, reprocesareFacturiAction } from "@/lib/actions/anaf-sync";
 import type { AnafFactura } from "@/types/anaf";
 
 type TipFilter = "toate" | "emisa" | "primita";
@@ -66,6 +66,16 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
     });
   }
 
+  function handleReprocess() {
+    if (!confirm("Re-parseaza toate facturile deja descarcate, cu logica actualizata. Nu consuma din cota ANAF (citeste din arhivele deja salvate). Continui?"))
+      return;
+    startTransition(async () => {
+      const result = await reprocesareFacturiAction();
+      setMessage(result.message);
+      if (result.success) router.refresh();
+    });
+  }
+
   const filtered = useMemo(() => {
     return facturi.filter((f) => {
       if (tipFilter !== "toate" && f.tip !== tipFilter) return false;
@@ -82,7 +92,7 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
     });
   }, [facturi, tipFilter, stareFilter, clientQuery, dataFrom, dataTo]);
 
-  const selectabile = filtered.filter((f) => f.stare === "noua");
+  const selectabile = filtered;
 
   function toggleAll() {
     setCheckedIds((prev) => {
@@ -119,14 +129,24 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
     <div>
       <div className="mb-1 flex items-center justify-between">
         <h1 className="text-lg font-heading text-text-primary">E-Factura (SPV)</h1>
-        <button
-          onClick={handleSync}
-          disabled={isPending}
-          className="flex items-center gap-1.5 rounded-md bg-[#E8007A] px-3 py-1.5 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
-          Sincronizeaza facturi
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleReprocess}
+            disabled={isPending}
+            title="Re-parseaza facturile deja descarcate cu logica actualizata, fara sa mai bata la ANAF"
+            className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50"
+          >
+            Reproceseaza descarcate
+          </button>
+          <button
+            onClick={handleSync}
+            disabled={isPending}
+            className="flex items-center gap-1.5 rounded-md bg-[#E8007A] px-3 py-1.5 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
+            Sincronizeaza facturi
+          </button>
+        </div>
       </div>
       <p className="mb-5 text-sm text-text-muted">
         Facturi descarcate automat din SPV. Selecteaza-le pe cele noi si importa-le in Creante (facturi emise) sau
@@ -220,9 +240,8 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
                   <input
                     type="checkbox"
                     checked={checkedIds.has(f.id)}
-                    disabled={f.stare !== "noua"}
                     onChange={() => toggleOne(f.id)}
-                    className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2 disabled:opacity-30"
+                    className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
                   />
                 </td>
                 <td className="px-3 py-2 text-text-secondary">{f.tip === "emisa" ? "Emisa" : "Primita"}</td>

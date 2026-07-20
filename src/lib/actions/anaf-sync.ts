@@ -153,6 +153,92 @@ async function matchAnafFacturiWithExisting(supabase: SupabaseServerClient) {
   }
 }
 
+/**
+ * Re-parseaza facturile deja descarcate (recitind arhiva ZIP deja salvata
+ * in Storage, NU descarcand din nou de la ANAF) - util dupa o corectie in
+ * parser (ex. eliminarea prefixului "WOL", extragerea scadentei/serviciului
+ * care nu erau citite inainte). Actualizeaza doar campurile derivate din
+ * XML, nu atinge starea/legatura cu Creante/Obligatii daca era deja seteta,
+ * si re-verifica deduplicarea dupa nr_factura curatat.
+ */
+export async function reprocesareFacturiAction(): Promise<{ success: boolean; message: string }> {
+  const check = await requireAdminSupabase();
+  if (!check.ok) return { success: false, message: check.message };
+  const { supabase } = check;
+
+  const { data: facturi, error: fetchError } = await supabase
+    .from("anaf_facturi")
+    .select("id, tip, storage_path, stare")
+    .not("storage_path", "is", null);
+
+  if (fetchError) return { success: false, message: fetchError.message };
+  if (!facturi || facturi.length === 0) {
+    return { success: true, message: "Nicio factura de reprocesat." };
+  }
+
+  let nrActualizate = 0;
+  const erori: string[] = [];
+
+  for (const f of facturi) {
+    try {
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from("facturi-anaf")
+        .download(f.storage_path as string);
+      if (downloadError || !fileData) {
+        erori.push(`${f.storage_path}: descarcare din storage esuata`);
+        continue;
+      }
+
+      const zipBuffer = Buffer.from(await fileData.arrayBuffer());
+      const zip = new AdmZip(zipBuffer);
+      const xmlEntry = zip
+        .getEntries()
+        .find((e) => e.entryName.toLowerCase().endsWith(".xml") && !e.entryName.toLowerCase().includes("semnatura"));
+      if (!xmlEntry) continue;
+
+      const parsed = parseAnafInvoiceXml(xmlEntry.getData().toString("utf-8"));
+      if (!parsed) continue;
+
+      const cifPartener = f.tip === "emisa" ? parsed.cifClient : parsed.cifFurnizor;
+      const numePartener = f.tip === "emisa" ? parsed.numeClient : parsed.numeFurnizor;
+
+      const { error: updateError } = await supabase
+        .from("anaf_facturi")
+        .update({
+          nr_factura: parsed.nrFactura,
+          data_factura: parsed.dataFactura,
+          data_scadenta: parsed.dataScadenta,
+          serviciu: parsed.serviciu,
+          valoare: parsed.valoare,
+          moneda: parsed.moneda,
+          cui_partener: cifPartener ?? null,
+          nume_partener: numePartener ?? null,
+        })
+        .eq("id", f.id);
+
+      if (updateError) {
+        erori.push(`${f.id}: ${updateError.message}`);
+        continue;
+      }
+      nrActualizate += 1;
+    } catch (err) {
+      erori.push(`${f.id}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // Re-verifica deduplicarea - unele facturi care nu se potriveau din cauza
+  // prefixului "WOL" (sau altor date lipsa) se pot potrivi acum corect.
+  await matchAnafFacturiWithExisting(supabase);
+
+  revalidatePath("/setari/e-factura");
+  revalidatePath("/setari/integrari");
+
+  const parts = [`${nrActualizate} facturi reprocesate din ${facturi.length}.`];
+  if (erori.length > 0) parts.push(`${erori.length} probleme: ${erori.slice(0, 3).join("; ")}`);
+
+  return { success: true, message: parts.join(" ") };
+}
+
 interface AnafFacturaPentruImport {
   id: string;
   tip: "emisa" | "primita";
@@ -298,18 +384,13 @@ export async function importAnafFacturiAction(
  * id-ul mesajului ANAF), le parseaza si le potriveste cu Creante/Obligatii
  * existente dupa numarul de factura.
  *
- * Nota: aceasta este prima versiune, nu a putut fi testata impotriva unui
- * cont real conectat inainte de livrare - structura raspunsului ANAF (nume
- * exacte de campuri in lista de mesaje) e posibil sa difere usor fata de
- * documentatie. Daca prima sincronizare esueaza sau vine goala desi exista
- * facturi, mesajul de eroare/succes de mai jos ar trebui sa arate destule
- * detalii ca sa corectez rapid.
+ * Extrasa separat de actiunea publica (syncAnafFacturiAction) ca sa poata fi
+ * reutilizata si din job-ul cron de sincronizare automata, care foloseste un
+ * client Supabase cu cheia de service-role (fara sesiune de utilizator).
  */
-export async function syncAnafFacturiAction(): Promise<{ success: boolean; message: string; nrNoi?: number }> {
-  const check = await requireAdminSupabase();
-  if (!check.ok) return { success: false, message: check.message };
-  const { supabase } = check;
-
+async function performAnafSync(
+  supabase: SupabaseServerClient
+): Promise<{ success: boolean; message: string; nrNoi?: number }> {
   const tokenResult = await getValidAccessToken(supabase);
   if ("error" in tokenResult) return { success: false, message: tokenResult.error };
   const { token, cif } = tokenResult;
@@ -419,6 +500,7 @@ export async function syncAnafFacturiAction(): Promise<{ success: boolean; messa
   await matchAnafFacturiWithExisting(supabase);
 
   revalidatePath("/setari/integrari");
+  revalidatePath("/setari/e-factura");
   revalidatePath("/creante");
   revalidatePath("/obligatii");
 
@@ -426,4 +508,23 @@ export async function syncAnafFacturiAction(): Promise<{ success: boolean; messa
   if (erori.length > 0) parts.push(`${erori.length} probleme: ${erori.slice(0, 3).join("; ")}`);
 
   return { success: true, message: parts.join(" "), nrNoi };
+}
+
+/** Actiunea publica (buton din UI) - cere sesiune de admin, apoi delega la performAnafSync. */
+export async function syncAnafFacturiAction(): Promise<{ success: boolean; message: string; nrNoi?: number }> {
+  const check = await requireAdminSupabase();
+  if (!check.ok) return { success: false, message: check.message };
+  return performAnafSync(check.supabase);
+}
+
+/**
+ * Folosita STRICT de ruta de cron (/api/cron/anaf-sync) - primeste un client
+ * Supabase deja creat (cu cheia de service-role, vezi @/lib/supabase/service)
+ * si ruleaza aceeasi sincronizare, fara nicio verificare de sesiune (ruta de
+ * cron e protejata separat, prin CRON_SECRET).
+ */
+export async function performAnafSyncForCron(
+  supabase: SupabaseServerClient
+): Promise<{ success: boolean; message: string; nrNoi?: number }> {
+  return performAnafSync(supabase);
 }

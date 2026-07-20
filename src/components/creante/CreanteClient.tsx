@@ -47,10 +47,11 @@ import {
   deleteAllCreanteAction,
   marcheazaIncasateBulkAction,
   anuleazaUltimeleIncasariBulkAction,
+  setTipVanzareBulkAction,
 } from "@/lib/actions/creante";
 import { getTodayISO } from "@/lib/date";
 import { syncPartnersAction } from "@/lib/actions/partners";
-import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
+import type { Creanta, CreanteImportBatch, CreantaIncasare, TipVanzare } from "@/types/creante";
 import type { ClientOption } from "@/lib/data/venituri";
 
 type StatusFilter = "toate" | "restanta" | "la_zi" | "incasata" | "neincasate";
@@ -400,6 +401,19 @@ export function CreanteClient({
         } else {
           setSyncMessage(result.message ?? "Eroare la anularea incasarilor.");
         }
+      } finally {
+        bulkLockRef.current = false;
+      }
+    });
+  }
+
+  function handleSetTipVanzareSelected(tip: TipVanzare) {
+    if (checkedIds.size === 0 || bulkLockRef.current) return;
+    bulkLockRef.current = true;
+    startTransition(async () => {
+      try {
+        const result = await setTipVanzareBulkAction(Array.from(checkedIds), tip);
+        if (!result.success && result.message) setSyncMessage(result.message);
       } finally {
         bulkLockRef.current = false;
       }
@@ -845,6 +859,22 @@ export function CreanteClient({
             >
               <RotateCcw size={13} />
               Anuleaza incasare
+            </button>
+            <button
+              onClick={() => handleSetTipVanzareSelected("Recurente")}
+              disabled={isPending}
+              title="Seteaza Tip vanzare = Recurente pe toate facturile selectate"
+              className="rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50"
+            >
+              → Recurente
+            </button>
+            <button
+              onClick={() => handleSetTipVanzareSelected("Nerecurente")}
+              disabled={isPending}
+              title="Seteaza Tip vanzare = Nerecurente pe toate facturile selectate"
+              className="rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50"
+            >
+              → Nerecurente
             </button>
             <button
               onClick={handleDeleteSelected}

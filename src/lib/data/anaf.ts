@@ -37,3 +37,18 @@ export async function getAnafConnectionStatus(): Promise<AnafConnectionStatus> {
     cif: extra?.cif ?? null,
   };
 }
+
+/** Numarul de facturi ANAF descarcate dar inca neprocesate (stare='noua') - folosit pentru badge-ul din Sidebar. */
+export async function getAnafFacturiNoiCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("anaf_facturi")
+    .select("id", { count: "exact", head: true })
+    .eq("stare", "noua");
+
+  if (error) {
+    console.error("getAnafFacturiNoiCount error:", error.message);
+    return 0;
+  }
+  return count ?? 0;
+}

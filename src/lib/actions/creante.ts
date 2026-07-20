@@ -508,6 +508,26 @@ export async function marcheazaIncasatAction(
  * date). Daca o factura trebuie incasata doar partial, se lasa nebifata
  * aici si se trateaza individual, din fisa facturii.
  */
+/**
+ * Seteaza Tip vanzare (Recurente/Nerecurente) in bloc, pe toate facturile
+ * selectate - util cand imporți multe facturi deodata (ex. din E-Factura)
+ * si vrei sa le clasifici rapid, fara sa intri pe fiecare individual.
+ */
+export async function setTipVanzareBulkAction(
+  ids: string[],
+  tipVanzare: TipVanzare
+): Promise<{ success: boolean; message?: string; nrProcesate?: number }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot edita creante." };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { error } = await supabase.from("creante").update({ tip_vanzare: tipVanzare }).in("id", ids);
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/creante");
+  return { success: true, nrProcesate: ids.length };
+}
+
 export async function marcheazaIncasateBulkAction(
   ids: string[],
   dataIncasare: string

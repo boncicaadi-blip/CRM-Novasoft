@@ -130,12 +130,14 @@ export function Sidebar({
   moduleAccess = ["crm"],
   submoduleAccess = [],
   deployVersion = null,
+  anafFacturiNoiCount = 0,
 }: {
   userName: string;
   isAdmin?: boolean;
   moduleAccess?: string[];
   submoduleAccess?: string[];
   deployVersion?: string | null;
+  anafFacturiNoiCount?: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -343,6 +345,11 @@ export function Sidebar({
                   >
                     <Receipt size={15} />
                     E-Factura
+                    {anafFacturiNoiCount > 0 && (
+                      <span className="ml-auto rounded-full bg-[#E8007A] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        {anafFacturiNoiCount}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     href="/setari/comercial"

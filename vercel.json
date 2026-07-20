@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/anaf-sync",
+      "schedule": "0 */3 * * *"
+    }
+  ]
+}
