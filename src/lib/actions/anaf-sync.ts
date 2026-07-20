@@ -153,6 +153,102 @@ async function matchAnafFacturiWithExisting(supabase: SupabaseServerClient) {
   }
 }
 
+interface AnafFacturaPentruImport {
+  id: string;
+  tip: "emisa" | "primita";
+  nr_factura: string | null;
+  nume_partener: string | null;
+  data_factura: string | null;
+  valoare: number | null;
+}
+
+/**
+ * Importa facturile selectate (doar cele cu stare 'noua') in Creante (daca
+ * tip='emisa') sau Obligatii (daca tip='primita'), in functie de tipul
+ * fiecarei facturi - un singur buton, ambele directii, exact ca in Excel-ul
+ * pe care il inlocuieste acest modul.
+ */
+export async function importAnafFacturiAction(
+  ids: string[]
+): Promise<{ success: boolean; message: string; nrImportate?: number }> {
+  const check = await requireAdminSupabase();
+  if (!check.ok) return { success: false, message: check.message };
+  const { supabase } = check;
+
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { data: facturi, error: fetchError } = await supabase
+    .from("anaf_facturi")
+    .select("id, tip, nr_factura, nume_partener, data_factura, valoare")
+    .in("id", ids)
+    .eq("stare", "noua");
+
+  if (fetchError) return { success: false, message: fetchError.message };
+
+  const deImportat = (facturi ?? []) as AnafFacturaPentruImport[];
+  if (deImportat.length === 0) {
+    return { success: false, message: "Facturile selectate nu mai sunt in starea 'noua' (au fost deja procesate)." };
+  }
+
+  let nrImportate = 0;
+  const erori: string[] = [];
+
+  for (const f of deImportat) {
+    if (!f.nr_factura || f.valoare === null) {
+      erori.push(`${f.nr_factura ?? "(fara numar)"}: lipsesc date esentiale (numar sau valoare) - verifica manual arhiva.`);
+      continue;
+    }
+
+    if (f.tip === "emisa") {
+      const { data: creantaNoua, error: insertError } = await supabase
+        .from("creante")
+        .insert({
+          nr_factura: f.nr_factura,
+          nume_firma: f.nume_partener ?? "Partener necunoscut",
+          data_factura: f.data_factura,
+          total_factura: f.valoare,
+        })
+        .select("id")
+        .single();
+
+      if (insertError) {
+        erori.push(`${f.nr_factura}: ${insertError.message}`);
+        continue;
+      }
+
+      await supabase.from("anaf_facturi").update({ stare: "importata", creanta_id: creantaNoua.id }).eq("id", f.id);
+      nrImportate += 1;
+    } else {
+      const { data: obligatieNoua, error: insertError } = await supabase
+        .from("obligatii")
+        .insert({
+          nr_factura: f.nr_factura,
+          nume_furnizor: f.nume_partener ?? "Partener necunoscut",
+          data_factura: f.data_factura,
+          total_factura: f.valoare,
+        })
+        .select("id")
+        .single();
+
+      if (insertError) {
+        erori.push(`${f.nr_factura}: ${insertError.message}`);
+        continue;
+      }
+
+      await supabase.from("anaf_facturi").update({ stare: "importata", obligatie_id: obligatieNoua.id }).eq("id", f.id);
+      nrImportate += 1;
+    }
+  }
+
+  revalidatePath("/setari/e-factura");
+  revalidatePath("/creante");
+  revalidatePath("/obligatii");
+
+  const parts = [`${nrImportate} facturi importate.`];
+  if (erori.length > 0) parts.push(`${erori.length} probleme: ${erori.slice(0, 3).join("; ")}`);
+
+  return { success: nrImportate > 0, message: parts.join(" "), nrImportate };
+}
 /**
  * Sincronizeaza facturile din SPV: cere lista de mesaje pe ultimele 60 de
  * zile (maximul permis de ANAF), descarca doar mesajele noi (dedup dupa

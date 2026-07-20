@@ -26,6 +26,7 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Receipt,
   type LucideIcon,
 } from "lucide-react";
 import type { ModuleKey } from "@/lib/modules";
@@ -334,6 +335,14 @@ export function Sidebar({
                   >
                     <Plug size={15} />
                     Integrari
+                  </Link>
+                  <Link
+                    href="/setari/e-factura"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-md px-2.5 py-2 text-sm text-text-primary transition hover:bg-surface-1 hover:text-text-primary"
+                  >
+                    <Receipt size={15} />
+                    E-Factura
                   </Link>
                   <Link
                     href="/setari/comercial"
