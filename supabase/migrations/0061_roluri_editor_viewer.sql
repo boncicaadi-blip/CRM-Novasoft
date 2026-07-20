@@ -12,10 +12,11 @@
 -- ============================================================================
 
 alter table public.profiles drop constraint if exists profiles_role_check;
-alter table public.profiles
-  add constraint profiles_role_check check (role in ('admin', 'editor', 'viewer'));
 
 update public.profiles set role = 'editor' where role = 'user';
+
+alter table public.profiles
+  add constraint profiles_role_check check (role in ('admin', 'editor', 'viewer'));
 
 alter table public.profiles alter column role set default 'editor';
 

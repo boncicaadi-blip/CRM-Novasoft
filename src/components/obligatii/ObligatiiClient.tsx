@@ -16,6 +16,7 @@ import {
   ChevronRight,
   X,
   Users,
+  RotateCcw,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
@@ -42,6 +43,7 @@ import {
   deleteObligatiiAction,
   deleteAllObligatiiAction,
   marcheazaPlatiteBulkAction,
+  anuleazaUltimelePlatiBulkAction,
 } from "@/lib/actions/obligatii";
 import { getTodayISO } from "@/lib/date";
 import type { Obligatie, ObligatiiImportBatch, ObligatiePlata } from "@/types/obligatii";
@@ -134,6 +136,7 @@ export function ObligatiiClient({
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Obligatie | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [dataPlataBulk, setDataPlataBulk] = useState(getTodayISO());
   const [isPending, startTransition] = useTransition();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -307,12 +310,27 @@ export function ObligatiiClient({
     if (checkedIds.size === 0) return;
     if (
       !confirm(
-        `Platesti integral ${checkedIds.size} facturi selectate, cu data de azi? Pentru o plata partiala, intra individual pe factura respectiva.`
+        `Platesti integral ${checkedIds.size} facturi selectate, cu data ${dataPlataBulk}? Pentru o plata partiala, intra individual pe factura respectiva.`
       )
     )
       return;
     startTransition(async () => {
-      const result = await marcheazaPlatiteBulkAction(Array.from(checkedIds), getTodayISO());
+      const result = await marcheazaPlatiteBulkAction(Array.from(checkedIds), dataPlataBulk);
+      if (result.success) setCheckedIds(new Set());
+      else if (result.message) alert(result.message);
+    });
+  }
+
+  function handleAnuleazaPlatiSelected() {
+    if (checkedIds.size === 0) return;
+    if (
+      !confirm(
+        `Anulezi ultima plata inregistrata pentru ${checkedIds.size} facturi selectate? Facturile revin pe soldul de dinainte de acea plata.`
+      )
+    )
+      return;
+    startTransition(async () => {
+      const result = await anuleazaUltimelePlatiBulkAction(Array.from(checkedIds));
       if (result.success) setCheckedIds(new Set());
       else if (result.message) alert(result.message);
     });
@@ -663,13 +681,31 @@ export function ObligatiiClient({
         </button>
         {checkedIds.size > 0 && (
           <>
+            <label className="ml-auto flex items-center gap-1.5 rounded-md border border-border-subtle px-2 py-1.5 text-xs text-text-secondary">
+              Data platii
+              <input
+                type="date"
+                value={dataPlataBulk}
+                onChange={(e) => setDataPlataBulk(e.target.value)}
+                className="rounded border-none bg-transparent text-text-primary outline-none"
+              />
+            </label>
             <button
               onClick={handlePlateasaSelected}
               disabled={isPending}
-              className="ml-auto flex items-center gap-1.5 rounded-md bg-green-500/10 px-2.5 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/20 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md bg-green-500/10 px-2.5 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/20 disabled:opacity-50"
             >
               <Wallet size={13} />
               Plateste {checkedIds.size} selectate
+            </button>
+            <button
+              onClick={handleAnuleazaPlatiSelected}
+              disabled={isPending}
+              title="Anuleaza ultima plata de pe fiecare factura selectata (revine pe soldul anterior)"
+              className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-500 transition hover:bg-amber-500/20 disabled:opacity-50"
+            >
+              <RotateCcw size={13} />
+              Anuleaza plata
             </button>
             <button
               onClick={handleDeleteSelected}

@@ -556,6 +556,47 @@ export async function undoIncasareAction(
   return { success: true };
 }
 
+/**
+ * Anuleaza in bloc ULTIMA incasare inregistrata pentru fiecare factura
+ * selectata (nu tot istoricul acelei facturi) - gandit pentru cazul in care
+ * o incasare in bloc a fost facuta din greseala si trebuie reluata. Daca o
+ * factura are mai multe incasari (ex. o incasare partiala mai veche + una
+ * noua), ramane doar cea mai veche, iar factura revine pe soldul de dinainte
+ * de ultima incasare - nu neincasata complet, daca avea deja o plata partiala
+ * anterioara legitima.
+ */
+export async function anuleazaUltimeleIncasariBulkAction(
+  ids: string[]
+): Promise<{ success: boolean; message?: string; nrProcesate?: number }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot anula incasari." };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { data: incasari, error: fetchError } = await supabase
+    .from("creante_incasari")
+    .select("id, creanta_id, creat_la")
+    .in("creanta_id", ids)
+    .order("creat_la", { ascending: false });
+
+  if (fetchError) return { success: false, message: fetchError.message };
+
+  const ultimaPerCreanta = new Map<string, string>();
+  for (const row of incasari ?? []) {
+    if (!ultimaPerCreanta.has(row.creanta_id)) ultimaPerCreanta.set(row.creanta_id, row.id);
+  }
+
+  const idsDeSters = [...ultimaPerCreanta.values()];
+  if (idsDeSters.length === 0) {
+    return { success: false, message: "Facturile selectate nu au nicio incasare de anulat." };
+  }
+
+  const { error: deleteError } = await supabase.from("creante_incasari").delete().in("id", idsDeSters);
+  if (deleteError) return { success: false, message: deleteError.message };
+
+  revalidatePath("/creante");
+  return { success: true, nrProcesate: idsDeSters.length };
+}
+
 /** Sterge in masa facturi din Creante - pentru corectarea unor importuri gresite. */
 export async function deleteCreanteAction(
   ids: string[]

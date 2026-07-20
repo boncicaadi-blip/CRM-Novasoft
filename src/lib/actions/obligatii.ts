@@ -418,6 +418,43 @@ export async function undoPlataAction(
   return { success: true };
 }
 
+/**
+ * Anuleaza in bloc ULTIMA plata inregistrata pentru fiecare factura
+ * selectata (nu tot istoricul acelei facturi) - vezi comentariul de la
+ * anuleazaUltimeleIncasariBulkAction (Creante), aceeasi logica in oglinda.
+ */
+export async function anuleazaUltimelePlatiBulkAction(
+  ids: string[]
+): Promise<{ success: boolean; message?: string; nrProcesate?: number }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot anula plati." };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { data: plati, error: fetchError } = await supabase
+    .from("obligatii_plati")
+    .select("id, obligatie_id, creat_la")
+    .in("obligatie_id", ids)
+    .order("creat_la", { ascending: false });
+
+  if (fetchError) return { success: false, message: fetchError.message };
+
+  const ultimaPerObligatie = new Map<string, string>();
+  for (const row of plati ?? []) {
+    if (!ultimaPerObligatie.has(row.obligatie_id)) ultimaPerObligatie.set(row.obligatie_id, row.id);
+  }
+
+  const idsDeSters = [...ultimaPerObligatie.values()];
+  if (idsDeSters.length === 0) {
+    return { success: false, message: "Facturile selectate nu au nicio plata de anulat." };
+  }
+
+  const { error: deleteError } = await supabase.from("obligatii_plati").delete().in("id", idsDeSters);
+  if (deleteError) return { success: false, message: deleteError.message };
+
+  revalidatePath("/obligatii");
+  return { success: true, nrProcesate: idsDeSters.length };
+}
+
 export async function deleteObligatiiAction(
   ids: string[]
 ): Promise<{ success: boolean; message?: string }> {

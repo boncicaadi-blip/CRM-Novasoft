@@ -19,6 +19,7 @@ import {
   Users,
   Link2,
   CalendarClock,
+  RotateCcw,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
@@ -40,7 +41,13 @@ import {
   type PeriodFilter,
   type AgingBucket,
 } from "@/lib/creante-analytics";
-import { toggleProposSpreIncasareAction, deleteCreanteAction, deleteAllCreanteAction, marcheazaIncasateBulkAction } from "@/lib/actions/creante";
+import {
+  toggleProposSpreIncasareAction,
+  deleteCreanteAction,
+  deleteAllCreanteAction,
+  marcheazaIncasateBulkAction,
+  anuleazaUltimeleIncasariBulkAction,
+} from "@/lib/actions/creante";
 import { getTodayISO } from "@/lib/date";
 import { syncPartnersAction } from "@/lib/actions/partners";
 import type { Creanta, CreanteImportBatch, CreantaIncasare } from "@/types/creante";
@@ -136,6 +143,7 @@ export function CreanteClient({
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Creanta | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [dataIncasareBulk, setDataIncasareBulk] = useState(getTodayISO());
   const [isPending, startTransition] = useTransition();
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -343,12 +351,12 @@ export function CreanteClient({
     if (checkedIds.size === 0) return;
     if (
       !confirm(
-        `Incasezi integral ${checkedIds.size} facturi selectate, cu data de azi? Pentru o incasare partiala, intra individual pe factura respectiva.`
+        `Incasezi integral ${checkedIds.size} facturi selectate, cu data ${dataIncasareBulk}? Pentru o incasare partiala, intra individual pe factura respectiva.`
       )
     )
       return;
     startTransition(async () => {
-      const result = await marcheazaIncasateBulkAction(Array.from(checkedIds), getTodayISO());
+      const result = await marcheazaIncasateBulkAction(Array.from(checkedIds), dataIncasareBulk);
       if (result.success) {
         setCheckedIds(new Set());
         setSyncMessage(
@@ -356,6 +364,27 @@ export function CreanteClient({
         );
       } else {
         setSyncMessage(result.message ?? "Eroare la incasare in bloc.");
+      }
+    });
+  }
+
+  function handleAnuleazaIncasariSelected() {
+    if (checkedIds.size === 0) return;
+    if (
+      !confirm(
+        `Anulezi ultima incasare inregistrata pentru ${checkedIds.size} facturi selectate? Facturile revin pe soldul de dinainte de acea incasare.`
+      )
+    )
+      return;
+    startTransition(async () => {
+      const result = await anuleazaUltimeleIncasariBulkAction(Array.from(checkedIds));
+      if (result.success) {
+        setCheckedIds(new Set());
+        setSyncMessage(
+          result.nrProcesate ? `${result.nrProcesate} incasari anulate.` : "Nicio incasare de anulat in selectie."
+        );
+      } else {
+        setSyncMessage(result.message ?? "Eroare la anularea incasarilor.");
       }
     });
   }
@@ -774,13 +803,31 @@ export function CreanteClient({
         </button>
         {checkedIds.size > 0 && (
           <>
+            <label className="ml-auto flex items-center gap-1.5 rounded-md border border-border-subtle px-2 py-1.5 text-xs text-text-secondary">
+              Data incasarii
+              <input
+                type="date"
+                value={dataIncasareBulk}
+                onChange={(e) => setDataIncasareBulk(e.target.value)}
+                className="rounded border-none bg-transparent text-text-primary outline-none"
+              />
+            </label>
             <button
               onClick={handleIncaseazaSelected}
               disabled={isPending}
-              className="ml-auto flex items-center gap-1.5 rounded-md bg-green-500/10 px-2.5 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/20 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-md bg-green-500/10 px-2.5 py-1.5 text-xs font-medium text-green-400 transition hover:bg-green-500/20 disabled:opacity-50"
             >
               <Wallet size={13} />
               Incaseaza {checkedIds.size} selectate
+            </button>
+            <button
+              onClick={handleAnuleazaIncasariSelected}
+              disabled={isPending}
+              title="Anuleaza ultima incasare de pe fiecare factura selectata (revine pe soldul anterior)"
+              className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-500 transition hover:bg-amber-500/20 disabled:opacity-50"
+            >
+              <RotateCcw size={13} />
+              Anuleaza incasare
             </button>
             <button
               onClick={handleDeleteSelected}
