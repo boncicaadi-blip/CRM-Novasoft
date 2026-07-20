@@ -4,6 +4,7 @@ export interface Obligatie {
   id: string;
   nr_factura: string;
   nume_furnizor: string;
+  cif_furnizor: string | null;
   data_factura: string | null;
   data_scadenta: string | null;
   serviciu_facturat: string | null;

@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { ExternalLink, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ExternalLink, Upload, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { importAnafFacturiAction } from "@/lib/actions/anaf-sync";
+import { importAnafFacturiAction, syncAnafFacturiAction } from "@/lib/actions/anaf-sync";
 import type { AnafFactura } from "@/types/anaf";
 
 type TipFilter = "toate" | "emisa" | "primita";
@@ -47,6 +48,7 @@ function OpenArhivaButton({ storagePath }: { storagePath: string }) {
 }
 
 export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
+  const router = useRouter();
   const [tipFilter, setTipFilter] = useState<TipFilter>("toate");
   const [stareFilter, setStareFilter] = useState<StareFilter>("toate");
   const [clientQuery, setClientQuery] = useState("");
@@ -55,6 +57,14 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function handleSync() {
+    startTransition(async () => {
+      const result = await syncAnafFacturiAction();
+      setMessage(result.message);
+      if (result.success) router.refresh();
+    });
+  }
 
   const filtered = useMemo(() => {
     return facturi.filter((f) => {
@@ -107,7 +117,17 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
 
   return (
     <div>
-      <h1 className="mb-1 text-lg font-heading text-text-primary">E-Factura (SPV)</h1>
+      <div className="mb-1 flex items-center justify-between">
+        <h1 className="text-lg font-heading text-text-primary">E-Factura (SPV)</h1>
+        <button
+          onClick={handleSync}
+          disabled={isPending}
+          className="flex items-center gap-1.5 rounded-md bg-[#E8007A] px-3 py-1.5 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={isPending ? "animate-spin" : ""} />
+          Sincronizeaza facturi
+        </button>
+      </div>
       <p className="mb-5 text-sm text-text-muted">
         Facturi descarcate automat din SPV. Selecteaza-le pe cele noi si importa-le in Creante (facturi emise) sau
         Obligatii (facturi primite) - conexiunea si sincronizarea se gestioneaza din Setari → Integrari.
@@ -183,8 +203,11 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
               </th>
               <th className="px-3 py-2">Tip</th>
               <th className="px-3 py-2">Partener</th>
+              <th className="px-3 py-2">CIF</th>
+              <th className="px-3 py-2">Serviciu</th>
               <th className="px-3 py-2">Nr. factura</th>
               <th className="px-3 py-2">Data</th>
+              <th className="px-3 py-2">Scadenta</th>
               <th className="px-3 py-2 text-right">Valoare</th>
               <th className="px-3 py-2">Stare</th>
               <th className="px-3 py-2" />
@@ -203,9 +226,12 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
                   />
                 </td>
                 <td className="px-3 py-2 text-text-secondary">{f.tip === "emisa" ? "Emisa" : "Primita"}</td>
-                <td className="px-3 py-2 text-text-primary">{f.nume_partener ?? f.cui_partener ?? "—"}</td>
+                <td className="px-3 py-2 text-text-primary">{f.nume_partener ?? "—"}</td>
+                <td className="px-3 py-2 text-text-secondary">{f.cui_partener ?? "—"}</td>
+                <td className="px-3 py-2 text-text-secondary">{f.serviciu ?? "—"}</td>
                 <td className="px-3 py-2 text-text-secondary">{f.nr_factura ?? "—"}</td>
                 <td className="px-3 py-2 text-text-secondary">{f.data_factura ?? "—"}</td>
+                <td className="px-3 py-2 text-text-secondary">{f.data_scadenta ?? "—"}</td>
                 <td className="px-3 py-2 text-right font-mono text-text-primary">
                   {f.valoare !== null ? `${f.valoare.toLocaleString("ro-RO")} ${f.moneda}` : "—"}
                 </td>
@@ -219,7 +245,7 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-sm text-text-muted">
+                <td colSpan={11} className="px-3 py-8 text-center text-sm text-text-muted">
                   Nicio factura pentru filtrele curente.
                 </td>
               </tr>

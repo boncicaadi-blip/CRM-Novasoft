@@ -158,4 +158,5 @@ export const NOMENCLATOR_CATEGORII: {
     hasProbability: false,
     parentCategorie: "cheltuiala_incadrare",
   },
+  { value: "obligatie_modalitate_plata", label: "Obligatii: Modalitate plata", hasColor: false, hasProbability: false },
 ];

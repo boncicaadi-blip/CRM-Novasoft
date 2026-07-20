@@ -6,6 +6,8 @@ export interface AnafFactura {
   nume_partener: string | null;
   nr_factura: string | null;
   data_factura: string | null;
+  data_scadenta: string | null;
+  serviciu: string | null;
   valoare: number | null;
   moneda: string;
   storage_path: string | null;

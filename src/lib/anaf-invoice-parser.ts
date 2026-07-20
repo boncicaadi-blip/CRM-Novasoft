@@ -3,6 +3,8 @@ import { XMLParser } from "fast-xml-parser";
 export interface ParsedAnafInvoice {
   nrFactura: string | null;
   dataFactura: string | null;
+  dataScadenta: string | null;
+  serviciu: string | null;
   valoare: number | null;
   moneda: string;
   cifFurnizor: string | null;
@@ -34,9 +36,28 @@ function cleanCif(value: unknown): string | null {
 }
 
 /**
- * Extrage datele esentiale (nr. factura, data, valoare, CIF si nume
- * furnizor/client) dintr-un XML de factura UBL 2.1 / CIUS-RO, asa cum e
- * descarcat de la ANAF (fie ca "Invoice", fie ca "CreditNote" pentru
+ * Unele softuri de facturare (ex. Synergo) prefixeaza numarul de factura cu
+ * o serie interna (ex. "WOL1002899") care nu apare in restul aplicatiei,
+ * unde facturile sunt numerotate simplu ("1002899"). Pastram doar de la
+ * prima cifra incolo, ca deduplicarea cu Creante/Obligatii sa functioneze
+ * corect (altfel "WOL1002899" si "1002899" ar fi considerate facturi
+ * diferite, desi sunt aceeasi).
+ */
+function cleanNrFactura(value: unknown): string | null {
+  const text = textOf(value);
+  if (!text) return null;
+  const match = text.match(/^[^\d]*(\d.*)$/);
+  return match ? match[1] : text;
+}
+
+function toUpperName(value: unknown): string | null {
+  const text = textOf(value);
+  return text ? text.toUpperCase() : null;
+}
+
+/**
+ * Extrage datele esentiale dintr-un XML de factura UBL 2.1 / CIUS-RO, asa
+ * cum e descarcat de la ANAF (fie ca "Invoice", fie ca "CreditNote" pentru
  * facturi de stornare). Returneaza null daca XML-ul nu poate fi parsat sau
  * nu pare o factura (ex. un raport de erori ANAF, nu un document UBL).
  */
@@ -51,15 +72,28 @@ export function parseAnafInvoiceXml(xml: string): ParsedAnafInvoice | null {
 
     const valoareText = textOf(invoice.LegalMonetaryTotal?.PayableAmount);
 
+    // Scadenta poate aparea fie direct pe Invoice (cbc:DueDate - cel mai
+    // comun in CIUS-RO), fie in interiorul PaymentMeans (mai rar).
+    const dataScadenta = textOf(invoice.DueDate) ?? textOf(invoice.PaymentMeans?.PaymentDueDate);
+
+    // Serviciul = denumirea de pe prima linie a facturii (InvoiceLine poate
+    // fi un singur obiect sau un array, in functie de cate linii are
+    // factura - tratam ambele cazuri).
+    const liniiRaw = invoice.InvoiceLine ?? invoice.CreditNoteLine;
+    const linii = Array.isArray(liniiRaw) ? liniiRaw : liniiRaw ? [liniiRaw] : [];
+    const serviciu = textOf(linii[0]?.Item?.Name ?? linii[0]?.Item?.Description);
+
     return {
-      nrFactura: textOf(invoice.ID),
+      nrFactura: cleanNrFactura(invoice.ID),
       dataFactura: textOf(invoice.IssueDate),
+      dataScadenta,
+      serviciu,
       valoare: valoareText !== null ? Number(valoareText) : null,
       moneda: textOf(invoice.DocumentCurrencyCode) ?? "RON",
       cifFurnizor: cleanCif(supplierParty?.PartyLegalEntity?.CompanyID ?? supplierParty?.PartyTaxScheme?.CompanyID),
-      numeFurnizor: textOf(supplierParty?.PartyLegalEntity?.RegistrationName ?? supplierParty?.PartyName?.Name),
+      numeFurnizor: toUpperName(supplierParty?.PartyLegalEntity?.RegistrationName ?? supplierParty?.PartyName?.Name),
       cifClient: cleanCif(customerParty?.PartyLegalEntity?.CompanyID ?? customerParty?.PartyTaxScheme?.CompanyID),
-      numeClient: textOf(customerParty?.PartyLegalEntity?.RegistrationName ?? customerParty?.PartyName?.Name),
+      numeClient: toUpperName(customerParty?.PartyLegalEntity?.RegistrationName ?? customerParty?.PartyName?.Name),
     };
   } catch (err) {
     console.error("parseAnafInvoiceXml error:", err);

@@ -16,11 +16,13 @@ export function FisaFurnizorClient({
   obligatii,
   plati,
   crossLinks,
+  modalitatePlataOptions,
 }: {
   numeFurnizor: string;
   obligatii: Obligatie[];
   plati: Record<string, ObligatiePlata[]>;
   crossLinks: PartnerCrossLinks;
+  modalitatePlataOptions: string[];
 }) {
   const [selected, setSelected] = useState<Obligatie | null>(null);
 
@@ -168,6 +170,7 @@ export function FisaFurnizorClient({
         <ObligatieDetailModal
           obligatie={selected}
           plati={plati[selected.id] ?? []}
+          modalitatePlataOptions={modalitatePlataOptions}
           onClose={() => setSelected(null)}
         />
       )}

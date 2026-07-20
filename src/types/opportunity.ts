@@ -209,7 +209,8 @@ export type NomenclatorCategorie =
   | "status_contract"
   | "modalitate_facturare"
   | "cheltuiala_incadrare"
-  | "cheltuiala_clasa";
+  | "cheltuiala_clasa"
+  | "obligatie_modalitate_plata";
 
 export interface Nomenclator {
   id: string;

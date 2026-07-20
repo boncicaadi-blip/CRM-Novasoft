@@ -44,9 +44,10 @@ import {
   deleteAllObligatiiAction,
   marcheazaPlatiteBulkAction,
   anuleazaUltimelePlatiBulkAction,
+  setTipAchizitieBulkAction,
 } from "@/lib/actions/obligatii";
 import { getTodayISO } from "@/lib/date";
-import type { Obligatie, ObligatiiImportBatch, ObligatiePlata } from "@/types/obligatii";
+import type { Obligatie, ObligatiiImportBatch, ObligatiePlata, TipAchizitie } from "@/types/obligatii";
 
 type StatusFilter = "toate" | "restanta" | "la_zi" | "platita";
 type SortKey =
@@ -123,10 +124,12 @@ export function ObligatiiClient({
   obligatii,
   lastBatch,
   plati,
+  modalitatePlataOptions,
 }: {
   obligatii: Obligatie[];
   lastBatch: ObligatiiImportBatch | null;
   plati: Record<string, ObligatiePlata[]>;
+  modalitatePlataOptions: string[];
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
@@ -347,6 +350,19 @@ export function ObligatiiClient({
         const result = await anuleazaUltimelePlatiBulkAction(Array.from(checkedIds));
         if (result.success) setCheckedIds(new Set());
         else if (result.message) alert(result.message);
+      } finally {
+        bulkLockRef.current = false;
+      }
+    });
+  }
+
+  function handleSetTipAchizitieSelected(tip: TipAchizitie) {
+    if (checkedIds.size === 0 || bulkLockRef.current) return;
+    bulkLockRef.current = true;
+    startTransition(async () => {
+      try {
+        const result = await setTipAchizitieBulkAction(Array.from(checkedIds), tip);
+        if (!result.success && result.message) alert(result.message);
       } finally {
         bulkLockRef.current = false;
       }
@@ -716,6 +732,22 @@ export function ObligatiiClient({
               Plateste {checkedIds.size} selectate
             </button>
             <button
+              onClick={() => handleSetTipAchizitieSelected("Recurente")}
+              disabled={isPending}
+              title="Seteaza Tip achizitie = Recurente pe toate facturile selectate"
+              className="rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50"
+            >
+              → Recurente
+            </button>
+            <button
+              onClick={() => handleSetTipAchizitieSelected("Nerecurente")}
+              disabled={isPending}
+              title="Seteaza Tip achizitie = Nerecurente pe toate facturile selectate"
+              className="rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-secondary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50"
+            >
+              → Nerecurente
+            </button>
+            <button
               onClick={handleAnuleazaPlatiSelected}
               disabled={isPending}
               title="Anuleaza ultima plata de pe fiecare factura selectata (revine pe soldul anterior)"
@@ -1013,6 +1045,7 @@ export function ObligatiiClient({
         <ObligatieDetailModal
           obligatie={selected}
           plati={plati[selected.id] ?? []}
+          modalitatePlataOptions={modalitatePlataOptions}
           onClose={() => setSelected(null)}
         />
       )}

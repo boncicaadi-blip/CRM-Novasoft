@@ -74,10 +74,12 @@ export function ObligatiiDashboardClient({
   obligatii,
   plati,
   targets,
+  modalitatePlataOptions,
 }: {
   obligatii: Obligatie[];
   plati: Record<string, ObligatiePlata[]>;
   targets: Record<string, number>;
+  modalitatePlataOptions: string[];
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("toate");
   const [customFrom, setCustomFrom] = useState("");
@@ -335,6 +337,7 @@ export function ObligatiiDashboardClient({
         <ObligatieDetailModal
           obligatie={selected}
           plati={plati[selected.id] ?? []}
+          modalitatePlataOptions={modalitatePlataOptions}
           onClose={() => setSelected(null)}
         />
       )}

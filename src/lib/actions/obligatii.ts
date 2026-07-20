@@ -279,6 +279,7 @@ export async function updateObligatieTrackingAction(
   fields: {
     tip_achizitie?: TipAchizitie | null;
     modalitate_plata?: string | null;
+    serviciu_facturat?: string | null;
     observatii?: string | null;
     valoare_propusa_spre_plata?: number | null;
   }
@@ -370,6 +371,26 @@ export async function marcheazaPlatitAction(
  * baza de date). Daca o factura trebuie platita doar partial, se lasa
  * nebifata aici si se trateaza individual, din fisa facturii.
  */
+/**
+ * Seteaza Tip achizitie (Recurente/Nerecurente) in bloc, pe toate facturile
+ * selectate - util cand imporți multe facturi deodata (ex. din E-Factura)
+ * si vrei sa le clasifici rapid, fara sa intri pe fiecare individual.
+ */
+export async function setTipAchizitieBulkAction(
+  ids: string[],
+  tipAchizitie: TipAchizitie
+): Promise<{ success: boolean; message?: string; nrProcesate?: number }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot edita obligatii." };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { error } = await supabase.from("obligatii").update({ tip_achizitie: tipAchizitie }).in("id", ids);
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/obligatii");
+  return { success: true, nrProcesate: ids.length };
+}
+
 export async function marcheazaPlatiteBulkAction(
   ids: string[],
   dataPlata: string

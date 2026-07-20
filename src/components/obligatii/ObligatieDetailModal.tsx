@@ -17,10 +17,12 @@ const TIP_ACHIZITIE_OPTIONS: TipAchizitie[] = ["Recurente", "Nerecurente"];
 export function ObligatieDetailModal({
   obligatie,
   plati,
+  modalitatePlataOptions,
   onClose,
 }: {
   obligatie: Obligatie;
   plati: ObligatiePlata[];
+  modalitatePlataOptions: string[];
   onClose: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -28,6 +30,7 @@ export function ObligatieDetailModal({
     obligatie.tip_achizitie ?? ""
   );
   const [modalitatePlata, setModalitatePlata] = useState(obligatie.modalitate_plata ?? "");
+  const [serviciuFacturat, setServiciuFacturat] = useState(obligatie.serviciu_facturat ?? "");
   const [observatii, setObservatii] = useState(obligatie.observatii ?? "");
   const [valoarePropusa, setValoarePropusa] = useState(
     String(obligatie.valoare_propusa_spre_plata ?? obligatie.sold)
@@ -49,6 +52,7 @@ export function ObligatieDetailModal({
       const result = await updateObligatieTrackingAction(obligatie.id, {
         tip_achizitie: tipAchizitie === "" ? null : tipAchizitie,
         modalitate_plata: modalitatePlata || null,
+        serviciu_facturat: serviciuFacturat || null,
         observatii: observatii || null,
         ...(obligatie.propus_spre_plata
           ? { valoare_propusa_spre_plata: Number(valoarePropusa) }
@@ -254,12 +258,31 @@ export function ObligatieDetailModal({
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] text-text-muted">Modalitate plata</label>
+            <label className="mb-1 block text-[11px] text-text-muted">Serviciu</label>
             <input
+              value={serviciuFacturat}
+              onChange={(e) => setServiciuFacturat(e.target.value)}
+              placeholder="Serviciul scris pe factura"
+              className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] text-text-muted">Modalitate plata</label>
+            <select
               value={modalitatePlata}
               onChange={(e) => setModalitatePlata(e.target.value)}
               className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
-            />
+            >
+              <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
+                —
+              </option>
+              {modalitatePlataOptions.map((o) => (
+                <option key={o} value={o} style={{ backgroundColor: "var(--surface-1)" }}>
+                  {o}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
