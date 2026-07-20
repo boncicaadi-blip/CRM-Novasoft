@@ -296,43 +296,60 @@ export function ObligatiiClient({
     });
   }
 
+  const bulkLockRef = useRef(false);
+
   function handleDeleteSelected() {
-    if (checkedIds.size === 0) return;
+    if (checkedIds.size === 0 || bulkLockRef.current) return;
     if (!confirm(`Sigur stergi ${checkedIds.size} facturi selectate? Actiunea nu poate fi anulata.`))
       return;
+    bulkLockRef.current = true;
     startTransition(async () => {
-      const result = await deleteObligatiiAction(Array.from(checkedIds));
-      if (result.success) setCheckedIds(new Set());
+      try {
+        const result = await deleteObligatiiAction(Array.from(checkedIds));
+        if (result.success) setCheckedIds(new Set());
+      } finally {
+        bulkLockRef.current = false;
+      }
     });
   }
 
   function handlePlateasaSelected() {
-    if (checkedIds.size === 0) return;
+    if (checkedIds.size === 0 || bulkLockRef.current) return;
     if (
       !confirm(
         `Platesti integral ${checkedIds.size} facturi selectate, cu data ${dataPlataBulk}? Pentru o plata partiala, intra individual pe factura respectiva.`
       )
     )
       return;
+    bulkLockRef.current = true;
     startTransition(async () => {
-      const result = await marcheazaPlatiteBulkAction(Array.from(checkedIds), dataPlataBulk);
-      if (result.success) setCheckedIds(new Set());
-      else if (result.message) alert(result.message);
+      try {
+        const result = await marcheazaPlatiteBulkAction(Array.from(checkedIds), dataPlataBulk);
+        if (result.success) setCheckedIds(new Set());
+        else if (result.message) alert(result.message);
+      } finally {
+        bulkLockRef.current = false;
+      }
     });
   }
 
   function handleAnuleazaPlatiSelected() {
-    if (checkedIds.size === 0) return;
+    if (checkedIds.size === 0 || bulkLockRef.current) return;
     if (
       !confirm(
         `Anulezi ultima plata inregistrata pentru ${checkedIds.size} facturi selectate? Facturile revin pe soldul de dinainte de acea plata.`
       )
     )
       return;
+    bulkLockRef.current = true;
     startTransition(async () => {
-      const result = await anuleazaUltimelePlatiBulkAction(Array.from(checkedIds));
-      if (result.success) setCheckedIds(new Set());
-      else if (result.message) alert(result.message);
+      try {
+        const result = await anuleazaUltimelePlatiBulkAction(Array.from(checkedIds));
+        if (result.success) setCheckedIds(new Set());
+        else if (result.message) alert(result.message);
+      } finally {
+        bulkLockRef.current = false;
+      }
     });
   }
 

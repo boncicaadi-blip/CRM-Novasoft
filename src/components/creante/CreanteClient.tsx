@@ -337,54 +337,71 @@ export function CreanteClient({
     });
   }
 
+  const bulkLockRef = useRef(false);
+
   function handleDeleteSelected() {
-    if (checkedIds.size === 0) return;
+    if (checkedIds.size === 0 || bulkLockRef.current) return;
     if (!confirm(`Sigur stergi ${checkedIds.size} facturi selectate? Actiunea nu poate fi anulata.`))
       return;
+    bulkLockRef.current = true;
     startTransition(async () => {
-      const result = await deleteCreanteAction(Array.from(checkedIds));
-      if (result.success) setCheckedIds(new Set());
+      try {
+        const result = await deleteCreanteAction(Array.from(checkedIds));
+        if (result.success) setCheckedIds(new Set());
+      } finally {
+        bulkLockRef.current = false;
+      }
     });
   }
 
   function handleIncaseazaSelected() {
-    if (checkedIds.size === 0) return;
+    if (checkedIds.size === 0 || bulkLockRef.current) return;
     if (
       !confirm(
         `Incasezi integral ${checkedIds.size} facturi selectate, cu data ${dataIncasareBulk}? Pentru o incasare partiala, intra individual pe factura respectiva.`
       )
     )
       return;
+    bulkLockRef.current = true;
     startTransition(async () => {
-      const result = await marcheazaIncasateBulkAction(Array.from(checkedIds), dataIncasareBulk);
-      if (result.success) {
-        setCheckedIds(new Set());
-        setSyncMessage(
-          result.nrProcesate ? `${result.nrProcesate} facturi incasate integral.` : "Nicio factura de incasat in selectie."
-        );
-      } else {
-        setSyncMessage(result.message ?? "Eroare la incasare in bloc.");
+      try {
+        const result = await marcheazaIncasateBulkAction(Array.from(checkedIds), dataIncasareBulk);
+        if (result.success) {
+          setCheckedIds(new Set());
+          setSyncMessage(
+            result.nrProcesate ? `${result.nrProcesate} facturi incasate integral.` : "Nicio factura de incasat in selectie."
+          );
+        } else {
+          setSyncMessage(result.message ?? "Eroare la incasare in bloc.");
+        }
+      } finally {
+        bulkLockRef.current = false;
       }
     });
   }
 
   function handleAnuleazaIncasariSelected() {
-    if (checkedIds.size === 0) return;
+    if (checkedIds.size === 0 || bulkLockRef.current) return;
     if (
       !confirm(
         `Anulezi ultima incasare inregistrata pentru ${checkedIds.size} facturi selectate? Facturile revin pe soldul de dinainte de acea incasare.`
       )
     )
       return;
+    bulkLockRef.current = true;
     startTransition(async () => {
-      const result = await anuleazaUltimeleIncasariBulkAction(Array.from(checkedIds));
-      if (result.success) {
-        setCheckedIds(new Set());
-        setSyncMessage(
-          result.nrProcesate ? `${result.nrProcesate} incasari anulate.` : "Nicio incasare de anulat in selectie."
-        );
-      } else {
-        setSyncMessage(result.message ?? "Eroare la anularea incasarilor.");
+      try {
+        const result = await anuleazaUltimeleIncasariBulkAction(Array.from(checkedIds));
+        if (result.success) {
+          setCheckedIds(new Set());
+          setSyncMessage(
+            result.nrProcesate ? `${result.nrProcesate} incasari anulate.` : "Nicio incasare de anulat in selectie."
+          );
+        } else {
+          setSyncMessage(result.message ?? "Eroare la anularea incasarilor.");
+        }
+      } finally {
+        bulkLockRef.current = false;
       }
     });
   }
