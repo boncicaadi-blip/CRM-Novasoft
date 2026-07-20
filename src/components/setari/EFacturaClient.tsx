@@ -121,6 +121,7 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
     startTransition(async () => {
       const result = await importAnafFacturiAction(Array.from(checkedIds));
       setMessage(result.message);
+      alert(result.message);
       if (result.success) setCheckedIds(new Set());
     });
   }
@@ -194,7 +195,9 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
         />
       </div>
 
-      {message && <p className="mb-3 text-xs text-text-muted">{message}</p>}
+      {message && (
+        <p className="mb-3 rounded-md bg-[#E8007A]/10 px-3 py-2 text-sm font-medium text-[#E8007A]">{message}</p>
+      )}
 
       {checkedIds.size > 0 && (
         <div className="mb-3">

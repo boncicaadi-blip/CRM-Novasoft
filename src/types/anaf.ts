@@ -9,6 +9,7 @@ export interface AnafFactura {
   data_scadenta: string | null;
   serviciu: string | null;
   valoare: number | null;
+  suma_ramasa_de_plata: number | null;
   moneda: string;
   storage_path: string | null;
   stare: "noua" | "potrivita" | "importata" | "ignorata";

@@ -168,7 +168,7 @@ export async function reprocesareFacturiAction(): Promise<{ success: boolean; me
 
   const { data: facturi, error: fetchError } = await supabase
     .from("anaf_facturi")
-    .select("id, tip, storage_path, stare")
+    .select("id, tip, storage_path, stare, creanta_id, obligatie_id")
     .not("storage_path", "is", null);
 
   if (fetchError) return { success: false, message: fetchError.message };
@@ -177,6 +177,7 @@ export async function reprocesareFacturiAction(): Promise<{ success: boolean; me
   }
 
   let nrActualizate = 0;
+  let nrRandiriLegate = 0;
   const erori: string[] = [];
 
   for (const f of facturi) {
@@ -201,6 +202,7 @@ export async function reprocesareFacturiAction(): Promise<{ success: boolean; me
 
       const cifPartener = f.tip === "emisa" ? parsed.cifClient : parsed.cifFurnizor;
       const numePartener = f.tip === "emisa" ? parsed.numeClient : parsed.numeFurnizor;
+      const dataScadenta = parsed.dataScadenta ?? parsed.dataFactura;
 
       const { error: updateError } = await supabase
         .from("anaf_facturi")
@@ -210,6 +212,7 @@ export async function reprocesareFacturiAction(): Promise<{ success: boolean; me
           data_scadenta: parsed.dataScadenta,
           serviciu: parsed.serviciu,
           valoare: parsed.valoare,
+          suma_ramasa_de_plata: parsed.sumaRamasaDePlata,
           moneda: parsed.moneda,
           cui_partener: cifPartener ?? null,
           nume_partener: numePartener ?? null,
@@ -221,6 +224,35 @@ export async function reprocesareFacturiAction(): Promise<{ success: boolean; me
         continue;
       }
       nrActualizate += 1;
+
+      // Daca aceasta factura era deja legata de un rand din Creante/Obligatii
+      // (importata anterior, posibil cu date gresite - ex. valoarea 0 de la
+      // bug-ul PayableAmount), actualizam si randul respectiv cu datele
+      // corectate acum. Fara asta, o reprocesare "repara" doar sursa
+      // (anaf_facturi), nu si factura deja creata in aplicatie.
+      if (f.tip === "emisa" && f.creanta_id && parsed.valoare !== null) {
+        const { error: syncError } = await supabase
+          .from("creante")
+          .update({
+            total_factura: parsed.valoare,
+            data_scadenta: dataScadenta,
+            serviciu_facturat: parsed.serviciu,
+            cif_client: cifPartener ?? null,
+          })
+          .eq("id", f.creanta_id);
+        if (!syncError) nrRandiriLegate += 1;
+      } else if (f.tip === "primita" && f.obligatie_id && parsed.valoare !== null) {
+        const { error: syncError } = await supabase
+          .from("obligatii")
+          .update({
+            total_factura: parsed.valoare,
+            data_scadenta: dataScadenta,
+            serviciu_facturat: parsed.serviciu,
+            cif_furnizor: cifPartener ?? null,
+          })
+          .eq("id", f.obligatie_id);
+        if (!syncError) nrRandiriLegate += 1;
+      }
     } catch (err) {
       erori.push(`${f.id}: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -232,8 +264,11 @@ export async function reprocesareFacturiAction(): Promise<{ success: boolean; me
 
   revalidatePath("/setari/e-factura");
   revalidatePath("/setari/integrari");
+  revalidatePath("/creante");
+  revalidatePath("/obligatii");
 
   const parts = [`${nrActualizate} facturi reprocesate din ${facturi.length}.`];
+  if (nrRandiriLegate > 0) parts.push(`${nrRandiriLegate} facturi deja importate au fost actualizate cu datele corecte.`);
   if (erori.length > 0) parts.push(`${erori.length} probleme: ${erori.slice(0, 3).join("; ")}`);
 
   return { success: true, message: parts.join(" ") };
@@ -249,19 +284,28 @@ interface AnafFacturaPentruImport {
   data_scadenta: string | null;
   serviciu: string | null;
   valoare: number | null;
+  suma_ramasa_de_plata: number | null;
+  creanta_id: string | null;
+  obligatie_id: string | null;
 }
 
 /**
- * Importa facturile selectate (doar cele cu stare 'noua') in Creante (daca
- * tip='emisa') sau Obligatii (daca tip='primita'), in functie de tipul
- * fiecarei facturi - un singur buton, ambele directii, exact ca in Excel-ul
- * pe care il inlocuieste acest modul.
+ * Importa facturile selectate in Creante (daca tip='emisa') sau Obligatii
+ * (daca tip='primita'), in functie de tipul fiecarei facturi - un singur
+ * buton, ambele directii, exact ca in Excel-ul pe care il inlocuieste acest
+ * modul.
  *
- * Inainte de fiecare inserare, se verifica INCA O DATA daca acel nr_factura
- * exista deja in tabela tinta (nu doar la sincronizare) - daca da, factura
- * NU se importa (ca sa nu creeze un duplicat), se marcheaza "potrivita" si
- * se raporteaza in mesaj. Asta acopera cazul in care factura a fost
- * adaugata manual intre timp, sau verificarea de la sincronizare a ratat-o.
+ * Eligibilitatea de import se stabileste dupa legatura (creanta_id /
+ * obligatie_id), NU dupa campul "stare" - astfel, daca o factura importata
+ * gresit e stearsa manual din Creante/Obligatii (legatura devine automat
+ * null), poate fi reimportata fara sa ramana blocata permanent.
+ *
+ * Doua reguli speciale, gandite pentru facturi tip bon fiscal/POS (ex.
+ * LIDL), unde nu exista un termen real de plata:
+ *   - daca nu exista data scadentei, se foloseste data facturii
+ *   - daca suma_ramasa_de_plata = 0 (ANAF confirma ca nu mai e nimic de
+ *     platit), factura e marcata automat incasata/platita integral, cu data
+ *     incasarii/platii = data facturii
  */
 export async function importAnafFacturiAction(
   ids: string[]
@@ -274,26 +318,35 @@ export async function importAnafFacturiAction(
 
   const { data: facturi, error: fetchError } = await supabase
     .from("anaf_facturi")
-    .select("id, tip, nr_factura, nume_partener, cui_partener, data_factura, data_scadenta, serviciu, valoare")
-    .in("id", ids)
-    .eq("stare", "noua");
+    .select(
+      "id, tip, nr_factura, nume_partener, cui_partener, data_factura, data_scadenta, serviciu, valoare, suma_ramasa_de_plata, creanta_id, obligatie_id"
+    )
+    .in("id", ids);
 
   if (fetchError) return { success: false, message: fetchError.message };
-
-  const deImportat = (facturi ?? []) as AnafFacturaPentruImport[];
-  if (deImportat.length === 0) {
-    return { success: false, message: "Facturile selectate nu mai sunt in starea 'noua' (au fost deja procesate)." };
+  if (!facturi || facturi.length === 0) {
+    return { success: false, message: "Facturile selectate nu au fost gasite." };
   }
 
+  const deImportat = facturi as AnafFacturaPentruImport[];
+
   let nrImportate = 0;
-  let nrDejaExistente = 0;
+  let nrDejaLegate = 0;
   const erori: string[] = [];
 
   for (const f of deImportat) {
+    if ((f.tip === "emisa" && f.creanta_id) || (f.tip === "primita" && f.obligatie_id)) {
+      nrDejaLegate += 1;
+      continue;
+    }
+
     if (!f.nr_factura || f.valoare === null) {
       erori.push(`${f.nr_factura ?? "(fara numar)"}: lipsesc date esentiale (numar sau valoare) - verifica manual arhiva.`);
       continue;
     }
+
+    const dataScadenta = f.data_scadenta ?? f.data_factura;
+    const platitaLaEmitere = f.suma_ramasa_de_plata === 0;
 
     if (f.tip === "emisa") {
       const { data: existenta } = await supabase
@@ -305,7 +358,7 @@ export async function importAnafFacturiAction(
 
       if (existenta) {
         await supabase.from("anaf_facturi").update({ stare: "potrivita", creanta_id: existenta.id }).eq("id", f.id);
-        nrDejaExistente += 1;
+        nrDejaLegate += 1;
         continue;
       }
 
@@ -316,7 +369,7 @@ export async function importAnafFacturiAction(
           nume_firma: f.nume_partener ?? "PARTENER NECUNOSCUT",
           cif_client: f.cui_partener,
           data_factura: f.data_factura,
-          data_scadenta: f.data_scadenta,
+          data_scadenta: dataScadenta,
           serviciu_facturat: f.serviciu,
           total_factura: f.valoare,
         })
@@ -326,6 +379,15 @@ export async function importAnafFacturiAction(
       if (insertError) {
         erori.push(`${f.nr_factura}: ${insertError.message}`);
         continue;
+      }
+
+      if (platitaLaEmitere && f.data_factura) {
+        await supabase.from("creante_incasari").insert({
+          creanta_id: creantaNoua.id,
+          valoare: f.valoare,
+          data_incasare: f.data_factura,
+          observatie: "Incasat automat - ANAF raporteaza factura ca deja achitata integral la emitere.",
+        });
       }
 
       await supabase.from("anaf_facturi").update({ stare: "importata", creanta_id: creantaNoua.id }).eq("id", f.id);
@@ -340,7 +402,7 @@ export async function importAnafFacturiAction(
 
       if (existenta) {
         await supabase.from("anaf_facturi").update({ stare: "potrivita", obligatie_id: existenta.id }).eq("id", f.id);
-        nrDejaExistente += 1;
+        nrDejaLegate += 1;
         continue;
       }
 
@@ -351,7 +413,7 @@ export async function importAnafFacturiAction(
           nume_furnizor: f.nume_partener ?? "PARTENER NECUNOSCUT",
           cif_furnizor: f.cui_partener,
           data_factura: f.data_factura,
-          data_scadenta: f.data_scadenta,
+          data_scadenta: dataScadenta,
           serviciu_facturat: f.serviciu,
           total_factura: f.valoare,
         })
@@ -361,6 +423,15 @@ export async function importAnafFacturiAction(
       if (insertError) {
         erori.push(`${f.nr_factura}: ${insertError.message}`);
         continue;
+      }
+
+      if (platitaLaEmitere && f.data_factura) {
+        await supabase.from("obligatii_plati").insert({
+          obligatie_id: obligatieNoua.id,
+          valoare: f.valoare,
+          data_plata: f.data_factura,
+          observatie: "Platit automat - ANAF raporteaza factura ca deja achitata integral la emitere.",
+        });
       }
 
       await supabase.from("anaf_facturi").update({ stare: "importata", obligatie_id: obligatieNoua.id }).eq("id", f.id);
@@ -373,10 +444,10 @@ export async function importAnafFacturiAction(
   revalidatePath("/obligatii");
 
   const parts = [`${nrImportate} facturi importate.`];
-  if (nrDejaExistente > 0) parts.push(`${nrDejaExistente} existau deja - nu au fost duplicate, doar marcate.`);
+  if (nrDejaLegate > 0) parts.push(`${nrDejaLegate} erau deja legate de un rand existent - nu au fost duplicate.`);
   if (erori.length > 0) parts.push(`${erori.length} probleme: ${erori.slice(0, 3).join("; ")}`);
 
-  return { success: nrImportate > 0 || nrDejaExistente > 0, message: parts.join(" "), nrImportate };
+  return { success: nrImportate > 0 || nrDejaLegate > 0, message: parts.join(" "), nrImportate };
 }
 /**
  * Sincronizeaza facturile din SPV: cere lista de mesaje pe ultimele 60 de
@@ -482,6 +553,7 @@ async function performAnafSync(
         data_scadenta: parsed?.dataScadenta ?? null,
         serviciu: parsed?.serviciu ?? null,
         valoare: parsed?.valoare ?? null,
+        suma_ramasa_de_plata: parsed?.sumaRamasaDePlata ?? null,
         moneda: parsed?.moneda ?? "RON",
         storage_path: storagePath,
         stare: "noua",

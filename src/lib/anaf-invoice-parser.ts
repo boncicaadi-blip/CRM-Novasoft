@@ -6,6 +6,8 @@ export interface ParsedAnafInvoice {
   dataScadenta: string | null;
   serviciu: string | null;
   valoare: number | null;
+  /** Suma ramasa de plata (BT-115) - 0 inseamna ca factura era deja achitata integral la emitere (ex. bon fiscal POS). */
+  sumaRamasaDePlata: number | null;
   moneda: string;
   cifFurnizor: string | null;
   numeFurnizor: string | null;
@@ -75,8 +77,9 @@ export function parseAnafInvoiceXml(xml: string): ParsedAnafInvoice | null {
     // pentru facturi deja achitate integral (ex. bonuri fiscale/POS, gen
     // LIDL), ceea ce ar da gresit "valoare 0" desi factura are o valoare
     // reala. Cadem pe PayableAmount doar daca TaxInclusiveAmount lipseste.
-    const valoareText =
-      textOf(invoice.LegalMonetaryTotal?.TaxInclusiveAmount) ?? textOf(invoice.LegalMonetaryTotal?.PayableAmount);
+    const taxInclusiveText = textOf(invoice.LegalMonetaryTotal?.TaxInclusiveAmount);
+    const payableText = textOf(invoice.LegalMonetaryTotal?.PayableAmount);
+    const valoareText = taxInclusiveText ?? payableText;
 
     // Scadenta poate aparea fie direct pe Invoice (cbc:DueDate - cel mai
     // comun in CIUS-RO), fie in interiorul PaymentMeans (mai rar).
@@ -95,6 +98,7 @@ export function parseAnafInvoiceXml(xml: string): ParsedAnafInvoice | null {
       dataScadenta,
       serviciu,
       valoare: valoareText !== null ? Number(valoareText) : null,
+      sumaRamasaDePlata: payableText !== null ? Number(payableText) : null,
       moneda: textOf(invoice.DocumentCurrencyCode) ?? "RON",
       cifFurnizor: cleanCif(supplierParty?.PartyLegalEntity?.CompanyID ?? supplierParty?.PartyTaxScheme?.CompanyID),
       numeFurnizor: toUpperName(supplierParty?.PartyLegalEntity?.RegistrationName ?? supplierParty?.PartyName?.Name),
