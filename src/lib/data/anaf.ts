@@ -20,6 +20,7 @@ interface AnafExtra {
   refresh_token?: string;
   expires_at?: string;
   connected_at?: string;
+  cif?: string;
 }
 
 export async function getAnafConnectionStatus(): Promise<AnafConnectionStatus> {
@@ -33,5 +34,6 @@ export async function getAnafConnectionStatus(): Promise<AnafConnectionStatus> {
     clientIdSet: Boolean(data?.username),
     connectedAt: extra?.connected_at ?? null,
     expiresAt: extra?.expires_at ?? null,
+    cif: extra?.cif ?? null,
   };
 }

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getTermeneCredentials } from "@/lib/data/apiCredentials";
-import { getAnafConnectionStatus } from "@/lib/data/anaf";
+import { getAnafConnectionStatus, getAnafFacturi } from "@/lib/data/anaf";
 import { TermeneCredentialsForm } from "@/components/setari/TermeneCredentialsForm";
 import { AnafConnectionCard } from "@/components/setari/AnafConnectionCard";
 
@@ -21,7 +21,11 @@ export default async function IntegrariPage() {
     redirect("/dashboard");
   }
 
-  const [termeneCreds, anafStatus] = await Promise.all([getTermeneCredentials(), getAnafConnectionStatus()]);
+  const [termeneCreds, anafStatus, anafFacturi] = await Promise.all([
+    getTermeneCredentials(),
+    getAnafConnectionStatus(),
+    getAnafFacturi(),
+  ]);
 
   return (
     <div className="px-3 py-4 sm:px-6">
@@ -41,7 +45,7 @@ export default async function IntegrariPage() {
         </div>
 
         <Suspense fallback={null}>
-          <AnafConnectionCard status={anafStatus} />
+          <AnafConnectionCard status={anafStatus} facturi={anafFacturi} />
         </Suspense>
       </div>
     </div>

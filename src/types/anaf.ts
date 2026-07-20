@@ -22,4 +22,5 @@ export interface AnafConnectionStatus {
   clientIdSet: boolean;
   connectedAt: string | null;
   expiresAt: string | null;
+  cif: string | null;
 }
