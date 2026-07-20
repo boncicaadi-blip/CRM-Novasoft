@@ -53,14 +53,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const basicAuth = Buffer.from(`${credRow.username}:${credRow.password}`).toString("base64");
     const tokenResponse = await fetch(ANAF_TOKEN_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        // ANAF specifica explicit in documentatia oficiala sa se trimita
+        // Client ID/Secret ca Basic Auth header, nu ca parametri in body.
+        Authorization: `Basic ${basicAuth}`,
+      },
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        client_id: credRow.username,
-        client_secret: credRow.password,
         redirect_uri: REDIRECT_URI,
         token_content_type: "jwt",
       }).toString(),
