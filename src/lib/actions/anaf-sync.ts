@@ -221,7 +221,7 @@ export async function syncAnafFacturiAction(): Promise<{ success: boolean; messa
     if (!tip) continue; // ERORI FACTURA / MESAJ CUMPARATOR - nu sunt facturi propriu-zise
 
     try {
-      const downloadResp = await fetch(`${ANAF_API_BASE}/descarcare/${mesajId}`, {
+      const downloadResp = await fetch(`${ANAF_API_BASE}/descarcare?id=${encodeURIComponent(mesajId)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!downloadResp.ok) {
