@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { getTermeneCredentials } from "@/lib/data/apiCredentials";
+import { getAnafConnectionStatus } from "@/lib/data/anaf";
 import { TermeneCredentialsForm } from "@/components/setari/TermeneCredentialsForm";
+import { AnafConnectionCard } from "@/components/setari/AnafConnectionCard";
 
 export default async function IntegrariPage() {
   const supabase = await createClient();
@@ -18,7 +21,7 @@ export default async function IntegrariPage() {
     redirect("/dashboard");
   }
 
-  const termeneCreds = await getTermeneCredentials();
+  const [termeneCreds, anafStatus] = await Promise.all([getTermeneCredentials(), getAnafConnectionStatus()]);
 
   return (
     <div className="px-3 py-4 sm:px-6">
@@ -27,13 +30,19 @@ export default async function IntegrariPage() {
         Credentiale pentru servicii externe folosite de aplicatie.
       </p>
 
-      <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
-        <p className="mb-3 text-sm font-medium text-text-primary">Termene.ro</p>
-        <p className="mb-4 text-xs text-text-muted">
-          Folosit pentru butonul &quot;Actualizeaza din ANAF&quot; (cifra de afaceri, nr.
-          angajati) si auto-completare la introducerea CUI-ului.
-        </p>
-        <TermeneCredentialsForm initial={termeneCreds} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="mb-3 text-sm font-medium text-text-primary">Termene.ro</p>
+          <p className="mb-4 text-xs text-text-muted">
+            Folosit pentru butonul &quot;Actualizeaza din ANAF&quot; (cifra de afaceri, nr.
+            angajati) si auto-completare la introducerea CUI-ului.
+          </p>
+          <TermeneCredentialsForm initial={termeneCreds} />
+        </div>
+
+        <Suspense fallback={null}>
+          <AnafConnectionCard status={anafStatus} />
+        </Suspense>
       </div>
     </div>
   );

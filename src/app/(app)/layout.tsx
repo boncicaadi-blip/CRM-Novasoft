@@ -6,6 +6,7 @@ import { ThemeSync } from "@/components/ThemeSync";
 import { DailySummaryPopup } from "@/components/DailySummaryPopup";
 import { PendingApprovalScreen } from "@/components/PendingApprovalScreen";
 import packageJson from "../../../package.json";
+import { VERSION_DATE } from "@/lib/version";
 
 const appVersion = packageJson.version;
 
@@ -40,10 +41,19 @@ export default async function AppLayout({
   // Vercel expune automat SHA-ul commit-ului curent la build (fara
   // configurare suplimentara) - afisam ultimele 7 caractere, identic cu ce
   // se vede in lista de Deployments din Vercel, ca sa stii usor pe ce
-  // versiune lucrezi. Combinat cu numarul de versiune din package.json,
-  // pe care il actualizezi manual cand vrei sa marchezi un release.
+  // versiune lucrezi. Combinat cu numarul de versiune din package.json
+  // (afisat ca "V0.35", fara ".0" final) si data ultimei versiuni
+  // (VERSION_DATE, din src/lib/version.ts) - actualizate manual de Claude
+  // de fiecare data cand livreaza o arhiva noua.
   const commitSha = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null;
-  const deployVersion = commitSha ? `${appVersion} · ${commitSha}` : appVersion;
+  const [major, minor, patch] = appVersion.split(".");
+  const versionLabel = patch === "0" ? `V${major}.${minor}` : `V${major}.${minor}.${patch}`;
+  const versionDateLabel = new Date(VERSION_DATE).toLocaleDateString("ro-RO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const deployVersion = [versionLabel, versionDateLabel, commitSha].filter(Boolean).join(" · ");
 
   return (
     <div className="flex h-screen flex-col overflow-hidden lg:flex-row">

@@ -390,7 +390,7 @@ export function Sidebar({
             </button>
           </div>
           {deployVersion && (
-            <p className="mt-1 px-2 text-[10px] text-text-faint">Versiunea {deployVersion}</p>
+            <p className="mt-1 px-2 text-[11px] font-medium text-text-secondary">Versiunea {deployVersion}</p>
           )}
           <p className="px-2 text-[10px] text-text-faint">Creat de Adrian Boncica</p>
         </div>
