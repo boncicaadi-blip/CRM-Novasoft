@@ -99,6 +99,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/management", label: "Rapoarte generale", icon: LayoutDashboard },
       { href: "/management/pl", label: "P&L detaliat", icon: FileBarChart },
+      { href: "/management/cashflow", label: "Cashflow", icon: Wallet },
     ],
   },
 ];

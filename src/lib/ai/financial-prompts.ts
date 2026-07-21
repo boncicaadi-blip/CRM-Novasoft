@@ -62,6 +62,15 @@ export function buildPlInsightPrompt(sumar: string): string {
   return `Sumarul P&L detaliat, la data curenta:\n\n${sumar}`;
 }
 
+export function buildCashflowInsightSystemPrompt(): string {
+  return `Esti un asistent financiar intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar de cashflow (Incasari, Plati, Net - Estimat vs Realizat, pe luni) si trebuie sa produci o interpretare utila pentru administrator - daca fluxul de numerar e sanatos, ce luni risca sa fie tensionate, si ce ar merita monitorizat.
+${REGULI_COMUNE}`;
+}
+
+export function buildCashflowInsightPrompt(sumar: string): string {
+  return `Sumarul de cashflow, la data curenta:\n\n${sumar}`;
+}
+
 export function buildVenituriInsightSystemPrompt(): string {
   return `Esti un asistent financiar intern pentru Novasoft Technologies SRL (solutii software TMS/ERP pentru firme de transport si logistica din Romania). Primesti un sumar al situatiei de Venituri (buget estimat vs. realizat, din contracte si vanzari) si trebuie sa produci o interpretare utila pentru administrator.
 ${REGULI_COMUNE}`;

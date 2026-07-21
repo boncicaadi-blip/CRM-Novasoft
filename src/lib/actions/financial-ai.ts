@@ -18,11 +18,14 @@ import {
   buildManagementInsightPrompt,
   buildPlInsightSystemPrompt,
   buildPlInsightPrompt,
+  buildCashflowInsightSystemPrompt,
+  buildCashflowInsightPrompt,
   parseFinancialInsightResponse,
   type FinancialInsightResult,
 } from "@/lib/ai/financial-prompts";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
 import { buildPlReport } from "@/lib/pl-analytics";
+import { buildCashflowReport } from "@/lib/cashflow-analytics";
 import { getCreante, getCreanteIncasari, getCreanteTargetsLunare } from "@/lib/data/creante";
 import { computeCreanteSummary } from "@/lib/creante-analytics";
 import { groupByAgingCreante, topRiscCreante, buildGrtSeries } from "@/lib/creante-dashboard-analytics";
@@ -441,6 +444,57 @@ export async function generatePlInsightAction(): Promise<{
       prompt: buildPlInsightPrompt(sumar),
       maxTokens: 4000,
       onUsage: (usage) => logAiUsage(supabase, "pl_insight", usage),
+    });
+    return { success: true, data: parseFinancialInsightResponse(raw) };
+  } catch (err) {
+    return handleAiError(err);
+  }
+}
+
+async function buildCashflowSummaryText(): Promise<string> {
+  const [creante, creanteIncasari, obligatii, obligatiiPlati] = await Promise.all([
+    getCreante(),
+    getCreanteIncasari(),
+    getObligatii(),
+    getObligatiiPlati(),
+  ]);
+
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const to = new Date(now.getFullYear(), now.getMonth() + 5, 1);
+  const report = buildCashflowReport(creante, obligatii, creanteIncasari, obligatiiPlati, from, now < to ? now : to);
+
+  const lines = [
+    `Cashflow (ultimele 6 luni + urmatoarele, dupa scadenta):`,
+    `Total Incasari: realizat ${formatRon(report.totalRealizat.incasari)}, estimat ${formatRon(report.totalEstimat.incasari)}`,
+    `Total Plati: realizat ${formatRon(report.totalRealizat.plati)}, estimat ${formatRon(report.totalEstimat.plati)}`,
+    `Cashflow Net: realizat ${formatRon(report.totalRealizat.net)}, estimat ${formatRon(report.totalEstimat.net)}`,
+    ``,
+    `Detaliu pe luna (Estimat):`,
+    ...report.luni.map(
+      (l) =>
+        `- ${l.label}: incasari ${formatRon(report.estimat[l.luna].incasari)}, plati ${formatRon(report.estimat[l.luna].plati)}, net ${formatRon(report.estimat[l.luna].net)}`
+    ),
+  ];
+
+  return lines.join("\n");
+}
+
+export async function generateCashflowInsightAction(): Promise<{
+  success: boolean;
+  message?: string;
+  data?: FinancialInsightResult;
+}> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot genera interpretari AI." };
+
+  try {
+    const sumar = await buildCashflowSummaryText();
+    const raw = await askClaude({
+      system: buildCashflowInsightSystemPrompt(),
+      prompt: buildCashflowInsightPrompt(sumar),
+      maxTokens: 4000,
+      onUsage: (usage) => logAiUsage(supabase, "cashflow_insight", usage),
     });
     return { success: true, data: parseFinancialInsightResponse(raw) };
   } catch (err) {

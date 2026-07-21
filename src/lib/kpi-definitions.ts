@@ -169,4 +169,19 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
       "Venituri si costuri pe grupe (Incadrare) si linii (Clasa), calculate automat din Venituri/Cheltuieli. Editezi grupele/liniile din Setari → Nomenclatoare (Incadrare Cheltuieli / Clasa Cheltuieli).",
     cumAnalizezi: "Click pe orice suma din tabel pentru a vedea din ce se compune.",
   },
+  cashflowIncasari: {
+    descriere: "Bani care intra efectiv (Realizat) sau care urmeaza sa intre, dupa scadenta (Estimat).",
+    formula: "Realizat: suma incasarilor efective (data reala). Estimat: soldul neincasat al facturilor, dupa data scadentei.",
+    cumAnalizezi: "Cat de aproape e Realizatul de Estimat? O diferenta mare inseamna incasari intarziate.",
+  },
+  cashflowPlati: {
+    descriere: "Bani care ies efectiv (Realizat) sau care urmeaza sa iasa, dupa scadenta (Estimat).",
+    formula: "Realizat: suma platilor efective (data reala). Estimat: soldul neplatit al facturilor, dupa data scadentei.",
+    cumAnalizezi: "Ai suficiente incasari estimate ca sa acoperi platile estimate din aceeasi luna?",
+  },
+  cashflowNet: {
+    descriere: "Diferenta dintre Incasari si Plati - cati bani net intra sau ies intr-o luna.",
+    formula: "Incasari - Plati",
+    cumAnalizezi: "O luna cu Net negativ inseamna ca ies mai multi bani decat intra - merita anticipata din timp.",
+  },
 };
