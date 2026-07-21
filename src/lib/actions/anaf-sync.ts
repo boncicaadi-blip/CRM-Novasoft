@@ -275,6 +275,26 @@ export async function reprocesareFacturiAction(): Promise<{ success: boolean; me
   return { success: true, message: parts.join(" ") };
 }
 
+/**
+ * Marcheaza facturile selectate ca "ignorata" - pentru cazurile in care XML-ul
+ * nu a putut fi citit corect (arhiva contine alt tip de document decat o
+ * factura standard, sau parsarea a esuat) si nu se pot importa. Nu le sterge,
+ * doar le scoate din calea filtrului implicit "Noua".
+ */
+export async function ignoreAnafFacturiBulkAction(
+  ids: string[]
+): Promise<{ success: boolean; message: string }> {
+  const check = await requireAdminSupabase();
+  if (!check.ok) return { success: false, message: check.message };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { error } = await check.supabase.from("anaf_facturi").update({ stare: "ignorata" }).in("id", ids);
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/setari/e-factura");
+  return { success: true, message: `${ids.length} facturi marcate ca ignorate.` };
+}
+
 interface AnafFacturaPentruImport {
   id: string;
   tip: "emisa" | "primita";

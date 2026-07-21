@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Upload, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { importAnafFacturiAction, syncAnafFacturiAction, reprocesareFacturiAction } from "@/lib/actions/anaf-sync";
+import { importAnafFacturiAction, syncAnafFacturiAction, reprocesareFacturiAction, ignoreAnafFacturiBulkAction } from "@/lib/actions/anaf-sync";
 import type { AnafFactura } from "@/types/anaf";
 
 type TipFilter = "toate" | "emisa" | "primita";
@@ -128,6 +128,17 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
     });
   }
 
+  function handleIgnore() {
+    if (checkedIds.size === 0) return;
+    if (!confirm(`Marchezi ${checkedIds.size} facturi ca ignorate? Nu se mai pot importa, dar raman vizibile in istoric.`))
+      return;
+    startTransition(async () => {
+      const result = await ignoreAnafFacturiBulkAction(Array.from(checkedIds));
+      setMessage(result.message);
+      if (result.success) setCheckedIds(new Set());
+    });
+  }
+
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
@@ -213,7 +224,7 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
       )}
 
       {checkedIds.size > 0 && (
-        <div className="mb-3">
+        <div className="mb-3 flex gap-2">
           <button
             onClick={handleImport}
             disabled={isPending}
@@ -221,6 +232,14 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
           >
             <Upload size={14} />
             Importa {checkedIds.size} selectate (Creante/Obligatii, automat)
+          </button>
+          <button
+            onClick={handleIgnore}
+            disabled={isPending}
+            title="Pentru facturi fara date suficiente (goale) care nu se pot importa"
+            className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50"
+          >
+            Ignora {checkedIds.size} selectate
           </button>
         </div>
       )}
