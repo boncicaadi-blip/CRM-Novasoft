@@ -4,7 +4,7 @@ import { BackButton } from "@/components/BackButton";
 import { CreanteDashboardClient } from "@/components/creante/dashboard/CreanteDashboardClient";
 
 export default async function CreanteDashboardPage() {
-  await requireModuleAccess("creante_obligatii");
+  await requireModuleAccess("creante_obligatii", "creante_dashboard");
 
   const [creante, incasari, targets] = await Promise.all([
     getCreante(),

@@ -72,10 +72,10 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Wallet,
     moduleKey: "creante_obligatii",
     items: [
-      { href: "/creante", label: "Creante", icon: Wallet },
-      { href: "/creante/dashboard", label: "Dashboard Creante", icon: FileBarChart },
-      { href: "/obligatii", label: "Obligatii", icon: Wallet },
-      { href: "/obligatii/dashboard", label: "Dashboard Obligatii", icon: FileBarChart },
+      { href: "/creante", label: "Creante", icon: Wallet, submodule: "creante" },
+      { href: "/creante/dashboard", label: "Dashboard Creante", icon: FileBarChart, submodule: "creante_dashboard" },
+      { href: "/obligatii", label: "Obligatii", icon: Wallet, submodule: "obligatii" },
+      { href: "/obligatii/dashboard", label: "Dashboard Obligatii", icon: FileBarChart, submodule: "obligatii_dashboard" },
     ],
   },
   {
@@ -97,9 +97,9 @@ const NAV_GROUPS: NavGroup[] = [
     icon: LayoutDashboard,
     moduleKey: "management",
     items: [
-      { href: "/management", label: "Rapoarte generale", icon: LayoutDashboard },
-      { href: "/management/pl", label: "P&L detaliat", icon: FileBarChart },
-      { href: "/management/cashflow", label: "Cashflow", icon: Wallet },
+      { href: "/management", label: "Rapoarte generale", icon: LayoutDashboard, submodule: "rapoarte_generale" },
+      { href: "/management/pl", label: "P&L detaliat", icon: FileBarChart, submodule: "pl" },
+      { href: "/management/cashflow", label: "Cashflow", icon: Wallet, submodule: "cashflow" },
     ],
   },
 ];

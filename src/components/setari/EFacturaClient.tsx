@@ -58,6 +58,8 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const nrFacturiNoi = facturi.filter((f) => f.stare === "noua").length;
+
   function handleSync() {
     startTransition(async () => {
       const result = await syncAnafFacturiAction();
@@ -149,10 +151,21 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
           </button>
         </div>
       </div>
-      <p className="mb-5 text-sm text-text-muted">
+      <p className="mb-3 text-sm text-text-muted">
         Facturi descarcate automat din SPV. Selecteaza-le pe cele noi si importa-le in Creante (facturi emise) sau
         Obligatii (facturi primite) - conexiunea si sincronizarea se gestioneaza din Setari → Integrari.
       </p>
+
+      {nrFacturiNoi > 0 && (
+        <p className="mb-5 flex items-center gap-2 rounded-md bg-[#E8007A]/10 px-3 py-2 text-sm text-[#E8007A]">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E8007A] text-[11px] font-semibold text-white">
+            {nrFacturiNoi}
+          </span>
+          {nrFacturiNoi === 1 ? "factura noua" : "facturi noi"}, descarcate dar inca neprocesate - filtreaza dupa
+          starea &quot;Noua&quot; mai jos ca sa le vezi si sa le imporți (sau sa le ignori pe cele care nu se
+          aplica).
+        </p>
+      )}
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <select

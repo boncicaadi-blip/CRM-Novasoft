@@ -184,4 +184,13 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     formula: "Incasari - Plati",
     cumAnalizezi: "O luna cu Net negativ inseamna ca ies mai multi bani decat intra - merita anticipata din timp.",
   },
+  cashflowPaymentCoverage: {
+    descriere: "Raportul dintre incasarile estimate si platile estimate, pentru perioada selectata.",
+    formula: "Incasari estimate / Plati estimate",
+    cumAnalizezi: "Sub 100% inseamna presiune: platile planificate depasesc incasarile estimate din aceeasi perioada.",
+  },
+  cashflowLuniNegative: {
+    descriere: "Numarul de luni din perioada selectata in care Cashflow Net e negativ (ies mai multi bani decat intra).",
+    cumAnalizezi: "Cu cat mai multe luni negative, cu atat perioada e mai tensionata financiar - merita identificate din timp.",
+  },
 };

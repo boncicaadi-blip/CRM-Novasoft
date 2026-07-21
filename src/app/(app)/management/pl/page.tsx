@@ -5,7 +5,7 @@ import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { PlClient } from "@/components/management/pl/PlClient";
 
 export default async function PlPage() {
-  await requireModuleAccess("management");
+  await requireModuleAccess("management", "pl");
 
   const [venituriLinii, cheltuieliLinii, nomenclatoare] = await Promise.all([
     getVenituriLinii(),

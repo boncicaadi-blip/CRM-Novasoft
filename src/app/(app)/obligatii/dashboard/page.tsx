@@ -5,7 +5,7 @@ import { BackButton } from "@/components/BackButton";
 import { ObligatiiDashboardClient } from "@/components/obligatii/dashboard/ObligatiiDashboardClient";
 
 export default async function ObligatiiDashboardPage() {
-  await requireModuleAccess("creante_obligatii");
+  await requireModuleAccess("creante_obligatii", "obligatii_dashboard");
 
   const [obligatii, plati, targets, nomenclatoare] = await Promise.all([
     getObligatii(),

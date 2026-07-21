@@ -5,7 +5,7 @@ import { BackButton } from "@/components/BackButton";
 import { ObligatiiClient } from "@/components/obligatii/ObligatiiClient";
 
 export default async function ObligatiiPage() {
-  await requireModuleAccess("creante_obligatii");
+  await requireModuleAccess("creante_obligatii", "obligatii");
 
   const [obligatii, lastBatch, plati, nomenclatoare] = await Promise.all([
     getObligatii(),

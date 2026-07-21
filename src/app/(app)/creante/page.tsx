@@ -5,7 +5,7 @@ import { BackButton } from "@/components/BackButton";
 import { CreanteClient } from "@/components/creante/CreanteClient";
 
 export default async function CreantePage() {
-  await requireModuleAccess("creante_obligatii");
+  await requireModuleAccess("creante_obligatii", "creante");
 
   const [creante, lastBatch, incasari, clienti] = await Promise.all([
     getCreante(),

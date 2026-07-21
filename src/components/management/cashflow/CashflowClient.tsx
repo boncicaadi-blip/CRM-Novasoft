@@ -8,6 +8,7 @@ import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { PlLineChart, type PlLineChartDatum } from "@/components/management/pl/PlLineChart";
+import { CashflowCombinedChart } from "@/components/management/cashflow/CashflowCombinedChart";
 import { CreanteComponentaList } from "@/components/creante/dashboard/CreanteComponentaList";
 import { ObligatiiComponentaList } from "@/components/obligatii/dashboard/ObligatiiComponentaList";
 import { CreantaDetailModal } from "@/components/creante/CreantaDetailModal";
@@ -156,6 +157,20 @@ export function CashflowClient({
 
   const nrColoane = (showEstimat ? 1 : 0) + (showRealizat ? 1 : 0);
   const primaLuna = report.luni[0]?.luna;
+
+  const combinedChartData = report.luni.map((l) => ({
+    label: l.label,
+    incasari: showRealizat ? report.realizat[l.luna].incasari : report.estimat[l.luna].incasari,
+    plati: showRealizat ? report.realizat[l.luna].plati : report.estimat[l.luna].plati,
+    net: showRealizat ? report.realizat[l.luna].net : report.estimat[l.luna].net,
+  }));
+
+  const paymentCoverage =
+    report.totalEstimat.plati > 0 ? (report.totalEstimat.incasari / report.totalEstimat.plati) * 100 : null;
+
+  const luniNegative = report.luni.filter((l) =>
+    (showRealizat ? report.realizat[l.luna].net : report.estimat[l.luna].net) < 0
+  ).length;
 
   function chartData(linie: LinieCashflow): PlLineChartDatum[] {
     return report.luni.map((l) => ({
@@ -337,6 +352,35 @@ export function CashflowClient({
         />
       </div>
 
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <KpiInfoCard
+          label="Payment Coverage"
+          value={paymentCoverage !== null ? `${Math.round(paymentCoverage)}%` : "—"}
+          valueColor={paymentCoverage !== null ? (paymentCoverage >= 100 ? "#22C55E" : "#EF4444") : undefined}
+          sublabel="Incasari estimate / Plati estimate"
+          icon={<Wallet size={16} />}
+          accent="#0070F3"
+          definition={KPI_DEFINITIONS.cashflowPaymentCoverage}
+        />
+        <KpiInfoCard
+          label="Luni negative"
+          value={String(luniNegative)}
+          valueColor={luniNegative > 0 ? "#EF4444" : "#22C55E"}
+          sublabel={`din ${report.luni.length} luni afisate`}
+          icon={<TrendingDown size={16} />}
+          accent="#F97316"
+          definition={KPI_DEFINITIONS.cashflowLuniNegative}
+        />
+      </div>
+
+      <div className="mb-4 rounded-xl border border-border-subtle bg-surface-1 p-4">
+        <p className="mb-1 text-sm font-medium text-text-primary">Incasari vs. Plati vs. Cashflow Net</p>
+        <p className="mb-3 text-[11px] text-text-muted">
+          Arata valorile {showRealizat ? "Realizate" : "Estimate"} pe fiecare luna din perioada selectata.
+        </p>
+        <CashflowCombinedChart data={combinedChartData} />
+      </div>
+
       <div className="mb-4">
         <AiInsightCard
           title="Interpretare AI (Claude)"
@@ -515,7 +559,7 @@ export function CashflowClient({
                 </button>
               </div>
               <div className="p-4">
-                <PlLineChart data={chartSelection.data} />
+                <PlLineChart data={chartSelection.data} moneda="RON" />
               </div>
             </div>
           </div>,

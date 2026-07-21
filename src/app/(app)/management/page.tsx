@@ -5,7 +5,7 @@ import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { ManagementDashboardClient } from "@/components/management/dashboard/ManagementDashboardClient";
 
 export default async function ManagementPage() {
-  await requireModuleAccess("management");
+  await requireModuleAccess("management", "rapoarte_generale");
 
   const [venituriLinii, cheltuieliLinii, angajati] = await Promise.all([
     getVenituriLinii(),

@@ -266,6 +266,7 @@ export async function reprocesareFacturiAction(): Promise<{ success: boolean; me
   revalidatePath("/setari/integrari");
   revalidatePath("/creante");
   revalidatePath("/obligatii");
+  revalidatePath("/", "layout");
 
   const parts = [`${nrActualizate} facturi reprocesate din ${facturi.length}.`];
   if (nrRandiriLegate > 0) parts.push(`${nrRandiriLegate} facturi deja importate au fost actualizate cu datele corecte.`);
@@ -442,6 +443,7 @@ export async function importAnafFacturiAction(
   revalidatePath("/setari/e-factura");
   revalidatePath("/creante");
   revalidatePath("/obligatii");
+  revalidatePath("/", "layout");
 
   const parts = [`${nrImportate} facturi importate.`];
   if (nrDejaLegate > 0) parts.push(`${nrDejaLegate} erau deja legate de un rand existent - nu au fost duplicate.`);
@@ -575,6 +577,7 @@ async function performAnafSync(
   revalidatePath("/setari/e-factura");
   revalidatePath("/creante");
   revalidatePath("/obligatii");
+  revalidatePath("/", "layout");
 
   const parts = [`${nrNoi} facturi noi descarcate din ${mesaje.length} mesaje gasite.`];
   if (erori.length > 0) parts.push(`${erori.length} probleme: ${erori.slice(0, 3).join("; ")}`);

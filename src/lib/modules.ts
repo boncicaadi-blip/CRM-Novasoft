@@ -24,12 +24,23 @@ export const SUBMODULES: Partial<Record<ModuleKey, { key: string; label: string 
     { key: "raport_comercial", label: "Raport Comercial" },
     { key: "raport_comercial_lunar", label: "Raport Comercial Lunar" },
   ],
+  creante_obligatii: [
+    { key: "creante", label: "Creante" },
+    { key: "creante_dashboard", label: "Dashboard Creante" },
+    { key: "obligatii", label: "Obligatii" },
+    { key: "obligatii_dashboard", label: "Dashboard Obligatii" },
+  ],
   venituri_cheltuieli: [
     { key: "venituri", label: "Venituri" },
     { key: "venituri_dashboard", label: "Dashboard Venituri" },
     { key: "venituri_harta", label: "Harta Venituri" },
     { key: "cheltuieli", label: "Cheltuieli" },
     { key: "cheltuieli_dashboard", label: "Dashboard Cheltuieli" },
+  ],
+  management: [
+    { key: "rapoarte_generale", label: "Rapoarte generale" },
+    { key: "pl", label: "P&L detaliat" },
+    { key: "cashflow", label: "Cashflow" },
   ],
 };
 
