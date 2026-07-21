@@ -132,6 +132,7 @@ export function Sidebar({
   submoduleAccess = [],
   deployVersion = null,
   anafFacturiNoiCount = 0,
+  pendingUsersCount = 0,
 }: {
   userName: string;
   isAdmin?: boolean;
@@ -139,6 +140,7 @@ export function Sidebar({
   submoduleAccess?: string[];
   deployVersion?: string | null;
   anafFacturiNoiCount?: number;
+  pendingUsersCount?: number;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -330,6 +332,11 @@ export function Sidebar({
                   >
                     <Users size={15} />
                     Utilizatori
+                    {pendingUsersCount > 0 && (
+                      <span className="ml-auto rounded-full bg-[#E8007A] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        {pendingUsersCount}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     href="/setari/integrari"
