@@ -14,11 +14,13 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     if (mode === "signin") {
@@ -28,21 +30,30 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-    } else {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: fullName } },
-      });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
+      router.push("/");
+      router.refresh();
+      return;
     }
 
-    router.push("/");
-    router.refresh();
+    // Signup: contul nu are inca o sesiune activa (trebuie confirmat emailul
+    // intai, apoi aprobat de un admin) - nu are sens sa redirectionam catre
+    // aplicatie, ramanem pe pagina si aratam un mesaj clar de succes.
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } },
+    });
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setSuccess("Cont creat! Verifica adresa de email pentru confirmare, apoi asteapta aprobarea unui administrator.");
+    setLoading(false);
+    setEmail("");
+    setPassword("");
+    setFullName("");
   }
 
   return (
@@ -65,7 +76,11 @@ export default function LoginPage() {
           <div className="mb-5 flex gap-1 rounded-lg bg-surface-1 p-1 text-sm">
             <button
               type="button"
-              onClick={() => setMode("signin")}
+              onClick={() => {
+                setMode("signin");
+                setError(null);
+                setSuccess(null);
+              }}
               className={`flex-1 rounded-md py-1.5 transition ${
                 mode === "signin" ? "bg-[#E8007A] text-[#0B0D1A] font-medium" : "text-text-primary"
               }`}
@@ -74,7 +89,11 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("signup")}
+              onClick={() => {
+                setMode("signup");
+                setError(null);
+                setSuccess(null);
+              }}
               className={`flex-1 rounded-md py-1.5 transition ${
                 mode === "signup" ? "bg-[#E8007A] text-[#0B0D1A] font-medium" : "text-text-primary"
               }`}
@@ -84,53 +103,59 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            {mode === "signup" && (
-              <div>
-                <label className="mb-1 block text-xs text-text-secondary">Nume complet</label>
-                <input
-                  required
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
-                  placeholder="Adrian Boncica"
-                />
-              </div>
-            )}
-            <div>
-              <label className="mb-1 block text-xs text-text-secondary">Email</label>
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
-                placeholder="tu@firma.ro"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-text-secondary">Parola</label>
-              <input
-                required
-                type="password"
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
-                placeholder="••••••••"
-              />
-            </div>
+            {success ? (
+              <p className="rounded-md bg-green-500/10 px-3 py-2 text-sm text-green-400">{success}</p>
+            ) : (
+              <>
+                {mode === "signup" && (
+                  <div>
+                    <label className="mb-1 block text-xs text-text-secondary">Nume complet</label>
+                    <input
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
+                      placeholder="Adrian Boncica"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="mb-1 block text-xs text-text-secondary">Email</label>
+                  <input
+                    required
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
+                    placeholder="tu@firma.ro"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-text-secondary">Parola</label>
+                  <input
+                    required
+                    type="password"
+                    minLength={6}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-md border border-border-subtle bg-surface-1 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
+                    placeholder="••••••••"
+                  />
+                </div>
 
-            {error && (
-              <p className="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-400">{error}</p>
-            )}
+                {error && (
+                  <p className="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-400">{error}</p>
+                )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-[#E8007A] py-2 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
-            >
-              {loading ? "Se proceseaza..." : mode === "signin" ? "Intra in cont" : "Creeaza cont"}
-            </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-md bg-[#E8007A] py-2 text-sm font-medium text-[#0B0D1A] transition hover:bg-[#FF4FAA] disabled:opacity-50"
+                >
+                  {loading ? "Se proceseaza..." : mode === "signin" ? "Intra in cont" : "Creeaza cont"}
+                </button>
+              </>
+            )}
           </form>
         </div>
         <p className="mt-4 text-center text-[11px] text-text-faint">Creat de Adrian Boncica</p>

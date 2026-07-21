@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Check, X, UserCheck } from "lucide-react";
-import { updateUserAction, approveUserAction } from "@/lib/actions/users";
+import { Pencil, Check, X, UserCheck, UserX, Trash2 } from "lucide-react";
+import { updateUserAction, approveUserAction, deactivateUserAction, deleteUserAction } from "@/lib/actions/users";
 import { ALL_MODULES, MODULE_LABELS, SUBMODULES, submoduleFullKey, type ModuleKey } from "@/lib/modules";
 import type { Profile } from "@/types/opportunity";
 
@@ -14,6 +14,10 @@ export function UserRow({ user }: { user: Profile }) {
   const [submoduleAccess, setSubmoduleAccess] = useState<string[]>(user.submodule_access ?? []);
   const [isPending, startTransition] = useTransition();
   const [isApproving, startApproving] = useTransition();
+  const [isDeactivating, startDeactivating] = useTransition();
+  const [isDeleting, startDeleting] = useTransition();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [rowError, setRowError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function toggleModule(m: ModuleKey) {
@@ -44,6 +48,25 @@ export function UserRow({ user }: { user: Profile }) {
   function handleApprove() {
     startApproving(async () => {
       await approveUserAction(user.id);
+    });
+  }
+
+  function handleDeactivate() {
+    setRowError(null);
+    startDeactivating(async () => {
+      const result = await deactivateUserAction(user.id);
+      if (!result.success) setRowError(result.message ?? "Eroare la dezactivare.");
+    });
+  }
+
+  function handleDelete() {
+    setRowError(null);
+    startDeleting(async () => {
+      const result = await deleteUserAction(user.id);
+      if (!result.success) {
+        setRowError(result.message ?? "Eroare la stergere.");
+        setConfirmingDelete(false);
+      }
     });
   }
 
@@ -214,6 +237,16 @@ export function UserRow({ user }: { user: Profile }) {
               {isApproving ? "..." : "Aproba"}
             </button>
           )}
+          {user.approved && (
+            <button
+              onClick={handleDeactivate}
+              disabled={isDeactivating}
+              className="rounded-md p-1 text-text-muted transition hover:bg-amber-500/15 hover:text-amber-400 disabled:opacity-50"
+              title="Dezactiveaza acest cont (blocheaza accesul, fara sa il stergi)"
+            >
+              <UserX size={14} />
+            </button>
+          )}
           <button
             onClick={() => setEditing(true)}
             className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-[#E8007A]"
@@ -221,7 +254,33 @@ export function UserRow({ user }: { user: Profile }) {
           >
             <Pencil size={14} />
           </button>
+          {confirmingDelete ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="rounded-md bg-red-500/20 px-2 py-1 text-xs text-red-400 hover:bg-red-500/30 disabled:opacity-50"
+              >
+                {isDeleting ? "..." : "Confirma"}
+              </button>
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-md px-2 py-1 text-xs text-text-secondary hover:bg-surface-1"
+              >
+                Anuleaza
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              className="rounded-md p-1 text-text-muted transition hover:bg-red-500/15 hover:text-red-400"
+              title="Sterge definitiv acest cont"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
+        {rowError && <p className="mt-1 text-[11px] text-red-400">{rowError}</p>}
       </td>
     </tr>
   );
