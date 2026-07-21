@@ -1,11 +1,17 @@
 "use client";
 
-import { useMemo, useState, Fragment } from "react";
-import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { useMemo, useState, useEffect, Fragment } from "react";
+import { createPortal } from "react-dom";
+import { TrendingUp, TrendingDown, Wallet, BarChart3, X } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
+import { PlLineChart, type PlLineChartDatum } from "@/components/management/pl/PlLineChart";
+import { CreanteComponentaList } from "@/components/creante/dashboard/CreanteComponentaList";
+import { ObligatiiComponentaList } from "@/components/obligatii/dashboard/ObligatiiComponentaList";
+import { CreantaDetailModal } from "@/components/creante/CreantaDetailModal";
+import { ObligatieDetailModal } from "@/components/obligatii/ObligatieDetailModal";
 import { generateCashflowInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { formatRon } from "@/lib/format";
@@ -24,6 +30,42 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
   { value: "custom", label: "Perioada personalizata" },
 ];
 
+type LinieCashflow = "incasari" | "plati" | "net";
+
+interface CompozitieSelection {
+  linie: "incasari" | "plati";
+  luna: string | null;
+  label: string;
+}
+
+interface ChartSelection {
+  label: string;
+  data: PlLineChartDatum[];
+}
+
+function AmountButton({ value, onClick }: { value: number; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="w-full text-right transition hover:text-[#E8007A] hover:underline">
+      {formatRon(value)}
+    </button>
+  );
+}
+
+function RowLabel({ label, onChartClick }: { label: string; onChartClick: () => void }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span>{label}</span>
+      <button
+        onClick={onChartClick}
+        title="Vezi graficul acestei linii"
+        className="shrink-0 text-text-secondary transition hover:text-[#E8007A]"
+      >
+        <BarChart3 size={13} />
+      </button>
+    </div>
+  );
+}
+
 function firstOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
@@ -33,11 +75,13 @@ export function CashflowClient({
   creanteIncasari,
   obligatii,
   obligatiiPlati,
+  modalitatePlataOptions,
 }: {
   creante: Creanta[];
   creanteIncasari: Record<string, CreantaIncasare[]>;
   obligatii: Obligatie[];
   obligatiiPlati: Record<string, ObligatiePlata[]>;
+  modalitatePlataOptions: string[];
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("anul_curent");
   const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()));
@@ -46,6 +90,26 @@ export function CashflowClient({
   const [customMonths, setCustomMonths] = useState<string[]>([]);
   const [showEstimat, setShowEstimat] = useState(true);
   const [showRealizat, setShowRealizat] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [chartSelection, setChartSelection] = useState<ChartSelection | null>(null);
+  const [compozitieSelection, setCompozitieSelection] = useState<CompozitieSelection | null>(null);
+  const [selectedCreanta, setSelectedCreanta] = useState<Creanta | null>(null);
+  const [selectedObligatie, setSelectedObligatie] = useState<Obligatie | null>(null);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- portalul are nevoie de document.body, disponibil doar dupa montare in client
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!chartSelection && !compozitieSelection) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setChartSelection(null);
+        setCompozitieSelection(null);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [chartSelection, compozitieSelection]);
 
   const toateDatele = useMemo(() => {
     const datesFromCreante = creante.map((c) => c.data_scadenta).filter((d): d is string => !!d);
@@ -91,6 +155,68 @@ export function CashflowClient({
   );
 
   const nrColoane = (showEstimat ? 1 : 0) + (showRealizat ? 1 : 0);
+  const primaLuna = report.luni[0]?.luna;
+
+  function chartData(linie: LinieCashflow): PlLineChartDatum[] {
+    return report.luni.map((l) => ({
+      label: l.label,
+      estimat: report.estimat[l.luna][linie],
+      realizat: report.realizat[l.luna][linie],
+    }));
+  }
+
+  const compozitieItems = useMemo(() => {
+    if (!compozitieSelection) return { creante: [] as Creanta[], obligatii: [] as Obligatie[] };
+    const { linie, luna } = compozitieSelection;
+
+    if (linie === "incasari") {
+      if (luna === null) {
+        // Total: toate facturile relevante in perioada (estimat: sold>0 cu scadenta in interval; realizat: cele cu incasare in interval)
+        const idsCuIncasareInPerioada = new Set(
+          Object.entries(creanteIncasari)
+            .filter(([, lista]) => lista.some((i) => report.luni.some((l) => l.luna === i.data_incasare.slice(0, 7))))
+            .map(([id]) => id)
+        );
+        return {
+          creante: creante.filter((c) => (c.sold > 0 && c.data_scadenta) || idsCuIncasareInPerioada.has(c.id)),
+          obligatii: [],
+        };
+      }
+      const isFirstMonth = luna === primaLuna;
+      return {
+        creante: creante.filter((c) => {
+          const inIncasari = (creanteIncasari[c.id] ?? []).some((i) => i.data_incasare.slice(0, 7) === luna);
+          const scadentaKey = c.data_scadenta?.slice(0, 7);
+          const inEstimat = c.sold > 0 && scadentaKey && (scadentaKey === luna || (isFirstMonth && scadentaKey < luna));
+          return inIncasari || inEstimat;
+        }),
+        obligatii: [],
+      };
+    }
+
+    // linie === "plati"
+    if (luna === null) {
+      const idsCuPlataInPerioada = new Set(
+        Object.entries(obligatiiPlati)
+          .filter(([, lista]) => lista.some((p) => report.luni.some((l) => l.luna === p.data_plata.slice(0, 7))))
+          .map(([id]) => id)
+      );
+      return {
+        creante: [],
+        obligatii: obligatii.filter((o) => (o.sold > 0 && o.data_scadenta) || idsCuPlataInPerioada.has(o.id)),
+      };
+    }
+    const isFirstMonth = luna === primaLuna;
+    return {
+      creante: [],
+      obligatii: obligatii.filter((o) => {
+        const inPlati = (obligatiiPlati[o.id] ?? []).some((p) => p.data_plata.slice(0, 7) === luna);
+        const scadentaKey = o.data_scadenta?.slice(0, 7);
+        const inEstimat = o.sold > 0 && scadentaKey && (scadentaKey === luna || (isFirstMonth && scadentaKey < luna));
+        return inPlati || inEstimat;
+      }),
+    };
+  }, [compozitieSelection, creante, obligatii, creanteIncasari, obligatiiPlati, report.luni, primaLuna]);
 
   return (
     <div className="px-4 py-4 sm:px-6 sm:py-6">
@@ -101,7 +227,7 @@ export function CashflowClient({
           definition={{
             descriere:
               "Fluxul real de numerar - cand chiar intra/ies banii (Realizat: data incasarii/platii), spre deosebire de P&L, unde conteaza data facturii. Estimat = sold neincasat/neplatit, dupa scadenta. Facturile restante apar in prima luna afisata, ca sa nu dispara din calcul.",
-            cumAnalizezi: "Click pe Estimat/Realizat pentru a vedea doar ce te intereseaza. Rosu = luna cu iesiri mai mari decat intrarile.",
+            cumAnalizezi: "Click pe orice suma pentru a vedea din ce se compune. Click pe iconita de grafic pentru evolutia acelei linii.",
           }}
         />
       </div>
@@ -224,7 +350,7 @@ export function CashflowClient({
           Bifeaza cel putin Estimat sau Realizat ca sa vezi tabelul.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border-subtle">
+        <div className="mb-4 overflow-x-auto rounded-xl border border-border-subtle">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-border-subtle bg-surface-1">
@@ -265,47 +391,71 @@ export function CashflowClient({
             </thead>
             <tbody>
               <tr className="border-b border-border-subtle bg-[#132420]">
-                <td className="sticky left-0 z-10 bg-[#132420] px-3 py-2 text-sm font-medium text-text-primary">Incasari</td>
+                <td className="sticky left-0 z-10 bg-[#132420] px-3 py-2 text-sm font-medium text-text-primary">
+                  <RowLabel label="Incasari" onChartClick={() => setChartSelection({ label: "Incasari", data: chartData("incasari") })} />
+                </td>
                 {report.luni.map((luna) => (
                   <Fragment key={luna.luna}>
                     {showEstimat && (
                       <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-sm text-text-primary">
-                        {formatRon(report.estimat[luna.luna].incasari)}
+                        <AmountButton
+                          value={report.estimat[luna.luna].incasari}
+                          onClick={() => setCompozitieSelection({ linie: "incasari", luna: luna.luna, label: `Incasari · ${luna.label}` })}
+                        />
                       </td>
                     )}
                     {showRealizat && (
                       <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-sm text-text-primary">
-                        {formatRon(report.realizat[luna.luna].incasari)}
+                        <AmountButton
+                          value={report.realizat[luna.luna].incasari}
+                          onClick={() => setCompozitieSelection({ linie: "incasari", luna: luna.luna, label: `Incasari · ${luna.label}` })}
+                        />
                       </td>
                     )}
                   </Fragment>
                 ))}
                 <td className="whitespace-nowrap bg-surface-1 px-3 py-2 text-right font-mono text-sm font-medium text-text-primary">
-                  {formatRon(showRealizat ? report.totalRealizat.incasari : report.totalEstimat.incasari)}
+                  <AmountButton
+                    value={showRealizat ? report.totalRealizat.incasari : report.totalEstimat.incasari}
+                    onClick={() => setCompozitieSelection({ linie: "incasari", luna: null, label: "Incasari · toata perioada" })}
+                  />
                 </td>
               </tr>
               <tr className="border-b border-border-subtle bg-surface-2">
-                <td className="sticky left-0 z-10 bg-surface-2 px-3 py-2 text-sm font-medium text-text-primary">Plati</td>
+                <td className="sticky left-0 z-10 bg-surface-2 px-3 py-2 text-sm font-medium text-text-primary">
+                  <RowLabel label="Plati" onChartClick={() => setChartSelection({ label: "Plati", data: chartData("plati") })} />
+                </td>
                 {report.luni.map((luna) => (
                   <Fragment key={luna.luna}>
                     {showEstimat && (
                       <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-sm text-text-primary">
-                        {formatRon(report.estimat[luna.luna].plati)}
+                        <AmountButton
+                          value={report.estimat[luna.luna].plati}
+                          onClick={() => setCompozitieSelection({ linie: "plati", luna: luna.luna, label: `Plati · ${luna.label}` })}
+                        />
                       </td>
                     )}
                     {showRealizat && (
                       <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-sm text-text-primary">
-                        {formatRon(report.realizat[luna.luna].plati)}
+                        <AmountButton
+                          value={report.realizat[luna.luna].plati}
+                          onClick={() => setCompozitieSelection({ linie: "plati", luna: luna.luna, label: `Plati · ${luna.label}` })}
+                        />
                       </td>
                     )}
                   </Fragment>
                 ))}
                 <td className="whitespace-nowrap bg-surface-1 px-3 py-2 text-right font-mono text-sm font-medium text-text-primary">
-                  {formatRon(showRealizat ? report.totalRealizat.plati : report.totalEstimat.plati)}
+                  <AmountButton
+                    value={showRealizat ? report.totalRealizat.plati : report.totalEstimat.plati}
+                    onClick={() => setCompozitieSelection({ linie: "plati", luna: null, label: "Plati · toata perioada" })}
+                  />
                 </td>
               </tr>
               <tr className="border-t-2 border-border-strong bg-surface-2 font-medium">
-                <td className="sticky left-0 z-10 bg-surface-2 px-3 py-2 text-sm text-text-primary">CASHFLOW NET</td>
+                <td className="sticky left-0 z-10 bg-surface-2 px-3 py-2 text-sm text-text-primary">
+                  <RowLabel label="CASHFLOW NET" onChartClick={() => setChartSelection({ label: "CASHFLOW NET", data: chartData("net") })} />
+                </td>
                 {report.luni.map((luna) => (
                   <Fragment key={luna.luna}>
                     {showEstimat && (
@@ -339,6 +489,88 @@ export function CashflowClient({
             </tbody>
           </table>
         </div>
+      )}
+
+      {mounted &&
+        chartSelection &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+            onClick={() => setChartSelection(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl rounded-xl border border-border-subtle bg-surface-1 shadow-2xl"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+                <p className="text-sm text-text-muted">
+                  Grafic: <span className="font-medium text-text-primary">{chartSelection.label}</span>
+                </p>
+                <button
+                  onClick={() => setChartSelection(null)}
+                  title="Inchide (Esc)"
+                  className="rounded-md p-1.5 text-text-muted transition hover:bg-surface-2 hover:text-text-primary"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-4">
+                <PlLineChart data={chartSelection.data} />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {mounted &&
+        compozitieSelection &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+            onClick={() => setCompozitieSelection(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-xl border border-border-subtle bg-surface-1 shadow-2xl"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-border-subtle px-4 py-3">
+                <p className="text-sm text-text-muted">
+                  Compozitie: <span className="font-medium text-text-primary">{compozitieSelection.label}</span>
+                </p>
+                <button
+                  onClick={() => setCompozitieSelection(null)}
+                  title="Inchide (Esc)"
+                  className="rounded-md p-1.5 text-text-muted transition hover:bg-surface-2 hover:text-text-primary"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="overflow-y-auto p-4">
+                {compozitieSelection.linie === "incasari" ? (
+                  <CreanteComponentaList facturi={compozitieItems.creante} onSelect={setSelectedCreanta} />
+                ) : (
+                  <ObligatiiComponentaList facturi={compozitieItems.obligatii} onSelect={setSelectedObligatie} />
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {selectedCreanta && (
+        <CreantaDetailModal
+          creanta={selectedCreanta}
+          incasari={creanteIncasari[selectedCreanta.id] ?? []}
+          onClose={() => setSelectedCreanta(null)}
+        />
+      )}
+      {selectedObligatie && (
+        <ObligatieDetailModal
+          obligatie={selectedObligatie}
+          plati={obligatiiPlati[selectedObligatie.id] ?? []}
+          modalitatePlataOptions={modalitatePlataOptions}
+          onClose={() => setSelectedObligatie(null)}
+        />
       )}
     </div>
   );
