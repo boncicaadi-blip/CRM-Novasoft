@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { cleanAndValidateCif } from "@/lib/cif-utils";
 
 export interface ParsedAnafInvoice {
   nrFactura: string | null;
@@ -33,8 +34,7 @@ function textOf(value: unknown): string | null {
 
 function cleanCif(value: unknown): string | null {
   const text = textOf(value);
-  if (!text) return null;
-  return text.replace(/^RO/i, "").trim() || null;
+  return cleanAndValidateCif(text);
 }
 
 /**
@@ -100,9 +100,9 @@ export function parseAnafInvoiceXml(xml: string): ParsedAnafInvoice | null {
       valoare: valoareText !== null ? Number(valoareText) : null,
       sumaRamasaDePlata: payableText !== null ? Number(payableText) : null,
       moneda: textOf(invoice.DocumentCurrencyCode) ?? "RON",
-      cifFurnizor: cleanCif(supplierParty?.PartyLegalEntity?.CompanyID ?? supplierParty?.PartyTaxScheme?.CompanyID),
+      cifFurnizor: cleanCif(supplierParty?.PartyTaxScheme?.CompanyID ?? supplierParty?.PartyLegalEntity?.CompanyID),
       numeFurnizor: toUpperName(supplierParty?.PartyLegalEntity?.RegistrationName ?? supplierParty?.PartyName?.Name),
-      cifClient: cleanCif(customerParty?.PartyLegalEntity?.CompanyID ?? customerParty?.PartyTaxScheme?.CompanyID),
+      cifClient: cleanCif(customerParty?.PartyTaxScheme?.CompanyID ?? customerParty?.PartyLegalEntity?.CompanyID),
       numeClient: toUpperName(customerParty?.PartyLegalEntity?.RegistrationName ?? customerParty?.PartyName?.Name),
     };
   } catch (err) {

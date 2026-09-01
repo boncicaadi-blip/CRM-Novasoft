@@ -13,11 +13,8 @@ import {
   Plus,
   ArrowUp,
   ArrowDown,
-  ChevronLeft,
-  ChevronRight,
   X,
   Users,
-  Link2,
   CalendarClock,
   RotateCcw,
 } from "lucide-react";
@@ -26,6 +23,7 @@ import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { CreanteImportForm } from "./CreanteImportForm";
 import { CreantaDetailModal } from "./CreantaDetailModal";
 import { ManualCreantaFormModal } from "./ManualCreantaFormModal";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import { AgingBar } from "./AgingBar";
 import { formatRon } from "@/lib/format";
 import { CREANTE_KPI_DEFINITIONS } from "@/lib/creante-kpi-definitions";
@@ -50,7 +48,6 @@ import {
   setTipVanzareBulkAction,
 } from "@/lib/actions/creante";
 import { getTodayISO } from "@/lib/date";
-import { syncPartnersAction } from "@/lib/actions/partners";
 import type { Creanta, CreanteImportBatch, CreantaIncasare, TipVanzare } from "@/types/creante";
 import type { ClientOption } from "@/lib/data/venituri";
 
@@ -140,13 +137,13 @@ export function CreanteClient({
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [customMonths, setCustomMonths] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("la_zi");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("neincasate");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Creanta | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [dataIncasareBulk, setDataIncasareBulk] = useState(getTodayISO());
   const [isPending, startTransition] = useTransition();
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [colWidths, setColWidths] = useState<Record<string, number>>(() =>
@@ -300,6 +297,18 @@ export function CreanteClient({
   }, [filtered]);
 
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  const selectedTotals = useMemo(() => {
+    let totalSold = 0;
+    let totalFacturat = 0;
+    for (const c of creante) {
+      if (checkedIds.has(c.id)) {
+        totalSold += c.sold;
+        totalFacturat += c.total_factura;
+      }
+    }
+    return { totalSold, totalFacturat };
+  }, [creante, checkedIds]);
   const pagedRows = useMemo(() => {
     if (pageSize === "toate") return filtered;
     const start = (page - 1) * pageSize;
@@ -431,19 +440,6 @@ export function CreanteClient({
     });
   }
 
-  function handleSyncPartners() {
-    setSyncMessage(null);
-    startTransition(async () => {
-      const result = await syncPartnersAction();
-      if (result.success && result.data) {
-        setSyncMessage(
-          `${result.data.parteneriNoi} parteneri noi, ${result.data.creanteLegate} facturi legate.`
-        );
-      } else {
-        setSyncMessage(result.message ?? "Eroare la sincronizare.");
-      }
-    });
-  }
 
   function handleExport() {
     const rows = filtered.map((c) => ({
@@ -507,18 +503,8 @@ export function CreanteClient({
         </div>
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleSyncPartners}
-              disabled={isPending}
-              title="Cauta firme comune intre Creante, Obligatii si CRM"
-              className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-2 text-xs font-medium text-text-primary transition hover:bg-surface-1 disabled:opacity-50"
-            >
-              <Link2 size={14} />
-              Sincronizeaza parteneri
-            </button>
             <CreanteImportForm />
           </div>
-          {syncMessage && <p className="text-xs text-text-muted">{syncMessage}</p>}
         </div>
       </div>
 
@@ -888,6 +874,8 @@ export function CreanteClient({
         )}
       </div>
 
+      {syncMessage && <p className="mb-3 text-xs text-text-muted">{syncMessage}</p>}
+
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="rounded-lg border border-border-subtle bg-surface-1 px-3 py-2">
           <p className="text-[11px] uppercase tracking-wide text-text-muted">
@@ -908,6 +896,38 @@ export function CreanteClient({
           </p>
         </div>
       </div>
+
+      {checkedIds.size > 0 && (
+        <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="rounded-lg border border-[#E8007A]/30 bg-[#E8007A]/5 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-[#E8007A]">
+              Total factura ({checkedIds.size} selectate)
+            </p>
+            <p className="font-mono text-xl font-semibold text-text-primary">
+              {formatRon(selectedTotals.totalFacturat)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-[#E8007A]/30 bg-[#E8007A]/5 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-[#E8007A]">Sold ({checkedIds.size} selectate)</p>
+            <p className="font-mono text-xl font-semibold text-text-primary">
+              {formatRon(selectedTotals.totalSold)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {viewMode === "facturi" && (
+        <div className="mb-2">
+          <PaginationBar
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            page={page}
+            setPage={setPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+          />
+        </div>
+      )}
 
       {viewMode === "facturi" && (
       <div className="overflow-x-auto rounded-xl border border-border-subtle">
@@ -1127,52 +1147,15 @@ export function CreanteClient({
       )}
 
       {viewMode === "facturi" && (
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
-        <div className="flex items-center gap-1.5">
-          <span>Randuri pe pagina:</span>
-          {[25, 50, 100, "toate" as const].map((size) => (
-            <button
-              key={size}
-              onClick={() => {
-                setPageSize(size);
-                setPage(1);
-              }}
-              className={`rounded-md px-2 py-1 font-medium transition ${
-                pageSize === size
-                  ? "bg-[#E8007A] text-[#0B0D1A]"
-                  : "border border-border-subtle text-text-secondary hover:bg-surface-1"
-              }`}
-            >
-              {size === "toate" ? "Toate" : size}
-            </button>
-          ))}
-        </div>
-        {pageSize !== "toate" && (
-          <div className="flex items-center gap-2">
-            <span>
-              {filtered.length === 0
-                ? "0 rezultate"
-                : `${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, filtered.length)} din ${filtered.length}`}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <span>
-              Pagina {page} din {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        )}
+      <div className="mt-3">
+        <PaginationBar
+          pageSize={pageSize}
+          setPageSize={setPageSize}
+          page={page}
+          setPage={setPage}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+        />
       </div>
       )}
 

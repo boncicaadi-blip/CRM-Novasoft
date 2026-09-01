@@ -8,6 +8,8 @@ export interface DashboardFilters {
   statuses: string[];
   responsabili: string[];
   judete: string[];
+  /** Nume oportunitate/client - cautare libera, ca sa poti urmari miscarea unei firme anume. */
+  search: string;
   /** Interval de date (inclusiv) - din presetare rapida SAU din drag pe graficul de evolutie. */
   dateFrom: string | null;
   dateTo: string | null;
@@ -19,6 +21,7 @@ export const EMPTY_FILTERS: DashboardFilters = {
   statuses: [],
   responsabili: [],
   judete: [],
+  search: "",
   dateFrom: null,
   dateTo: null,
   periodPreset: null,
@@ -30,6 +33,7 @@ export function hasActiveFilters(filters: DashboardFilters): boolean {
     filters.statuses.length > 0 ||
     filters.responsabili.length > 0 ||
     filters.judete.length > 0 ||
+    filters.search.trim().length > 0 ||
     filters.dateFrom !== null ||
     filters.dateTo !== null
   );
@@ -90,7 +94,11 @@ export function applyDashboardFilters(
     );
   }
   if (filters.judete.length > 0) {
-    rows = rows.filter((o) => filters.judete.includes(o.judet ?? "Necunoscut"));
+    rows = rows.filter((o) => filters.judete.includes(o.partner?.judet ?? "Necunoscut"));
+  }
+  if (filters.search.trim()) {
+    const q = filters.search.trim().toLowerCase();
+    rows = rows.filter((o) => o.nume_potential.toLowerCase().includes(q));
   }
   if (filters.dateFrom) {
     rows = rows.filter((o) => o.updated_at.slice(0, 10) >= filters.dateFrom!);
@@ -120,6 +128,15 @@ export function computeKpis(opportunities: Opportunity[]) {
   const closedCount = won.length + lost.length;
   const winRate = closedCount > 0 ? won.length / closedCount : 0;
 
+  // Oportunitati noi in ultimele 30 de zile - respecta orice filtru deja
+  // aplicat (calculat direct din setul `opportunities` primit, care e deja
+  // filtrat de apelant).
+  const acum30Zile = new Date();
+  acum30Zile.setDate(acum30Zile.getDate() - 30);
+  const newOpportunitiesCount = opportunities.filter(
+    (o) => new Date(o.created_at) >= acum30Zile
+  ).length;
+
   return {
     totalOpportunities: pipelineReal.length,
     leadPoolCount: leadPool.length,
@@ -132,6 +149,7 @@ export function computeKpis(opportunities: Opportunity[]) {
     weightedForecast,
     forecastImplementare,
     winRate,
+    newOpportunitiesCount,
   };
 }
 
@@ -276,33 +294,132 @@ export function groupByCanalIntrare(opportunities: Opportunity[]) {
 }
 
 export function buildTimeSeries(history: OpportunityHistoryRow[]) {
-  // Grupam pe luna (YYYY-MM) si luam ultimul snapshot din fiecare luna per oportunitate,
-  // apoi sumam ARR-ul activ la acel moment.
-  const byMonthAndOpp = new Map<string, Map<string, OpportunityHistoryRow>>();
+  if (history.length === 0) return [];
 
+  // Grupam istoricul per oportunitate, sortat cronologic - ca sa putem gasi
+  // rapid "starea la sfarsitul lunii X" pentru fiecare oportunitate.
+  const byOpp = new Map<string, OpportunityHistoryRow[]>();
   for (const row of history) {
-    const month = row.snapshot_date.slice(0, 7); // YYYY-MM
-    if (!byMonthAndOpp.has(month)) byMonthAndOpp.set(month, new Map());
-    const monthMap = byMonthAndOpp.get(month)!;
-    const existing = monthMap.get(row.opportunity_id);
-    if (!existing || row.snapshot_date > existing.snapshot_date) {
-      monthMap.set(row.opportunity_id, row);
+    if (!byOpp.has(row.opportunity_id)) byOpp.set(row.opportunity_id, []);
+    byOpp.get(row.opportunity_id)!.push(row);
+  }
+  for (const rows of byOpp.values()) {
+    rows.sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
+  }
+
+  // Generam TOATE lunile, continuu, de la prima inregistrare pana la luna
+  // curenta - nu doar lunile in care s-a modificat efectiv ceva. Altfel, o
+  // oportunitate neatinsa cateva luni "dispare" din grafic in acele luni,
+  // desi ea chiar exista si conteaza in continuare - se "mentine" starea ei
+  // cunoscuta pana la urmatoarea modificare reala.
+  let firstDate = history[0].snapshot_date;
+  for (const row of history) if (row.snapshot_date < firstDate) firstDate = row.snapshot_date;
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const months: string[] = [];
+  const start = firstDate.slice(0, 7).split("-").map(Number);
+  let [y, m] = start;
+  while (`${y}-${String(m).padStart(2, "0")}` <= currentMonth) {
+    months.push(`${y}-${String(m).padStart(2, "0")}`);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
     }
   }
 
-  const months = Array.from(byMonthAndOpp.keys()).sort();
   return months.map((month) => {
-    const rows = Array.from(byMonthAndOpp.get(month)!.values());
-    const arr = rows.reduce((s, r) => s + (r.arr_synergo ?? 0), 0);
-    const count = rows.length;
-    // Prima si ultima zi calendaristica a lunii - folosite pentru a converti
-    // o selectie de luni (drag pe grafic) intr-un interval real de date,
-    // aplicabil ca filtru pe updated_at.
-    const [y, m] = month.split("-").map(Number);
+    const [my, mm] = month.split("-").map(Number);
+    const lastDay = new Date(my, mm, 0).getDate();
+    const sfarsitLuna = `${month}-${String(lastDay).padStart(2, "0")}T23:59:59`;
+
+    let arr = 0;
+    let mrr = 0;
+    let implementare = 0;
+    let count = 0;
+
+    for (const rows of byOpp.values()) {
+      // Cel mai recent snapshot cu data <= sfarsitul lunii - "starea la zi".
+      let starea: OpportunityHistoryRow | null = null;
+      for (const row of rows) {
+        if (row.snapshot_date <= sfarsitLuna) starea = row;
+        else break;
+      }
+      if (!starea || starea.status !== "Activa") continue;
+      arr += starea.arr_synergo ?? 0;
+      mrr += starea.mrr_synergo ?? 0;
+      implementare += starea.forecast_implementare ?? 0;
+      count += 1;
+    }
+
     const dateFrom = `${month}-01`;
-    const lastDay = new Date(y, m, 0).getDate();
     const dateTo = `${month}-${String(lastDay).padStart(2, "0")}`;
-    return { month, arr, count, dateFrom, dateTo };
+    return { month, arr, mrr, implementare, count, dateFrom, dateTo };
+  });
+}
+
+export interface StageEvolutionDatum {
+  month: string;
+  total: number;
+  stageCounts: Record<string, number>;
+}
+
+/**
+ * Cate oportunitati erau, in fiecare luna, in fiecare stage - reconstruit
+ * din istoric cu aceeasi logica de "mentinere a starii" ca buildTimeSeries
+ * (o oportunitate neatinsa isi pastreaza ultimul stage cunoscut in lunile
+ * fara modificari). Exclude Lead Pool, la fel ca restul rapoartelor
+ * comerciale.
+ */
+export function buildStageEvolution(history: OpportunityHistoryRow[]): StageEvolutionDatum[] {
+  if (history.length === 0) return [];
+
+  const byOpp = new Map<string, OpportunityHistoryRow[]>();
+  for (const row of history) {
+    if (!byOpp.has(row.opportunity_id)) byOpp.set(row.opportunity_id, []);
+    byOpp.get(row.opportunity_id)!.push(row);
+  }
+  for (const rows of byOpp.values()) {
+    rows.sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
+  }
+
+  let firstDate = history[0].snapshot_date;
+  for (const row of history) if (row.snapshot_date < firstDate) firstDate = row.snapshot_date;
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const months: string[] = [];
+  let [y, m] = firstDate.slice(0, 7).split("-").map(Number);
+  while (`${y}-${String(m).padStart(2, "0")}` <= currentMonth) {
+    months.push(`${y}-${String(m).padStart(2, "0")}`);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+
+  return months.map((month) => {
+    const [my, mm] = month.split("-").map(Number);
+    const lastDay = new Date(my, mm, 0).getDate();
+    const sfarsitLuna = `${month}-${String(lastDay).padStart(2, "0")}T23:59:59`;
+
+    const stageCounts: Record<string, number> = {};
+    let total = 0;
+
+    for (const rows of byOpp.values()) {
+      let starea: OpportunityHistoryRow | null = null;
+      for (const row of rows) {
+        if (row.snapshot_date <= sfarsitLuna) starea = row;
+        else break;
+      }
+      if (!starea || !starea.stage || starea.stage === "Lead Pool") continue;
+      stageCounts[starea.stage] = (stageCounts[starea.stage] ?? 0) + 1;
+      total += 1;
+    }
+
+    return { month, total, stageCounts };
   });
 }
 
@@ -319,32 +436,50 @@ export interface OpportunityScoreBreakdown {
  */
 export function computeOpportunityScore(o: Opportunity): OpportunityScoreBreakdown {
   const detalii: { criteriu: string; puncte: number; maxim: number }[] = [];
+  const p = o.partner;
 
-  // Decident identificat (contact cu nume + functie) - 20p
-  const decidentPuncte = o.contact_nume && o.contact_functie ? 20 : o.contact_nume ? 10 : 0;
+  // Decident identificat (contact cu nume + functie) - 20p - din Partener.
+  const contactNume = p?.contact_nume ?? null;
+  const contactFunctie = p?.contact_functie ?? null;
+  const decidentPuncte = contactNume && contactFunctie ? 20 : contactNume ? 10 : 0;
   detalii.push({ criteriu: "Decident identificat", puncte: decidentPuncte, maxim: 20 });
 
-  // Sistem actual deficitar / fara sistem - 20p (presupunem ca lipsa solutiei
-  // existente sau mentionarea uneia indica o nevoie de inlocuire)
-  const sistemPuncte = o.solutia_existenta ? 20 : 0;
-  detalii.push({ criteriu: "Sistem actual identificat", puncte: sistemPuncte, maxim: 20 });
+  // Sistem actual deficitar / fara sistem - 15p - din Partener.
+  const sistemPuncte = p?.solutia_existenta ? 15 : 0;
+  detalii.push({ criteriu: "Sistem actual identificat", puncte: sistemPuncte, maxim: 15 });
 
-  // Flota / casa de expeditii (nr vehicule > 0) - 15p, scalat dupa marime
-  const nrVehicule = o.nr_vehicule ?? 0;
-  const flotaPuncte = nrVehicule >= 20 ? 15 : nrVehicule >= 5 ? 10 : nrVehicule > 0 ? 5 : 0;
-  detalii.push({ criteriu: "Marime flota", puncte: flotaPuncte, maxim: 15 });
+  // Dimensiune companie - 20p - adaptat dupa domeniul de activitate al
+  // Partenerului: o casa de expeditii (CE) nu detine flota proprie, deci nu
+  // are sens sa fie penalizata pentru "0 vehicule" - se evalueaza dupa
+  // nr. angajati in schimb. Un transportator cu flota (TRM, sau mixt
+  // TRM + CE) chiar detine vehicule, deci ramane evaluat dupa flota.
+  const domeniu = p?.domeniu?.valoare ?? "";
+  const areFlotaProprie = domeniu.includes("TRM");
+  let dimensiunePuncte = 0;
+  let dimensiuneCriteriu: string;
+  if (areFlotaProprie) {
+    const nrVehicule = p?.nr_vehicule ?? 0;
+    dimensiunePuncte = nrVehicule >= 20 ? 20 : nrVehicule >= 5 ? 12 : nrVehicule > 0 ? 6 : 0;
+    dimensiuneCriteriu = "Marime flota";
+  } else {
+    const nrAngajati = p?.nr_angajati ?? 0;
+    dimensiunePuncte = nrAngajati >= 50 ? 20 : nrAngajati >= 15 ? 12 : nrAngajati > 0 ? 6 : 0;
+    dimensiuneCriteriu = "Marime companie (angajati)";
+  }
+  detalii.push({ criteriu: dimensiuneCriteriu, puncte: dimensiunePuncte, maxim: 20 });
 
-  // Nr utilizatori Synergo solicitati - 15p, scalat
+  // Nr utilizatori Synergo solicitati - 15p, scalat - specific negocierii,
+  // ramane pe Oportunitate.
   const nrUtilizatori = o.nr_utilizatori_synergo ?? 0;
   const utilizatoriPuncte =
     nrUtilizatori >= 20 ? 15 : nrUtilizatori >= 10 ? 10 : nrUtilizatori > 0 ? 5 : 0;
   detalii.push({ criteriu: "Nr utilizatori", puncte: utilizatoriPuncte, maxim: 15 });
 
-  // Interes produs/proiect definit (TMS, ERP etc.) - 10p
+  // Interes produs/proiect definit (TMS, ERP etc.) - 10p.
   const interesPuncte = o.produs_serviciu_propus || o.tip_proiect ? 10 : 0;
   detalii.push({ criteriu: "Interes produs definit", puncte: interesPuncte, maxim: 10 });
 
-  // Termen de decizie / actiune apropiata (in urmatoarele 14 zile) - 10p
+  // Termen de decizie / actiune apropiata (in urmatoarele 14 zile) - 10p.
   let termenPuncte = 0;
   if (o.data_actiune) {
     const zile = Math.floor(
@@ -355,12 +490,12 @@ export function computeOpportunityScore(o: Opportunity): OpportunityScoreBreakdo
   }
   detalii.push({ criteriu: "Termen apropiat", puncte: termenPuncte, maxim: 10 });
 
-  // Recomandare ca sursa - 5p
+  // Recomandare ca sursa - 5p.
   const recomandarePuncte = o.canal_intrare === "Recomandare" ? 5 : 0;
   detalii.push({ criteriu: "Sursa recomandare", puncte: recomandarePuncte, maxim: 5 });
 
-  // Potential fonduri europene - 5p
-  const fonduriPuncte = o.potential_fonduri_europene ? 5 : 0;
+  // Potential fonduri europene - 5p - din Partener.
+  const fonduriPuncte = p?.potential_fonduri_europene ? 5 : 0;
   detalii.push({ criteriu: "Fonduri europene", puncte: fonduriPuncte, maxim: 5 });
 
   const total = detalii.reduce((s, d) => s + d.puncte, 0);

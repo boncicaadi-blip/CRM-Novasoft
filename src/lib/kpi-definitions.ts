@@ -84,6 +84,16 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     formula: "Suma ARR pentru oportunitatile cu status Activa (exclus Lead Pool)",
     cumAnalizezi: "Cat business recurent potential ai in lucru chiar acum?",
   },
+  crmMrrActiv: {
+    descriere: "Valoarea lunara recurenta (MRR) a tuturor oportunitatilor active, neponderata cu probabilitatea - include si mentenanta lunara onpremise, unde exista.",
+    formula: "Suma MRR pentru oportunitatile cu status Activa (exclus Lead Pool)",
+    cumAnalizezi: "Cu cat poti creste veniturile recurente lunare, daca inchizi tot ce ai in lucru chiar acum?",
+  },
+  crmOportunitatiNoi: {
+    descriere: "Numarul de oportunitati create in ultimele 30 de zile, in cadrul filtrului curent.",
+    formula: "Count(oportunitati) unde created_at >= azi - 30 zile",
+    cumAnalizezi: "Cat de activ e fluxul de leaduri noi in ultima perioada?",
+  },
   crmForecastPonderat: {
     descriere: "ARR-ul pipeline-ului, ajustat cu probabilitatea de castig a fiecarei oportunitati (dupa stage).",
     formula: "Suma (ARR x Probabilitate stage), pentru oportunitatile active",
@@ -124,6 +134,19 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     descriere: "Evolutia ARR-ului activ in timp, pe baza istoricului de schimbari al oportunitatilor.",
     cumAnalizezi: "Arata daca pipeline-ul creste sau scade in timp - un trend descendent sustinut merita investigat.",
   },
+  crmEvolutieMrrChart: {
+    descriere: "Evolutia MRR-ului activ in timp (recurenta lunara), reconstruita din istoricul de modificari - starea unei oportunitati se mentine in lunile in care nu s-a modificat nimic.",
+    cumAnalizezi: "Arata daca veniturile recurente lunare potentiale cresc sau scad in timp - mai relevant decat ARR pentru urmarirea cresterii lunare.",
+  },
+  crmEvolutieImplementareChart: {
+    descriere: "Evolutia valorii de implementare (venit unic) in timp, pe baza istoricului de schimbari al oportunitatilor.",
+    cumAnalizezi: "Arata daca volumul de proiecte noi de implementat creste sau scade in timp.",
+  },
+  crmMiscareStageuri: {
+    descriere: "Numarul de oportunitati in fiecare stage, luna de luna, reconstruit din istoric - starea unei oportunitati se mentine in lunile fara modificari.",
+    formula: "Count(oportunitati) grupat pe stage, la finalul fiecarei luni (exclus Lead Pool)",
+    cumAnalizezi: "Arata cum se misca pipeline-ul intre etape in timp. Filtreaza dupa nume, sus, ca sa vezi traseul exact al unei singure oportunitati.",
+  },
   raportLunarPipelineEvolutie: {
     descriere: "Pipeline-ul total activ la finalul fiecarei luni, reconstruit din istoricul de modificari.",
     formula: "Pipeline Total Activ, calculat la ultima zi a fiecarei luni",
@@ -154,6 +177,11 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     formula: "Suma venit_estimat sau venit_realizat din liniile de Venituri, pentru perioada selectata",
     cumAnalizezi: "Cat venit ai planificat sau ai realizat efectiv in perioada aleasa?",
   },
+  plComparatiiPerioade: {
+    descriere: "MTD (luna curenta pana acum), YTD (anul curent pana acum), MoM (variatie fata de luna anterioara) si YoY (variatie fata de aceeasi luna, anul trecut) - calculate mereu pe luna/anul curent, indiferent de perioada selectata mai sus in pagina.",
+    formula: "MTD/YTD: suma valorilor realizate. MoM/YoY: (curent - anterior) / |anterior|",
+    cumAnalizezi: "Verde = evolutie buna (venituri/profit in crestere, sau cheltuieli in scadere). Rosu = evolutie nefavorabila.",
+  },
   plTotalCosturi: {
     descriere: "Suma tuturor costurilor, pe toate grupele (Incadrare), pentru perioada si filtrul selectat.",
     formula: "Suma valoare_prognozata sau valoare_realizata din liniile de Cheltuieli, pentru perioada selectata",
@@ -170,14 +198,14 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     cumAnalizezi: "Click pe orice suma din tabel pentru a vedea din ce se compune.",
   },
   cashflowIncasari: {
-    descriere: "Bani care intra efectiv (Realizat) sau care urmeaza sa intre, dupa scadenta (Estimat).",
-    formula: "Realizat: suma incasarilor efective (data reala). Estimat: soldul neincasat al facturilor, dupa data scadentei.",
-    cumAnalizezi: "Cat de aproape e Realizatul de Estimat? O diferenta mare inseamna incasari intarziate.",
+    descriere: "Bani care intra efectiv (Realizat) sau care urmeaza sa intre, dupa scadenta (Prognozat).",
+    formula: "Realizat: suma incasarilor efective (data reala). Prognozat: soldul neincasat al facturilor, dupa data scadentei.",
+    cumAnalizezi: "Cat de aproape e Realizatul de Prognozat? O diferenta mare inseamna incasari intarziate.",
   },
   cashflowPlati: {
-    descriere: "Bani care ies efectiv (Realizat) sau care urmeaza sa iasa, dupa scadenta (Estimat).",
-    formula: "Realizat: suma platilor efective (data reala). Estimat: soldul neplatit al facturilor, dupa data scadentei.",
-    cumAnalizezi: "Ai suficiente incasari estimate ca sa acoperi platile estimate din aceeasi luna?",
+    descriere: "Bani care ies efectiv (Realizat) sau care urmeaza sa iasa, dupa scadenta (Prognozat).",
+    formula: "Realizat: suma platilor efective (data reala). Prognozat: soldul neplatit al facturilor, dupa data scadentei.",
+    cumAnalizezi: "Ai suficiente incasari prognozate ca sa acoperi platile prognozate din aceeasi luna?",
   },
   cashflowNet: {
     descriere: "Diferenta dintre Incasari si Plati - cati bani net intra sau ies intr-o luna.",
@@ -185,9 +213,9 @@ export const KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     cumAnalizezi: "O luna cu Net negativ inseamna ca ies mai multi bani decat intra - merita anticipata din timp.",
   },
   cashflowPaymentCoverage: {
-    descriere: "Raportul dintre incasarile estimate si platile estimate, pentru perioada selectata.",
-    formula: "Incasari estimate / Plati estimate",
-    cumAnalizezi: "Sub 100% inseamna presiune: platile planificate depasesc incasarile estimate din aceeasi perioada.",
+    descriere: "Raportul dintre incasarile prognozate si platile prognozate, pentru perioada selectata.",
+    formula: "Incasari prognozate / Plati prognozate",
+    cumAnalizezi: "Sub 100% inseamna presiune: platile planificate depasesc incasarile prognozate din aceeasi perioada.",
   },
   cashflowLuniNegative: {
     descriere: "Numarul de luni din perioada selectata in care Cashflow Net e negativ (ies mai multi bani decat intra).",

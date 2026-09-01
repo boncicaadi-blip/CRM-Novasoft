@@ -213,3 +213,23 @@ export async function bulkMarkPlatitAction(ids: string[]): Promise<{ success: bo
   revalidatePath("/venituri-cheltuieli/cheltuieli");
   return { success: true };
 }
+
+/**
+ * Inversul lui bulkMarkPlatitAction - scoate bifa de platit si reseteaza
+ * valoare_realizata la 0.
+ */
+export async function bulkUnmarkPlatitAction(ids: string[]): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot edita cheltuieli." };
+  if (ids.length === 0) return { success: true };
+
+  const { error } = await supabase
+    .from("cheltuieli_linii")
+    .update({ platit: false, valoare_realizata: 0 })
+    .in("id", ids);
+
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/venituri-cheltuieli/cheltuieli");
+  return { success: true };
+}

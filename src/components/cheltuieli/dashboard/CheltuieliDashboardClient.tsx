@@ -21,7 +21,7 @@ import {
 import { VenituriEvolutieChart } from "@/components/venituri/dashboard/VenituriEvolutieChart";
 import { VenituriPieChart } from "@/components/venituri/dashboard/VenituriPieChart";
 import { CheltuieliComponentaList } from "./CheltuieliComponentaList";
-import { TopClasaList } from "./TopClasaList";
+import { VenituriTopClientiChart } from "@/components/venituri/dashboard/VenituriTopClientiChart";
 import type { ContractCheltuiala, CheltuialaLinie } from "@/types/cheltuieli";
 
 type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
@@ -132,8 +132,8 @@ export function CheltuieliDashboardClient({
   const frecventaData = useMemo(() => groupByFrecventa(filtered), [filtered]);
   const statusData = useMemo(() => groupByStatusContract(filtered, contractById), [filtered, contractById]);
   const evolutieData = useMemo(
-    () => buildEvolutieLunara(cheltuieliLinii.filter(matchesFilters), 18),
-    [cheltuieliLinii, filters]
+    () => buildEvolutieLunara(filtered),
+    [filtered]
   );
 
   const hasFilter = filters.incadrare.length > 0 || filters.clasa.length > 0 || filters.frecventa.length > 0;
@@ -289,9 +289,9 @@ export function CheltuieliDashboardClient({
         <VenituriEvolutieChart data={evolutieData} />
       </ExpandableChart>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <ExpandableChart>
-          <VenituriPieChart
+          <VenituriTopClientiChart
             title="Dupa Incadrare"
             data={incadrareData}
             selected={filters.incadrare}
@@ -300,14 +300,31 @@ export function CheltuieliDashboardClient({
           />
         </ExpandableChart>
         <ExpandableChart>
-          <TopClasaList
-            title="Dupa Clasa"
-            data={clasaData}
-            selected={filters.clasa}
-            onToggle={(v) => setFilters((f) => ({ ...f, clasa: toggleIn(f.clasa, v) }))}
-            definition={CHELTUIELI_KPI_DEFINITIONS.dupaClasa}
+          <VenituriPieChart
+            title="Pondere pe Incadrare"
+            data={incadrareData}
+            selected={filters.incadrare}
+            onToggle={(v) => setFilters((f) => ({ ...f, incadrare: toggleIn(f.incadrare, v) }))}
+            definition={CHELTUIELI_KPI_DEFINITIONS.dupaIncadrare}
           />
         </ExpandableChart>
+      </div>
+
+      {filters.incadrare.length > 0 && (
+        <div className="mt-4">
+          <ExpandableChart>
+            <VenituriTopClientiChart
+              title={`Dupa Clasa (in cadrul: ${filters.incadrare.join(", ")})`}
+              data={clasaData}
+              selected={filters.clasa}
+              onToggle={(v) => setFilters((f) => ({ ...f, clasa: toggleIn(f.clasa, v) }))}
+              definition={CHELTUIELI_KPI_DEFINITIONS.dupaClasa}
+            />
+          </ExpandableChart>
+        </div>
+      )}
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <ExpandableChart>
           <VenituriPieChart
             title="Recurenta vs. Nerecurenta"

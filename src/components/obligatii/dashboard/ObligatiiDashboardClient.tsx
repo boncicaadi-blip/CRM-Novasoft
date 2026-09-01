@@ -117,21 +117,33 @@ export function ObligatiiDashboardClient({
     [platiFlat, period, customFrom, customTo, customMonths]
   );
 
-  const grtSeries = useMemo(() => buildGrtSeries(platiFlat, targets, 11), [platiFlat, targets]);
-  const platiSeries = useMemo(() => buildPlatiTimeSeries(platiFlat, 11), [platiFlat]);
-  const facturatSeries = useMemo(() => buildFacturatTimeSeries(obligatii, 11), [obligatii]);
-  const dinamicaData = useMemo(
-    () =>
-      facturatSeries.map((f, i) => ({
-        month: f.month,
-        facturat: f.facturat,
-        platit: platiSeries[i]?.total ?? 0,
-      })),
-    [facturatSeries, platiSeries]
+  const grtSeries = useMemo(
+    () => buildGrtSeries(platiFlat, targets, 11, period, { from: customFrom, to: customTo, months: customMonths }),
+    [platiFlat, targets, period, customFrom, customTo, customMonths]
   );
+  // Separat de grafic (care respecta filtrul de perioada) - cardul de GRT
+  // "luna curenta" trebuie sa arate mereu luna reala curenta, indiferent de
+  // filtrul ales in restul paginii.
+  const grtSeriesIntreg = useMemo(() => buildGrtSeries(platiFlat, targets, 11), [platiFlat, targets]);
+  const platiSeries = useMemo(
+    () => buildPlatiTimeSeries(platiFlat, 11, period, { from: customFrom, to: customTo, months: customMonths }),
+    [platiFlat, period, customFrom, customTo, customMonths]
+  );
+  const facturatSeries = useMemo(
+    () => buildFacturatTimeSeries(obligatii, 11, period, { from: customFrom, to: customTo, months: customMonths }),
+    [obligatii, period, customFrom, customTo, customMonths]
+  );
+  const dinamicaData = useMemo(() => {
+    const platiByMonth = new Map(platiSeries.map((p) => [p.monthKey, p.total]));
+    return facturatSeries.map((f) => ({
+      month: f.month,
+      facturat: f.facturat,
+      platit: platiByMonth.get(f.monthKey) ?? 0,
+    }));
+  }, [facturatSeries, platiSeries]);
 
   const currentMonthKey = getTodayISO().slice(0, 7);
-  const currentMonthGrt = grtSeries.find((g) => g.monthKey === currentMonthKey);
+  const currentMonthGrt = grtSeriesIntreg.find((g) => g.monthKey === currentMonthKey);
 
   const furnizorOptions = useMemo(
     () => Array.from(new Set(obligatii.map((o) => o.nume_furnizor))).sort(),

@@ -3,4 +3,4 @@
  * genereaza o arhiva noua de schimbari (Claude o actualizeaza aici), separat
  * de numarul de versiune din package.json.
  */
-export const VERSION_DATE = "2026-07-20";
+export const VERSION_DATE = "2026-08-31";

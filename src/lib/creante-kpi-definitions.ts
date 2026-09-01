@@ -45,6 +45,12 @@ export const CREANTE_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     cumAnalizezi:
       "Spre deosebire de celelalte carduri, acesta chiar raspunde la filtrul de perioada. O factura emisa in martie dar incasata in iunie conteaza la iunie, nu la martie.",
   },
+  dso: {
+    descriere: "Days Sales Outstanding - numarul mediu de zile pana se incaseaza o factura, dupa emitere.",
+    formula: "(Sold neincasat curent / Total facturat in ultimele 90 de zile) x 90 de zile",
+    cumAnalizezi:
+      "Un DSO care creste in timp arata ca incasezi mai greu decat inainte - clientii platesc mai tarziu. Nu raspunde la filtrul de perioada de sus (e mereu calculat pe ultimele 90 de zile, ca sa fie comparabil de la o luna la alta).",
+  },
   statusChart: {
     descriere: "Cate facturi (si cat sold) sunt in fiecare status: La zi, Restanta sau Incasata.",
     formula: "Numarare + suma sold, grupate dupa status curent al fiecarei facturi",

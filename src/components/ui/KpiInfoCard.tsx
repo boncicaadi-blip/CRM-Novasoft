@@ -84,8 +84,11 @@ export function KpiInfoCard({
             {value}
           </p>
           {trend && trend !== "flat" && (
-            <span style={{ color: trendColor }}>
-              {trend === "up" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+            <span
+              className="flex items-center justify-center rounded-full p-1"
+              style={{ backgroundColor: `${trendColor}20`, color: trendColor }}
+            >
+              {trend === "up" ? <ArrowUp size={22} strokeWidth={3} /> : <ArrowDown size={22} strokeWidth={3} />}
             </span>
           )}
         </div>

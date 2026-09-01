@@ -12,16 +12,18 @@ import {
   Download,
   ArrowUp,
   ArrowDown,
-  ChevronLeft,
-  ChevronRight,
   X,
   Users,
   RotateCcw,
+  Plus,
 } from "lucide-react";
 import { KpiInfoCard } from "@/components/ui/KpiInfoCard";
 import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { ObligatiiImportForm } from "./ObligatiiImportForm";
 import { ObligatieDetailModal } from "./ObligatieDetailModal";
+import { ManualObligatieFormModal } from "./ManualObligatieFormModal";
+import { ObligatiiRecurenteModal } from "./ObligatiiRecurenteModal";
+import { PaginationBar } from "@/components/ui/PaginationBar";
 import { AgingBarObligatii } from "./AgingBarObligatii";
 import { formatRon } from "@/lib/format";
 import { OBLIGATII_KPI_DEFINITIONS } from "@/lib/obligatii-kpi-definitions";
@@ -125,19 +127,24 @@ export function ObligatiiClient({
   lastBatch,
   plati,
   modalitatePlataOptions,
+  recurente,
+  furnizoriOptions,
 }: {
   obligatii: Obligatie[];
   lastBatch: ObligatiiImportBatch | null;
   plati: Record<string, ObligatiePlata[]>;
   modalitatePlataOptions: string[];
+  recurente: (import("@/types/obligatii").ObligatieRecurenta & { partner_nume: string | null })[];
+  furnizoriOptions: import("@/lib/data/partners").FurnizorOption[];
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("luna_curenta");
   const [customFrom, setCustomFrom] = useState("");
   const [customTo, setCustomTo] = useState("");
   const [customMonths, setCustomMonths] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("restanta");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("toate");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Obligatie | null>(null);
+  const [showManualForm, setShowManualForm] = useState(false);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [dataPlataBulk, setDataPlataBulk] = useState(getTodayISO());
   const [isPending, startTransition] = useTransition();
@@ -155,6 +162,8 @@ export function ObligatiiClient({
     "soldRestant" | "targetPropus" | "totalPlatit" | null
   >(null);
   const [onlyPartial, setOnlyPartial] = useState(false);
+  const [onlyPrognoza, setOnlyPrognoza] = useState(false);
+  const [showRecurenteModal, setShowRecurenteModal] = useState(false);
   const [viewMode, setViewMode] = useState<"facturi" | "furnizor">("facturi");
 
   const obligatiiEffective = useMemo(() => {
@@ -214,6 +223,7 @@ export function ObligatiiClient({
       }
       if (agingFilter && !matchesAgingBucketObligatie(o, agingFilter)) return false;
       if (onlyPartial && !isPartialPropusObligatie(o)) return false;
+      if (onlyPrognoza && o.sursa !== "prognoza") return false;
       if (statusFilter === "toate") return true;
       return getObligatieStatus(o) === statusFilter;
     });
@@ -226,7 +236,7 @@ export function ObligatiiClient({
       });
     }
     return rows;
-  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter, onlyPartial]);
+  }, [inPeriodList, statusFilter, search, sortKey, sortDir, agingFilter, onlyPartial, onlyPrognoza]);
 
   // Grupare pe furnizor - respecta toate filtrele active.
   const furnizorGroups = useMemo(() => {
@@ -263,6 +273,18 @@ export function ObligatiiClient({
   }, [filtered]);
 
   const totalPages = pageSize === "toate" ? 1 : Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  const selectedTotals = useMemo(() => {
+    let totalSold = 0;
+    let totalFacturat = 0;
+    for (const o of obligatii) {
+      if (checkedIds.has(o.id)) {
+        totalSold += o.sold;
+        totalFacturat += o.total_factura;
+      }
+    }
+    return { totalSold, totalFacturat };
+  }, [obligatii, checkedIds]);
   const pagedRows = useMemo(() => {
     if (pageSize === "toate") return filtered;
     const start = (page - 1) * pageSize;
@@ -678,6 +700,23 @@ export function ObligatiiClient({
           <Target size={13} />
           Propuse partial
         </button>
+        <button
+          onClick={() => setOnlyPrognoza((v) => !v)}
+          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
+            onlyPrognoza
+              ? "bg-amber-500 text-[#0B0D1A]"
+              : "border border-border-subtle text-text-secondary hover:bg-surface-1"
+          }`}
+          title="Doar facturi prognozate (generate in avans, inca neconfirmate cu o factura reala)"
+        >
+          Doar prognoze
+        </button>
+        <button
+          onClick={() => setShowRecurenteModal(true)}
+          className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-primary transition hover:bg-surface-1"
+        >
+          Plati recurente
+        </button>
         <div className="flex items-center rounded-md border border-border-subtle p-0.5">
           <button
             onClick={() => setViewMode("facturi")}
@@ -697,6 +736,13 @@ export function ObligatiiClient({
             Pe furnizor
           </button>
         </div>
+        <button
+          onClick={() => setShowManualForm(true)}
+          className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-primary transition hover:bg-surface-1"
+        >
+          <Plus size={13} />
+          Adauga manual
+        </button>
         <button
           onClick={handleExport}
           className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs font-medium text-text-primary transition hover:bg-surface-1"
@@ -789,6 +835,38 @@ export function ObligatiiClient({
         </div>
       </div>
 
+      {checkedIds.size > 0 && (
+        <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="rounded-lg border border-[#E8007A]/30 bg-[#E8007A]/5 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-[#E8007A]">
+              Total factura ({checkedIds.size} selectate)
+            </p>
+            <p className="font-mono text-xl font-semibold text-text-primary">
+              {formatRon(selectedTotals.totalFacturat)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-[#E8007A]/30 bg-[#E8007A]/5 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-[#E8007A]">Sold ({checkedIds.size} selectate)</p>
+            <p className="font-mono text-xl font-semibold text-text-primary">
+              {formatRon(selectedTotals.totalSold)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {viewMode === "facturi" && (
+        <div className="mb-2">
+          <PaginationBar
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            page={page}
+            setPage={setPage}
+            totalPages={totalPages}
+            totalItems={filtered.length}
+          />
+        </div>
+      )}
+
       {viewMode === "facturi" && (
       <div className="overflow-x-auto rounded-xl border border-border-subtle">
         <table className="text-sm" style={{ tableLayout: "fixed", width: "max-content" }}>
@@ -848,6 +926,11 @@ export function ObligatiiClient({
                     >
                       {o.nume_furnizor}
                     </Link>
+                    {o.sursa === "prognoza" && (
+                      <span className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-medium text-amber-400">
+                        Prognoza
+                      </span>
+                    )}
                   </td>
                   <td
                     className="cursor-pointer truncate px-2 py-1.5 text-text-secondary"
@@ -992,52 +1075,15 @@ export function ObligatiiClient({
       )}
 
       {viewMode === "facturi" && (
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
-        <div className="flex items-center gap-1.5">
-          <span>Randuri pe pagina:</span>
-          {[25, 50, 100, "toate" as const].map((size) => (
-            <button
-              key={size}
-              onClick={() => {
-                setPageSize(size);
-                setPage(1);
-              }}
-              className={`rounded-md px-2 py-1 font-medium transition ${
-                pageSize === size
-                  ? "bg-[#E8007A] text-[#0B0D1A]"
-                  : "border border-border-subtle text-text-secondary hover:bg-surface-1"
-              }`}
-            >
-              {size === "toate" ? "Toate" : size}
-            </button>
-          ))}
-        </div>
-        {pageSize !== "toate" && (
-          <div className="flex items-center gap-2">
-            <span>
-              {filtered.length === 0
-                ? "0 rezultate"
-                : `${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, filtered.length)} din ${filtered.length}`}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <span>
-              Pagina {page} din {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="rounded-md border border-border-subtle p-1 transition hover:bg-surface-1 disabled:opacity-30"
-            >
-              <ChevronRight size={14} />
-            </button>
-          </div>
-        )}
+      <div className="mt-3">
+        <PaginationBar
+          pageSize={pageSize}
+          setPageSize={setPageSize}
+          page={page}
+          setPage={setPage}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+        />
       </div>
       )}
 
@@ -1048,6 +1094,18 @@ export function ObligatiiClient({
           modalitatePlataOptions={modalitatePlataOptions}
           onClose={() => setSelected(null)}
         />
+      )}
+
+      {showManualForm && (
+        <ManualObligatieFormModal
+          modalitatePlataOptions={modalitatePlataOptions}
+          furnizoriOptions={furnizoriOptions}
+          onClose={() => setShowManualForm(false)}
+        />
+      )}
+
+      {showRecurenteModal && (
+        <ObligatiiRecurenteModal recurente={recurente} onClose={() => setShowRecurenteModal(false)} />
       )}
     </div>
   );

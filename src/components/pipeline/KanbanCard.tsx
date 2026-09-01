@@ -9,6 +9,7 @@ import { STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { computeStagnation } from "@/lib/analytics";
 import { ScoreBadge } from "@/components/ScoreBadge";
+import { getCompanyLogoUrl } from "@/lib/logo";
 import type { Opportunity } from "@/types/opportunity";
 
 export function KanbanCard({
@@ -34,10 +35,12 @@ export function KanbanCard({
         opacity: isDragging ? 0 : 1,
       };
 
-  const totalValue =
-    (opportunity.arr_synergo ?? 0) +
-    (opportunity.valoare_implementare_synergo ?? 0) +
-    (opportunity.licenta_synergo_onpremise ?? 0);
+  // MRR total (SaaS recurent + mentenanta lunara onpremise, daca exista) si
+  // valoarea de implementare - afisate separat, in loc de un singur total
+  // combinat, ca sa se vada clar recurenta fata de venitul unic.
+  const mrrTotal = (opportunity.mrr_synergo ?? 0) + (opportunity.forecast_mentenanta_onpremise_lunar ?? 0);
+  const logoUrl = getCompanyLogoUrl(opportunity.partner?.website, 32);
+  const implementareTotal = opportunity.forecast_implementare ?? opportunity.valoare_implementare_synergo ?? 0;
 
   // Risc: B-04/B-09 din roadmap - "fara next step" (Activa fara actiune/data),
   // "intarziat" (actiune planificata dar data e in trecut), sau "stagnare"
@@ -57,7 +60,18 @@ export function KanbanCard({
   const content = (
     <>
       <div className="mb-1.5 flex items-start justify-between gap-2">
-        <p className="text-sm font-medium leading-tight text-text-primary">
+        <p className="flex items-center gap-1.5 text-sm font-medium leading-tight text-text-primary">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-4 w-4 shrink-0 rounded border border-border-subtle bg-white object-contain p-0.5"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          )}
           {opportunity.nume_potential}
         </p>
         <span
@@ -71,7 +85,7 @@ export function KanbanCard({
         </span>
       </div>
       <p className="mb-1.5 text-[11px] text-text-muted">
-        {opportunity.judet ?? "—"} · {opportunity.tip_proiect ?? "—"}
+        {opportunity.partner?.judet ?? "—"} · {opportunity.tip_proiect ?? "—"}
       </p>
 
       {opportunity.actiune && (
@@ -120,8 +134,18 @@ export function KanbanCard({
       )}
 
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[#E8007A]">
-          {totalValue > 0 ? formatEur(totalValue) : "—"}
+        <span className="flex items-center gap-2 font-mono text-xs">
+          {mrrTotal > 0 && (
+            <span style={{ color: "#E8007A" }} title="MRR (recurent lunar)">
+              {formatEur(mrrTotal)} MRR
+            </span>
+          )}
+          {implementareTotal > 0 && (
+            <span style={{ color: "#0070F3" }} title="Valoare implementare">
+              {formatEur(implementareTotal)} IMPL.
+            </span>
+          )}
+          {mrrTotal <= 0 && implementareTotal <= 0 && <span className="text-text-muted">—</span>}
         </span>
         <div className="flex items-center gap-1.5">
           <ScoreBadge o={opportunity} />

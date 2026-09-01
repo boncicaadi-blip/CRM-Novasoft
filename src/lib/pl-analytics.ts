@@ -94,9 +94,11 @@ export function buildPlReport(
     const key = l.luna.slice(0, 7);
     if (!lunaSet.has(key)) continue;
     const target = l.tip_venit === "Recurent" ? venitRecurent : venitNerecurent;
-    target.perLuna[key].estimat += l.venit_estimat;
+    if (!l.mutat_in_linie_id) {
+      target.perLuna[key].estimat += l.venit_estimat;
+      target.totalEstimat += l.venit_estimat;
+    }
     target.perLuna[key].realizat += l.venit_realizat ?? 0;
-    target.totalEstimat += l.venit_estimat;
     target.totalRealizat += l.venit_realizat ?? 0;
   }
 
@@ -170,4 +172,193 @@ export function buildPlReport(
       totalRealizat: venituri.totalRealizat - totalCosturi.totalRealizat,
     },
   };
+}
+
+export interface PeriodComparisonValue {
+  curent: number;
+  anterior: number | null;
+  variatieProcent: number | null;
+}
+
+export interface PeriodComparisons {
+  mtdVenituri: number;
+  mtdCheltuieli: number;
+  mtdProfit: number;
+  ytdVenituri: number;
+  ytdCheltuieli: number;
+  ytdProfit: number;
+  momVenituri: PeriodComparisonValue;
+  momCheltuieli: PeriodComparisonValue;
+  momProfit: PeriodComparisonValue;
+  yoyVenituri: PeriodComparisonValue;
+  yoyCheltuieli: PeriodComparisonValue;
+  yoyProfit: PeriodComparisonValue;
+}
+
+function sumRealizatByMonth(
+  venituriLinii: VenitLinie[],
+  cheltuieliLinii: CheltuialaLinie[]
+): { venituri: Map<string, number>; cheltuieli: Map<string, number> } {
+  const venituri = new Map<string, number>();
+  for (const l of venituriLinii) {
+    const key = l.luna.slice(0, 7);
+    venituri.set(key, (venituri.get(key) ?? 0) + (l.venit_realizat ?? 0));
+  }
+  const cheltuieli = new Map<string, number>();
+  for (const l of cheltuieliLinii) {
+    const key = l.luna.slice(0, 7);
+    cheltuieli.set(key, (cheltuieli.get(key) ?? 0) + (l.valoare_realizata ?? 0));
+  }
+  return { venituri, cheltuieli };
+}
+
+function variatie(curent: number, anterior: number | null): PeriodComparisonValue {
+  return {
+    curent,
+    anterior,
+    variatieProcent: anterior !== null && anterior !== 0 ? (curent - anterior) / Math.abs(anterior) : null,
+  };
+}
+
+/**
+ * MTD (Month to Date), YTD (Year to Date), MoM (Month over Month) si YoY
+ * (Year over Year) - calculate direct din liniile brute de Venituri/
+ * Cheltuieli, independent de intervalul selectat in tabelul de mai sus
+ * (aceste comparatii se raporteaza mereu la luna/anul CURENT, ca sa fie
+ * consistente indiferent ce interval urmaresti in restul paginii).
+ */
+export function computePeriodComparisons(
+  venituriLinii: VenitLinie[],
+  cheltuieliLinii: CheltuialaLinie[]
+): PeriodComparisons {
+  const { venituri: venituriPerLuna, cheltuieli: cheltuieliPerLuna } = sumRealizatByMonth(
+    venituriLinii,
+    cheltuieliLinii
+  );
+
+  const azi = new Date();
+  const anCurent = azi.getFullYear();
+  const lunaCurenta = azi.getMonth() + 1; // 1-12
+  const lunaCurentaKey = `${anCurent}-${String(lunaCurenta).padStart(2, "0")}`;
+
+  const lunaAnterioara = new Date(anCurent, lunaCurenta - 2, 1); // luna - 1 (0-indexat -> -2)
+  const lunaAnterioaraKey = `${lunaAnterioara.getFullYear()}-${String(lunaAnterioara.getMonth() + 1).padStart(2, "0")}`;
+
+  const aceeasiLunaAnulTrecutKey = `${anCurent - 1}-${String(lunaCurenta).padStart(2, "0")}`;
+
+  const mtdVenituri = venituriPerLuna.get(lunaCurentaKey) ?? 0;
+  const mtdCheltuieli = cheltuieliPerLuna.get(lunaCurentaKey) ?? 0;
+
+  let ytdVenituri = 0;
+  let ytdCheltuieli = 0;
+  for (let l = 1; l <= lunaCurenta; l++) {
+    const key = `${anCurent}-${String(l).padStart(2, "0")}`;
+    ytdVenituri += venituriPerLuna.get(key) ?? 0;
+    ytdCheltuieli += cheltuieliPerLuna.get(key) ?? 0;
+  }
+
+  const momVenituriAnterior = venituriPerLuna.get(lunaAnterioaraKey) ?? null;
+  const momCheltuieliAnterior = cheltuieliPerLuna.get(lunaAnterioaraKey) ?? null;
+  const yoyVenituriAnterior = venituriPerLuna.has(aceeasiLunaAnulTrecutKey)
+    ? venituriPerLuna.get(aceeasiLunaAnulTrecutKey)!
+    : null;
+  const yoyCheltuieliAnterior = cheltuieliPerLuna.has(aceeasiLunaAnulTrecutKey)
+    ? cheltuieliPerLuna.get(aceeasiLunaAnulTrecutKey)!
+    : null;
+
+  return {
+    mtdVenituri,
+    mtdCheltuieli,
+    mtdProfit: mtdVenituri - mtdCheltuieli,
+    ytdVenituri,
+    ytdCheltuieli,
+    ytdProfit: ytdVenituri - ytdCheltuieli,
+    momVenituri: variatie(mtdVenituri, momVenituriAnterior),
+    momCheltuieli: variatie(mtdCheltuieli, momCheltuieliAnterior),
+    momProfit: variatie(
+      mtdVenituri - mtdCheltuieli,
+      momVenituriAnterior !== null && momCheltuieliAnterior !== null
+        ? momVenituriAnterior - momCheltuieliAnterior
+        : null
+    ),
+    yoyVenituri: variatie(mtdVenituri, yoyVenituriAnterior),
+    yoyCheltuieli: variatie(mtdCheltuieli, yoyCheltuieliAnterior),
+    yoyProfit: variatie(
+      mtdVenituri - mtdCheltuieli,
+      yoyVenituriAnterior !== null && yoyCheltuieliAnterior !== null
+        ? yoyVenituriAnterior - yoyCheltuieliAnterior
+        : null
+    ),
+  };
+}
+
+export const LUNI_LABELS = [
+  "Ian", "Feb", "Mar", "Apr", "Mai", "Iun", "Iul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+export interface AnComparisonDatum {
+  an: number;
+  venituri: number;
+  cheltuieli: number;
+  profit: number;
+  variatieProcent: number | null;
+}
+
+/**
+ * Total realizat pe an, pentru anii selectati liber (nu neaparat
+ * consecutivi) - filtrat, optional, doar pe anumite luni (ex. doar Q1).
+ * Variatia procentuala se calculeaza fata de anul ANTERIOR DIN SELECTIE
+ * (ordinea in care apar in `ani`), nu neaparat anul calendaristic anterior -
+ * daca alegi 2023 si 2025 (sarind 2024), 2025 se compara cu 2023.
+ */
+export function computeMultiYearComparison(
+  venituriLinii: VenitLinie[],
+  ani: number[],
+  luni: number[] = []
+): AnComparisonDatum[] {
+  const aniSortati = [...ani].sort((a, b) => a - b);
+  const totaluri = aniSortati.map((an) => {
+    let venituri = 0;
+    for (const l of venituriLinii) {
+      const d = new Date(l.luna);
+      if (d.getFullYear() !== an) continue;
+      if (luni.length > 0 && !luni.includes(d.getMonth() + 1)) continue;
+      venituri += l.venit_realizat ?? 0;
+    }
+    return { an, venituri };
+  });
+
+  return totaluri.map((d, idx) => {
+    if (idx === 0) {
+      return { an: d.an, venituri: d.venituri, cheltuieli: 0, profit: d.venituri, variatieProcent: null };
+    }
+    const anterior = totaluri[idx - 1];
+    const variatieProcent = anterior.venituri > 0 ? ((d.venituri - anterior.venituri) / anterior.venituri) * 100 : null;
+    return { an: d.an, venituri: d.venituri, cheltuieli: 0, profit: d.venituri, variatieProcent };
+  });
+}
+
+export interface LunaAnComparisonDatum {
+  luna: number;
+  label: string;
+  valori: Record<number, number>;
+}
+
+/** Total realizat, pe fiecare luna (1-12), separat pentru fiecare an
+ * selectat - pentru graficul cu o linie per an, ca sa compari traiectoria
+ * lunara intre ani. */
+export function computeMonthByYearComparison(venituriLinii: VenitLinie[], ani: number[]): LunaAnComparisonDatum[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const luna = i + 1;
+    const valori: Record<number, number> = {};
+    for (const an of ani) {
+      let total = 0;
+      for (const l of venituriLinii) {
+        const d = new Date(l.luna);
+        if (d.getFullYear() === an && d.getMonth() + 1 === luna) total += l.venit_realizat ?? 0;
+      }
+      valori[an] = total;
+    }
+    return { luna, label: LUNI_LABELS[i], valori };
+  });
 }

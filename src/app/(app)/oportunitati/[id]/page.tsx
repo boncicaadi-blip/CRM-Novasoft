@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { History } from "lucide-react";
+import { History, Building2 } from "lucide-react";
 import { BackLink } from "@/components/BackLink";
 import { getOpportunity, getProfiles } from "@/lib/data/opportunities";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
@@ -11,7 +11,6 @@ import { STAGE_COLORS, STATUS_COLORS } from "@/lib/constants";
 import { formatEur } from "@/lib/format";
 import { DeleteButton } from "@/components/DeleteButton";
 import { FirmaCard } from "@/components/overview/FirmaCard";
-import { ContactCard } from "@/components/overview/ContactCard";
 import { CalificareCard } from "@/components/overview/CalificareCard";
 import { PipelineStatusCard } from "@/components/overview/PipelineStatusCard";
 import { ActiuneCard } from "@/components/overview/ActiuneCard";
@@ -74,6 +73,15 @@ export default async function OpportunityOverviewPage({
           <p className="mt-1 text-xs text-text-muted">{o.nume_grup}</p>
         </div>
         <div className="flex items-center gap-2">
+          {o.partner_id && (
+            <Link
+              href={`/parteneri/${o.partner_id}`}
+              className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 text-sm text-text-primary transition hover:bg-surface-1"
+            >
+              <Building2 size={14} />
+              Fisa partenerului
+            </Link>
+          )}
           <Link
             href={`/oportunitati/${o.id}/istoric`}
             className="flex items-center gap-1.5 rounded-md border border-border-subtle px-3 py-1.5 text-sm text-text-primary transition hover:bg-surface-1"
@@ -106,8 +114,7 @@ export default async function OpportunityOverviewPage({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <FirmaCard o={o} profiles={profiles} domeniiActivitate={nomenclatoare["domeniu_activitate"] ?? []} />
-        <ContactCard o={o} />
+        <FirmaCard o={o} profiles={profiles} />
         <CalificareCard o={o} produseServicii={valori(nomenclatoare["produs_serviciu"])} />
         <PipelineStatusCard
           o={o}
@@ -124,12 +131,11 @@ export default async function OpportunityOverviewPage({
           currentUserId={userId}
         />
         <PricingCard o={o} tipuriProiect={valori(nomenclatoare["tip_proiect"])} />
+        <SursaCard o={o} canaleIntrare={valori(nomenclatoare["canal_intrare"])} />
       </div>
 
-      {/* Sursa & Context (1/4) + Oferte atasate (1/4) + Timeline (1/2) - rand
-          separat, grid de 4 coloane. */}
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-4">
-        <SursaCard o={o} canaleIntrare={valori(nomenclatoare["canal_intrare"])} />
+      {/* Oferte atasate (1/3) + Timeline (2/3) - rand separat, grid de 3 coloane. */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <OferteCard opportunityId={o.id} oferte={oferte} />
         <TimelineCard opportunityId={o.id} entries={timeline} />
       </div>

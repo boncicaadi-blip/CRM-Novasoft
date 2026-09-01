@@ -21,6 +21,7 @@ import {
 import { VenituriEvolutieChart } from "./VenituriEvolutieChart";
 import { VenituriPieChart } from "./VenituriPieChart";
 import { VenituriTopClientiChart } from "./VenituriTopClientiChart";
+import { ParetoChart } from "./ParetoChart";
 import { VenituriComponentaList } from "./VenituriComponentaList";
 import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { generateVenituriInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
@@ -142,9 +143,11 @@ export function VenituriDashboardClient({
     let realizat = 0;
     let estimatPanaAcum = 0;
     for (const l of filtered) {
-      estimat += l.venit_estimat;
+      if (!l.mutat_in_linie_id) {
+        estimat += l.venit_estimat;
+        if (l.luna.slice(0, 7) <= lunaCurentaKey) estimatPanaAcum += l.venit_estimat;
+      }
       realizat += l.venit_realizat ?? 0;
-      if (l.luna.slice(0, 7) <= lunaCurentaKey) estimatPanaAcum += l.venit_estimat;
     }
     const diferenta = realizat - estimatPanaAcum;
     const grt = estimatPanaAcum > 0 ? (realizat / estimatPanaAcum) * 100 : null;
@@ -157,10 +160,11 @@ export function VenituriDashboardClient({
   const statusData = useMemo(() => groupByStatusContract(filtered, contractById), [filtered, contractById]);
   const grupData = useMemo(() => groupBy(filtered, (l) => grupOf(l)), [filtered, grupByPartnerId]);
   const topClientiData = useMemo(() => topClienti(filtered, 10), [filtered]);
+  const paretoClientiData = useMemo(() => topClienti(filtered, 9999), [filtered]);
 
   const evolutieData = useMemo(
-    () => buildEvolutieLunara(venituriLinii.filter(matchesFilters), 18),
-    [venituriLinii, filters, grupByPartnerId]
+    () => buildEvolutieLunara(filtered, 18),
+    [filtered]
   );
 
   const hasFilter =
@@ -396,6 +400,25 @@ export function VenituriDashboardClient({
               definition={VENITURI_KPI_DEFINITIONS.topClienti}
             />
           </ExpandableChart>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <ExpandableChart>
+              <ParetoChart
+                title="Pareto - venit realizat pe client"
+                data={paretoClientiData}
+                valueKey="realizat"
+                definition={VENITURI_KPI_DEFINITIONS.paretoRealizat}
+              />
+            </ExpandableChart>
+            <ExpandableChart>
+              <ParetoChart
+                title="Pareto - venit estimat pe client"
+                data={paretoClientiData}
+                valueKey="estimat"
+                definition={VENITURI_KPI_DEFINITIONS.paretoEstimat}
+              />
+            </ExpandableChart>
+          </div>
         </div>
       </div>
     </div>

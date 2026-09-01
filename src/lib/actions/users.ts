@@ -120,6 +120,29 @@ export async function updateUserAction(
   }
 }
 
+/** Adminul poate activa/dezactiva popup-ul zilnic pentru orice utilizator,
+ * direct din lista de Utilizatori. */
+export async function togglePopupZilnicAction(
+  userId: string,
+  arataPopup: boolean
+): Promise<{ success: boolean; message?: string }> {
+  try {
+    const { supabase } = await assertAdmin();
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ arata_popup_zilnic: arataPopup })
+      .eq("id", userId);
+
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath("/setari/utilizatori");
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: e instanceof Error ? e.message : "Eroare necunoscuta." };
+  }
+}
+
 /** Fiecare user isi poate schimba doar propria preferinta de tema. */
 export async function updateThemePreferenceAction(
   theme: "light" | "dark" | "system"
@@ -135,4 +158,48 @@ export async function updateThemePreferenceAction(
 
   if (error) return { success: false, message: error.message };
   return { success: true };
+}
+
+/**
+ * Trimite un email fiecarui admin cand se inregistreaza un cont nou, ca sa
+ * stie ca are ceva de aprobat. Apelata direct dupa `auth.signUp()` reusit,
+ * de pe pagina de login/inregistrare - userul nu are inca sesiune activa
+ * (necesita confirmare email + aprobare admin), deci foloseste clientul cu
+ * rol de serviciu (bypass RLS), nu clientul normal.
+ */
+export async function notificaAdminiUtilizatorNou(payload: {
+  email: string;
+  fullName: string;
+}): Promise<void> {
+  try {
+    const supabase = createServiceClient();
+    const { data: admini } = await supabase.from("profiles").select("email").eq("role", "admin");
+    if (!admini || admini.length === 0) return;
+
+    const { trimiteEmail } = await import("@/lib/email/resend");
+    const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://crm.nova-soft.ro";
+
+    await Promise.all(
+      admini
+        .filter((a) => a.email)
+        .map((a) =>
+          trimiteEmail({
+            to: a.email as string,
+            subject: "Cont nou, in asteptarea aprobarii",
+            from: "Novasoft CRM <notificari@nova-soft.ro>",
+            html: `
+              <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+                <h2 style="color: #E8007A;">Cont nou creat</h2>
+                <p><strong>${payload.fullName}</strong> (${payload.email}) si-a creat un cont si asteapta aprobarea ta.</p>
+                <a href="${APP_URL}/setari/utilizatori" style="display: inline-block; background: #E8007A; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">
+                  Vezi si aproba contul
+                </a>
+              </div>
+            `,
+          })
+        )
+    );
+  } catch (err) {
+    console.error("notificaAdminiUtilizatorNou error:", err);
+  }
 }

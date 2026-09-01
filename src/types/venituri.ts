@@ -33,6 +33,7 @@ export interface VenitLinie {
   venit_estimat: number;
   venit_realizat: number | null;
   facturat: boolean;
+  mutat_in_linie_id: string | null;
   observatii: string | null;
   creat_la: string;
   actualizat_la: string;

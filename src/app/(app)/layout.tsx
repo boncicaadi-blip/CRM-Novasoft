@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getTodayAndOverdueOpportunities } from "@/lib/data/opportunities";
 import { getAnafFacturiNoiCount } from "@/lib/data/anaf";
 import { getPendingUsersCount } from "@/lib/data/users";
+import { getCereriDeAprobatCount, getCereriNecititite } from "@/lib/data/concedii";
 import { Sidebar } from "@/components/Sidebar";
 import { ThemeSync } from "@/components/ThemeSync";
 import { DailySummaryPopup } from "@/components/DailySummaryPopup";
@@ -26,7 +27,7 @@ export default async function AppLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, theme, approved, module_access, submodule_access")
+    .select("full_name, role, theme, approved, module_access, submodule_access, arata_popup_zilnic")
     .eq("id", data.user.id)
     .single();
 
@@ -42,6 +43,10 @@ export default async function AppLayout({
   const isAdmin = profile?.role === "admin";
   const anafFacturiNoiCount = isAdmin ? await getAnafFacturiNoiCount() : 0;
   const pendingUsersCount = isAdmin ? await getPendingUsersCount() : 0;
+  const [cereriDeAprobat, cererileMeleNecititite] = await Promise.all([
+    getCereriDeAprobatCount(),
+    getCereriNecititite(),
+  ]);
 
   // Vercel expune automat SHA-ul commit-ului curent la build (fara
   // configurare suplimentara) - afisam ultimele 7 caractere, identic cu ce
@@ -63,7 +68,7 @@ export default async function AppLayout({
   return (
     <div className="flex h-screen flex-col overflow-hidden lg:flex-row">
       <ThemeSync dbTheme={profile?.theme ?? "dark"} />
-      <DailySummaryPopup opportunities={todayOpportunities} />
+      {profile?.arata_popup_zilnic !== false && <DailySummaryPopup opportunities={todayOpportunities} />}
       <Sidebar
         userName={profile?.full_name ?? data.user.email ?? "Utilizator"}
         isAdmin={isAdmin}
@@ -72,6 +77,7 @@ export default async function AppLayout({
         deployVersion={deployVersion}
         anafFacturiNoiCount={anafFacturiNoiCount}
         pendingUsersCount={pendingUsersCount}
+        badgeCounts={{ cereriDeAprobat, cererileMeleNecititite }}
       />
       <main className="flex-1 overflow-y-auto pb-14 lg:pb-0">{children}</main>
     </div>

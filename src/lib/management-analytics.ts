@@ -41,7 +41,7 @@ export function buildManagementMonthly(
   for (const l of venituriLinii) {
     const bucket = byKey.get(l.luna.slice(0, 7));
     if (!bucket) continue;
-    bucket.venitEstimat += l.venit_estimat;
+    if (!l.mutat_in_linie_id) bucket.venitEstimat += l.venit_estimat;
     bucket.venitRealizat += l.venit_realizat ?? 0;
     if (l.tip_venit === "Recurent") bucket.venitRecurentRealizat += l.venit_realizat ?? 0;
   }

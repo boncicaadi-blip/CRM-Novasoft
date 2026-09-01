@@ -3,42 +3,23 @@
 import { useState, useRef, useTransition } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import { InfoRow, LabeledInput } from "@/components/overview/InfoCard";
-import { TextInput, MoneyInput } from "@/components/form/fields";
-import { JUDETE } from "@/lib/constants";
-import { formatEur } from "@/lib/format";
+import { TextInput } from "@/components/form/fields";
 import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
 import { updateOpportunitySectionAction } from "@/lib/actions/opportunities";
-import type { Nomenclator, Opportunity, Profile } from "@/types/opportunity";
+import { getCompanyLogoUrl } from "@/lib/logo";
+import type { Opportunity, Profile } from "@/types/opportunity";
 
-const FIELDS = [
-  "nume_grup",
-  "nume_potential",
-  "cod_fiscal",
-  "responsabil_vanzare_id",
-  "domeniul_activitate_id",
-  "judet",
-  "oras",
-  "nr_angajati",
-  "cifra_afaceri",
-  "nr_vehicule",
-];
+const FIELDS = ["nume_potential", "cod_fiscal", "responsabil_vanzare_id"];
 
 const optionStyle = { backgroundColor: "var(--surface-1)", color: "var(--text-primary)" };
 
-export function FirmaCard({
-  o,
-  profiles,
-  domeniiActivitate,
-}: {
-  o: Opportunity;
-  profiles: Profile[];
-  domeniiActivitate: Nomenclator[];
-}) {
+export function FirmaCard({ o, profiles }: { o: Opportunity; profiles: Profile[] }) {
   const [editing, setEditing] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   useSaveShortcut(formRef, editing);
+  const logoUrl = getCompanyLogoUrl(o.partner?.website, 64);
 
   function handleSubmit(formData: FormData) {
     formData.set("__fields", FIELDS.join(","));
@@ -60,7 +41,20 @@ export function FirmaCard({
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Firma</p>
+        <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-text-muted">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-5 w-5 rounded border border-border-subtle bg-white object-contain p-0.5"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          )}
+          Firma
+        </p>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
@@ -72,11 +66,13 @@ export function FirmaCard({
         )}
       </div>
 
+      <p className="mb-2 text-[11px] text-text-faint">
+        Restul datelor de firma (domeniu, contacte, cifra de afaceri, calificare) s-au mutat in
+        Fisa Partenerului - vezi butonul de sus.
+      </p>
+
       {editing ? (
         <form ref={formRef} action={handleSubmit} className="space-y-2.5">
-          <LabeledInput label="Nume grup">
-            <TextInput name="nume_grup" defaultValue={o.nume_grup} required />
-          </LabeledInput>
           <LabeledInput label="Nume potential">
             <TextInput name="nume_potential" defaultValue={o.nume_potential} required />
           </LabeledInput>
@@ -98,50 +94,6 @@ export function FirmaCard({
                 </option>
               ))}
             </select>
-          </LabeledInput>
-          <LabeledInput label="Domeniu activitate">
-            <select
-              name="domeniul_activitate_id"
-              defaultValue={o.domeniul_activitate_id ?? ""}
-              className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
-            >
-              <option value="" style={optionStyle}>
-                Selecteaza...
-              </option>
-              {domeniiActivitate.map((d) => (
-                <option key={d.id} value={d.id} style={optionStyle}>
-                  {d.valoare}
-                </option>
-              ))}
-            </select>
-          </LabeledInput>
-          <LabeledInput label="Judet">
-            <select
-              name="judet"
-              defaultValue={o.judet ?? ""}
-              className="w-full rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
-            >
-              <option value="" style={optionStyle}>
-                Selecteaza...
-              </option>
-              {JUDETE.map((j) => (
-                <option key={j} value={j} style={optionStyle}>
-                  {j}
-                </option>
-              ))}
-            </select>
-          </LabeledInput>
-          <LabeledInput label="Oras">
-            <TextInput name="oras" defaultValue={o.oras ?? ""} />
-          </LabeledInput>
-          <LabeledInput label="Nr angajati">
-            <TextInput type="number" name="nr_angajati" defaultValue={o.nr_angajati ?? ""} />
-          </LabeledInput>
-          <LabeledInput label="Cifra de afaceri (EUR, manual)">
-            <MoneyInput name="cifra_afaceri" defaultValue={o.cifra_afaceri ?? 0} />
-          </LabeledInput>
-          <LabeledInput label="Nr vehicule">
-            <TextInput type="number" name="nr_vehicule" defaultValue={o.nr_vehicule ?? ""} />
           </LabeledInput>
 
           {error && (
@@ -171,16 +123,9 @@ export function FirmaCard({
         </form>
       ) : (
         <div className="divide-y divide-white/5">
-          <InfoRow label="Nume grup" value={o.nume_grup} />
           <InfoRow label="Nume potential" value={o.nume_potential} />
           <InfoRow label="Cod fiscal" value={o.cod_fiscal} />
           <InfoRow label="Responsabil vanzare" value={o.profiles?.full_name} />
-          <InfoRow label="Domeniu activitate" value={o.domeniul_activitate} />
-          <InfoRow label="Judet" value={o.judet} />
-          <InfoRow label="Oras" value={o.oras} />
-          <InfoRow label="Nr angajati" value={o.nr_angajati} />
-          <InfoRow label="Cifra de afaceri" value={o.cifra_afaceri ? formatEur(o.cifra_afaceri) : null} />
-          <InfoRow label="Nr vehicule" value={o.nr_vehicule} />
         </div>
       )}
     </div>

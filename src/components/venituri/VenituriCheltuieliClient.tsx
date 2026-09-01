@@ -20,8 +20,10 @@ import {
   Trash2,
   X,
   Check,
+  ArrowRightCircle,
   Pencil,
   CheckCheck,
+  RotateCcw,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -39,15 +41,17 @@ import {
   addVenitLinieManualAction,
   updateVenitLinieAction,
   deleteVenitLinieAction,
+  mutaEstimareVenitAction,
   deleteVenituriLiniiAction,
   bulkMarkFacturatAction,
+  bulkUnmarkFacturatAction,
   syncVenituriLiniiAction,
 } from "@/lib/actions/venituri";
 import type { Contract, VenitLinie, ContractStatus, TipVenit } from "@/types/venituri";
 import type { ClientOption } from "@/lib/data/venituri";
 import type { Nomenclator } from "@/types/opportunity";
 
-type ViewMode = "venituri" | "contracte";
+type ViewMode = "venituri" | "contracte" | "mutari";
 type PeriodFilter = "luna_curenta" | "ultimele_3_luni" | "anul_curent" | "toate" | "custom";
 
 const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
@@ -111,7 +115,7 @@ function buildMonthlyChartData(linii: VenitLinie[]): LunaChartDatum[] {
   for (const l of linii) {
     const key = l.luna.slice(0, 7);
     const cur = byMonth.get(key) ?? { estimat: 0, realizat: 0 };
-    cur.estimat += l.venit_estimat;
+    if (!l.mutat_in_linie_id) cur.estimat += l.venit_estimat;
     cur.realizat += l.venit_realizat ?? 0;
     byMonth.set(key, cur);
   }
@@ -193,6 +197,8 @@ export function VenituriCheltuieliClient({
   const [filterStatus, setFilterStatus] = useState("");
   const [filterTipVenit, setFilterTipVenit] = useState("");
   const [filterStadiu, setFilterStadiu] = useState("");
+  const [filterFacturat, setFilterFacturat] = useState<"" | "da" | "nu">("");
+  const [filterMutare, setFilterMutare] = useState<"" | "mutate" | "primite">("");
   const [isPending, startTransition] = useTransition();
   const [showContractForm, setShowContractForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
@@ -208,6 +214,11 @@ export function VenituriCheltuieliClient({
     return Array.from(set).sort();
   }, [venituriLinii, contracte]);
 
+  const destinatieIds = useMemo(
+    () => new Set(venituriLinii.filter((l) => l.mutat_in_linie_id).map((l) => l.mutat_in_linie_id!)),
+    [venituriLinii]
+  );
+
   const filteredLinii = useMemo(
     () =>
       venituriLinii.filter((l) => {
@@ -219,7 +230,10 @@ export function VenituriCheltuieliClient({
           (!filterServiciu || l.serviciu === filterServiciu) &&
           (!filterStatus || contract?.status_contract === filterStatus) &&
           (!filterTipVenit || l.tip_venit === filterTipVenit) &&
-          (!filterStadiu || contract?.stadiu_contract === filterStadiu)
+          (!filterStadiu || contract?.stadiu_contract === filterStadiu) &&
+          (!filterFacturat || (filterFacturat === "da" ? l.facturat : !l.facturat)) &&
+          (!filterMutare ||
+            (filterMutare === "mutate" ? !!l.mutat_in_linie_id : destinatieIds.has(l.id)))
         );
       }),
     [
@@ -235,6 +249,9 @@ export function VenituriCheltuieliClient({
       filterStatus,
       filterTipVenit,
       filterStadiu,
+      filterFacturat,
+      filterMutare,
+      destinatieIds,
     ]
   );
 
@@ -258,12 +275,18 @@ export function VenituriCheltuieliClient({
     let estimat = 0;
     let realizat = 0;
     let estimatPanaAcum = 0;
+    let estimatInitial = 0;
+    let estimariActive = 0;
     for (const l of filteredLinii) {
-      estimat += l.venit_estimat;
+      estimatInitial += l.venit_estimat;
+      if (!l.mutat_in_linie_id) {
+        estimat += l.venit_estimat;
+        if (l.luna.slice(0, 7) <= lunaCurentaKey) estimatPanaAcum += l.venit_estimat;
+        if (!l.facturat) estimariActive += l.venit_estimat;
+      }
       realizat += l.venit_realizat ?? 0;
-      if (l.luna.slice(0, 7) <= lunaCurentaKey) estimatPanaAcum += l.venit_estimat;
     }
-    return { estimat, realizat, estimatPanaAcum, diferenta: realizat - estimatPanaAcum };
+    return { estimat, realizat, estimatPanaAcum, estimatInitial, estimariActive, diferenta: realizat - estimatPanaAcum };
   }, [filteredLinii]);
 
   function handleSync() {
@@ -348,6 +371,37 @@ export function VenituriCheltuieliClient({
         </div>
       </div>
 
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
+            Estimat initial (istoric)
+            <InfoTooltip
+              title="Estimat initial"
+              definition={{
+                descriere:
+                  "Suma tuturor liniilor create initial pentru perioada selectata - inclusiv cele mutate ulterior in alta luna. Arata cat ai estimat initial, indiferent ce s-a intamplat dupa.",
+                cumAnalizezi: "Compara-l cu Estimat (activ) ca sa vezi cat s-a mutat in alte luni.",
+              }}
+            />
+          </p>
+          <p className="font-mono text-2xl font-medium text-text-primary">{formatEur(summary.estimatInitial)}</p>
+        </div>
+        <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="flex items-center gap-1.5 text-xs text-text-muted">
+            Estimari active (nefacturate)
+            <InfoTooltip
+              title="Estimari active"
+              definition={{
+                descriere:
+                  "Suma liniilor inca deschise pentru perioada selectata - nu au fost mutate in alta luna si nu au fost inca facturate. Arata cat mai ai de incasat, ca estimare curenta.",
+                cumAnalizezi: "Aceasta e cifra relevanta pentru forecast - fara duplicate din liniile mutate.",
+              }}
+            />
+          </p>
+          <p className="font-mono text-2xl font-medium text-amber-400">{formatEur(summary.estimariActive)}</p>
+        </div>
+      </div>
+
       <VeniturChart linii={filteredLinii} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -369,6 +423,15 @@ export function VenituriCheltuieliClient({
           >
             <FileText size={13} />
             Contracte
+          </button>
+          <button
+            onClick={() => setViewMode("mutari")}
+            className={`flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition ${
+              viewMode === "mutari" ? "bg-surface-2 text-text-primary" : "text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <ArrowRightCircle size={13} />
+            Mutari
           </button>
         </div>
         {viewMode === "venituri" && (
@@ -426,6 +489,37 @@ export function VenituriCheltuieliClient({
               </option>
               <option value="Nerecurent" style={{ backgroundColor: "var(--surface-1)" }}>
                 Nerecurent
+              </option>
+            </select>
+            <select
+              value={filterFacturat}
+              onChange={(e) => setFilterFacturat(e.target.value as "" | "da" | "nu")}
+              className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
+            >
+              <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
+                Facturat + Nefacturat
+              </option>
+              <option value="da" style={{ backgroundColor: "var(--surface-1)" }}>
+                Facturat
+              </option>
+              <option value="nu" style={{ backgroundColor: "var(--surface-1)" }}>
+                Nefacturat
+              </option>
+            </select>
+            <select
+              value={filterMutare}
+              onChange={(e) => setFilterMutare(e.target.value as "" | "mutate" | "primite")}
+              title="Raport mutari - vezi liniile mutate in alta luna, sau cele primite dintr-o mutare"
+              className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
+            >
+              <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
+                Toate (fara filtru mutari)
+              </option>
+              <option value="mutate" style={{ backgroundColor: "var(--surface-1)" }}>
+                Mutate (originale)
+              </option>
+              <option value="primite" style={{ backgroundColor: "var(--surface-1)" }}>
+                Primite (din mutare)
               </option>
             </select>
           </>
@@ -495,7 +589,7 @@ export function VenituriCheltuieliClient({
             <NomOption key={n.id} n={n} />
           ))}
         </select>
-        {(filterClient || filterProdus || filterServiciu || filterStatus || filterStadiu) && (
+        {(filterClient || filterProdus || filterServiciu || filterStatus || filterStadiu || filterFacturat || filterMutare) && (
           <button
             onClick={() => {
               setFilterClient("");
@@ -503,6 +597,8 @@ export function VenituriCheltuieliClient({
               setFilterServiciu("");
               setFilterStatus("");
               setFilterStadiu("");
+              setFilterFacturat("");
+              setFilterMutare("");
             }}
             className="text-xs text-[#E8007A] hover:text-[#FF4FAA]"
           >
@@ -511,15 +607,20 @@ export function VenituriCheltuieliClient({
         )}
       </div>
 
+      {viewMode === "venituri" && <AnualSummaryCard linii={venituriLinii} />}
+
       {viewMode === "venituri" ? (
         <VenituriTable
           linii={filteredLinii}
+          toateLiniile={venituriLinii}
           contracte={contracte}
           produseOptions={produseOptions}
           serviciiOptions={serviciiOptions}
         />
-      ) : (
+      ) : viewMode === "contracte" ? (
         <ContracteTable contracte={filteredContracte} onEdit={setEditingContract} />
+      ) : (
+        <MutariTable linii={venituriLinii} />
       )}
 
       {showContractForm && (
@@ -557,17 +658,22 @@ export function VenituriCheltuieliClient({
 
 function VenituriTable({
   linii,
+  toateLiniile,
   contracte,
   produseOptions,
   serviciiOptions,
 }: {
   linii: VenitLinie[];
+  toateLiniile: VenitLinie[];
   contracte: Contract[];
   produseOptions: Nomenclator[];
   serviciiOptions: Nomenclator[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [movingId, setMovingId] = useState<string | null>(null);
+  const [moveMonth, setMoveMonth] = useState("");
+  const [isMoving, startMoving] = useTransition();
   const [produs, setProdus] = useState("");
   const [serviciu, setServiciu] = useState("");
   const [luna, setLuna] = useState("");
@@ -579,6 +685,18 @@ function VenituriTable({
   const [page, setPage] = useState(1);
 
   const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
+  const linieById = useMemo(() => new Map(toateLiniile.map((l) => [l.id, l])), [toateLiniile]);
+  const selectedTotals = useMemo(() => {
+    let totalEstimat = 0;
+    let totalRealizat = 0;
+    for (const l of linii) {
+      if (checkedIds.has(l.id)) {
+        totalEstimat += l.venit_estimat;
+        totalRealizat += l.venit_realizat ?? 0;
+      }
+    }
+    return { totalEstimat, totalRealizat };
+  }, [linii, checkedIds]);
 
   function startEdit(l: VenitLinie) {
     setEditingId(l.id);
@@ -608,6 +726,19 @@ function VenituriTable({
     if (!confirm("Stergi aceasta linie de venit?")) return;
     startTransition(async () => {
       await deleteVenitLinieAction(id);
+    });
+  }
+
+  function handleMove(id: string) {
+    if (!moveMonth) return;
+    startMoving(async () => {
+      const result = await mutaEstimareVenitAction(id, `${moveMonth}-01`);
+      if (result.success) {
+        setMovingId(null);
+        setMoveMonth("");
+      } else {
+        alert(result.message ?? "Eroare la mutare.");
+      }
     });
   }
 
@@ -646,6 +777,20 @@ function VenituriTable({
       return;
     startTransition(async () => {
       await bulkMarkFacturatAction(Array.from(checkedIds));
+      setCheckedIds(new Set());
+    });
+  }
+
+  function handleBulkUnfacturat() {
+    if (checkedIds.size === 0) return;
+    if (
+      !confirm(
+        `Scoti bifa "Facturat" de pe ${checkedIds.size} linii? Valoarea realizata revine la 0, pentru fiecare.`
+      )
+    )
+      return;
+    startTransition(async () => {
+      await bulkUnmarkFacturatAction(Array.from(checkedIds));
       setCheckedIds(new Set());
     });
   }
@@ -701,6 +846,14 @@ function VenituriTable({
             Marcheaza facturat (= estimat)
           </button>
           <button
+            onClick={handleBulkUnfacturat}
+            disabled={isPending}
+            className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-400 transition hover:bg-amber-500/20 disabled:opacity-50"
+          >
+            <RotateCcw size={13} />
+            Marcheaza nefacturat (= 0)
+          </button>
+          <button
             onClick={handleBulkDelete}
             disabled={isPending}
             className="ml-auto flex items-center gap-1.5 rounded-md bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
@@ -708,6 +861,26 @@ function VenituriTable({
             <Trash2 size={13} />
             Sterge selectate
           </button>
+        </div>
+      )}
+      {checkedIds.size > 0 && (
+        <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="rounded-lg border border-[#E8007A]/30 bg-[#E8007A]/5 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-[#E8007A]">
+              Total estimat ({checkedIds.size} selectate)
+            </p>
+            <p className="font-mono text-xl font-semibold text-text-primary">
+              {formatEur(selectedTotals.totalEstimat)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-[#E8007A]/30 bg-[#E8007A]/5 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-[#E8007A]">
+              Total realizat ({checkedIds.size} selectate)
+            </p>
+            <p className="font-mono text-xl font-semibold text-text-primary">
+              {formatEur(selectedTotals.totalRealizat)}
+            </p>
+          </div>
         </div>
       )}
       <div className="overflow-x-auto rounded-xl border border-border-subtle">
@@ -740,7 +913,7 @@ function VenituriTable({
               const isEditing = editingId === l.id;
               const contract = l.contract_id ? contractById.get(l.contract_id) : undefined;
               return (
-                <tr key={l.id} className="border-b border-border-faint hover:bg-surface-1">
+                <tr key={l.id} className={`border-b border-border-faint hover:bg-surface-1 ${l.mutat_in_linie_id ? "opacity-50" : ""}`}>
                   <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
@@ -798,7 +971,23 @@ function VenituriTable({
                         className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
-                      new Date(l.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })
+                      <>
+                        {new Date(l.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })}
+                        {l.mutat_in_linie_id && (
+                          <span
+                            className="ml-1.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-400"
+                            title="Estimarea a fost mutata - nu mai intra in totaluri aici"
+                          >
+                            Mutat →{" "}
+                            {linieById.get(l.mutat_in_linie_id)
+                              ? new Date(linieById.get(l.mutat_in_linie_id)!.luna).toLocaleDateString("ro-RO", {
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "alta luna"}
+                          </span>
+                        )}
+                      </>
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -824,7 +1013,18 @@ function VenituriTable({
                         className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-right text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
-                      <span className="font-mono text-text-primary">
+                      <span
+                        className={`font-mono ${
+                          l.venit_realizat !== null && l.venit_realizat !== l.venit_estimat
+                            ? "font-semibold text-amber-400"
+                            : "text-text-primary"
+                        }`}
+                        title={
+                          l.venit_realizat !== null && l.venit_realizat !== l.venit_estimat
+                            ? `Diferit de estimat (${formatEur(l.venit_estimat)})`
+                            : undefined
+                        }
+                      >
                         {l.venit_realizat !== null ? formatEur(l.venit_realizat) : "—"}
                       </span>
                     )}
@@ -864,8 +1064,51 @@ function VenituriTable({
                           <X size={14} />
                         </button>
                       </div>
+                    ) : movingId === l.id ? (
+                      <div className="flex items-center justify-end gap-1">
+                        <input
+                          type="month"
+                          value={moveMonth}
+                          onChange={(e) => setMoveMonth(e.target.value)}
+                          autoFocus
+                          className="rounded-md border border-border-subtle bg-surface-2 px-1.5 py-1 text-xs text-text-primary outline-none focus:border-[#E8007A]"
+                        />
+                        <button
+                          onClick={() => handleMove(l.id)}
+                          disabled={isMoving || !moveMonth}
+                          className="rounded-md p-1 text-green-400 hover:bg-green-500/10 disabled:opacity-50"
+                          title="Confirma mutarea"
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setMovingId(null);
+                            setMoveMonth("");
+                          }}
+                          className="rounded-md p-1 text-text-muted hover:bg-surface-1"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
                     ) : (
                       <div className="flex items-center justify-end gap-1">
+                        {!l.mutat_in_linie_id && !l.facturat && (
+                          <button
+                            onClick={() => {
+                              setMovingId(l.id);
+                              const urmatoarea = new Date(l.luna);
+                              urmatoarea.setMonth(urmatoarea.getMonth() + 1);
+                              setMoveMonth(
+                                `${urmatoarea.getFullYear()}-${String(urmatoarea.getMonth() + 1).padStart(2, "0")}`
+                              );
+                            }}
+                            className="rounded-md p-1 text-text-muted hover:bg-surface-1 hover:text-amber-400"
+                            title="Muta estimarea in alta luna (ramane aici ca istoric, nu mai intra in total)"
+                          >
+                            <ArrowRightCircle size={13} />
+                          </button>
+                        )}
                         <button
                           onClick={() => startEdit(l)}
                           className="rounded-md p-1 text-text-muted hover:bg-surface-1 hover:text-[#E8007A]"
@@ -941,6 +1184,126 @@ function VenituriTable({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Rezumat anual: 3 cifre distincte, fara suprapunere de bani.
+ * - Total estimat initial: tot ce s-a estimat vreodata pentru anul ales,
+ *   numarat o singura data la locul initial (chiar daca a fost mutat ulterior).
+ * - Estimari active: ce mai e inca deschis, nefacturat, nemutat - "ramas de
+ *   incasat" la data curenta.
+ * - Realizat: ce s-a facturat efectiv in anul respectiv.
+ */
+function AnualSummaryCard({ linii }: { linii: VenitLinie[] }) {
+  const aniDisponibili = useMemo(() => {
+    const ani = new Set(linii.map((l) => new Date(l.luna).getFullYear()));
+    return Array.from(ani).sort((a, b) => b - a);
+  }, [linii]);
+
+  const [an, setAn] = useState(() => new Date().getFullYear());
+
+  const sumar = useMemo(() => {
+    const movedTargetIds = new Set(linii.filter((l) => l.mutat_in_linie_id).map((l) => l.mutat_in_linie_id));
+    let estimatInitial = 0;
+    let estimatActiv = 0;
+    let realizat = 0;
+    for (const l of linii) {
+      if (new Date(l.luna).getFullYear() !== an) continue;
+      if (!movedTargetIds.has(l.id)) estimatInitial += l.venit_estimat;
+      if (!l.mutat_in_linie_id && !l.facturat) estimatActiv += l.venit_estimat;
+      realizat += l.venit_realizat ?? 0;
+    }
+    return { estimatInitial, estimatActiv, realizat };
+  }, [linii, an]);
+
+  return (
+    <div className="mb-4 rounded-xl border border-border-subtle bg-surface-1 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Rezumat anual</p>
+        <select
+          value={an}
+          onChange={(e) => setAn(Number(e.target.value))}
+          className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-xs text-text-primary outline-none focus:border-[#E8007A]"
+        >
+          {aniDisponibili.map((a) => (
+            <option key={a} value={a} style={{ backgroundColor: "var(--surface-1)" }}>
+              {a}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <p className="text-[11px] text-text-muted" title="Tot ce s-a estimat vreodata pentru acest an, numarat o singura data - la locul initial, chiar daca a fost mutat ulterior">
+            Estimat initial (an)
+          </p>
+          <p className="font-mono text-lg font-semibold text-text-primary">{formatEur(sumar.estimatInitial)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-text-muted" title="Ce mai e inca deschis - nefacturat si nemutat - la data curenta">
+            Estimari active (ramase)
+          </p>
+          <p className="font-mono text-lg font-semibold text-amber-400">{formatEur(sumar.estimatActiv)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] text-text-muted">Realizat (facturat)</p>
+          <p className="font-mono text-lg font-semibold text-green-400">{formatEur(sumar.realizat)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Raport cu toate estimarile mutate: de unde, catre unde, cat. */
+function MutariTable({ linii }: { linii: VenitLinie[] }) {
+  const linieById = useMemo(() => new Map(linii.map((l) => [l.id, l])), [linii]);
+  const mutate = useMemo(
+    () =>
+      linii
+        .filter((l) => l.mutat_in_linie_id)
+        .map((l) => ({ sursa: l, tinta: linieById.get(l.mutat_in_linie_id!) }))
+        .sort((a, b) => (a.sursa.luna < b.sursa.luna ? 1 : -1)),
+    [linii, linieById]
+  );
+
+  if (mutate.length === 0) {
+    return <p className="rounded-xl border border-border-subtle bg-surface-1 p-6 text-center text-sm text-text-muted">Nicio estimare mutata inca.</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto rounded-xl border border-border-subtle">
+      <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b border-border-subtle bg-surface-1 text-left text-xs text-text-muted">
+            <th className="px-3 py-2">Client</th>
+            <th className="px-3 py-2 text-right">Suma originala</th>
+            <th className="px-3 py-2">Luna originala</th>
+            <th className="px-3 py-2">Luna noua</th>
+            <th className="px-3 py-2 text-right">Suma noua</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mutate.map(({ sursa, tinta }) => (
+            <tr key={sursa.id} className="border-b border-border-faint hover:bg-surface-1">
+              <td className="px-3 py-2 text-text-primary">{sursa.nume_client}</td>
+              <td className="px-3 py-2 text-right font-mono text-text-secondary">{formatEur(sursa.venit_estimat)}</td>
+              <td className="px-3 py-2 text-text-secondary">
+                {new Date(sursa.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })}
+              </td>
+              <td className="px-3 py-2 text-amber-400">
+                {tinta
+                  ? new Date(tinta.luna).toLocaleDateString("ro-RO", { month: "short", year: "numeric" })
+                  : "—"}
+              </td>
+              <td className="px-3 py-2 text-right font-mono text-text-primary">
+                {tinta ? formatEur(tinta.venit_estimat) : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

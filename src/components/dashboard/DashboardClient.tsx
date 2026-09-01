@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { TrendingUp, Target, Trophy, XCircle, Wrench, AlertTriangle } from "lucide-react";
+import { TrendingUp, Target, Trophy, XCircle, Wrench, AlertTriangle, Sparkles } from "lucide-react";
 import {
   computeKpis,
   groupByStage,
   groupByStatus,
-  groupByResponsabil,
   buildTimeSeries,
+  buildStageEvolution,
   upcomingActions,
   applyDashboardFilters,
   buildRiskLists,
@@ -23,7 +23,7 @@ import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { StageChart } from "@/components/dashboard/StageChart";
 import { StatusChart } from "@/components/dashboard/StatusChart";
 import { TimeSeriesChart } from "@/components/dashboard/TimeSeriesChart";
-import { ResponsabilChart } from "@/components/dashboard/ResponsabilChart";
+import { StageEvolutionChart } from "@/components/dashboard/StageEvolutionChart";
 import { ActionsList } from "@/components/dashboard/ActionsList";
 import { FilteredOpportunitiesList } from "@/components/dashboard/FilteredOpportunitiesList";
 import { DashboardFilterBar } from "@/components/dashboard/DashboardFilterBar";
@@ -60,7 +60,7 @@ export function DashboardClient({
     [opportunities]
   );
   const judete = useMemo(
-    () => Array.from(new Set(opportunities.map((o) => o.judet ?? "Necunoscut"))).sort(),
+    () => Array.from(new Set(opportunities.map((o) => o.partner?.judet ?? "Necunoscut"))).sort(),
     [opportunities]
   );
 
@@ -80,8 +80,15 @@ export function DashboardClient({
     );
   }, [filtered, stageOrder]);
   const statusData = useMemo(() => groupByStatus(filtered), [filtered]);
-  const responsabilData = useMemo(() => groupByResponsabil(filtered), [filtered]);
   const timeSeries = useMemo(() => buildTimeSeries(history), [history]);
+  const stageEvolution = useMemo(() => {
+    // Restrangem istoricul la oportunitatile care corespund filtrului curent
+    // (in special cautarea dupa nume) - ca sa poti vedea traseul exact al
+    // unei singure firme, daca o cauti sus.
+    const idsFiltrate = new Set(filtered.map((o) => o.id));
+    const historyFiltrat = history.filter((h) => idsFiltrate.has(h.opportunity_id));
+    return buildStageEvolution(historyFiltrat);
+  }, [history, filtered]);
   const actions = useMemo(() => upcomingActions(filtered), [filtered]);
   const riskLists = useMemo(() => buildRiskLists(filtered), [filtered]);
 
@@ -136,13 +143,13 @@ export function DashboardClient({
         />
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <KpiCard
-          label="ARR activ"
-          value={formatEur(kpis.totalArr)}
+          label="MRR activ"
+          value={formatEur(kpis.totalMrr)}
           sublabel={`${kpis.activeCount} oportunitati active`}
           icon={<TrendingUp size={16} />}
-          definition={KPI_DEFINITIONS.crmArrActiv}
+          definition={KPI_DEFINITIONS.crmMrrActiv}
         />
         <KpiCard
           label="Forecast ponderat"
@@ -184,6 +191,14 @@ export function DashboardClient({
           href="/actiuni"
           definition={KPI_DEFINITIONS.crmFaraNextStep}
         />
+        <KpiCard
+          label="Oportunitati noi"
+          value={String(kpis.newOpportunitiesCount)}
+          sublabel="Ultimele 30 de zile"
+          icon={<Sparkles size={16} />}
+          accent="#A855F7"
+          definition={KPI_DEFINITIONS.crmOportunitatiNoi}
+        />
       </div>
 
       {/* Layout compact pe 2 coloane: stanga grafice principale, dreapta zona
@@ -218,32 +233,40 @@ export function DashboardClient({
             </ExpandableChart>
           </div>
 
-          <ExpandableChart>
-            <TimeSeriesChart
-              data={timeSeries}
-              selectedRange={selectedRange}
-              onSelectRange={(range) =>
-                setFilters((f) => ({
-                  ...f,
-                  dateFrom: range?.dateFrom ?? null,
-                  dateTo: range?.dateTo ?? null,
-                  periodPreset: range ? "custom" : null,
-                }))
-              }
-            />
-          </ExpandableChart>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <ExpandableChart>
+              <TimeSeriesChart
+                data={timeSeries}
+                dataKey="mrr"
+                title="Evolutie MRR in timp (din istoric)"
+                tooltipLabel="MRR"
+                color="#E8007A"
+                definition={KPI_DEFINITIONS.crmEvolutieMrrChart}
+                selectedRange={selectedRange}
+                onSelectRange={(range) =>
+                  setFilters((f) => ({
+                    ...f,
+                    dateFrom: range?.dateFrom ?? null,
+                    dateTo: range?.dateTo ?? null,
+                    periodPreset: range ? "custom" : null,
+                  }))
+                }
+              />
+            </ExpandableChart>
+            <ExpandableChart>
+              <TimeSeriesChart
+                data={timeSeries}
+                dataKey="implementare"
+                title="Evolutie Implementare in timp (din istoric)"
+                tooltipLabel="Implementare"
+                color="#0070F3"
+                definition={KPI_DEFINITIONS.crmEvolutieImplementareChart}
+              />
+            </ExpandableChart>
+          </div>
 
           <ExpandableChart>
-            <ResponsabilChart
-              data={responsabilData}
-              selected={filters.responsabili[0] ?? null}
-              onSelect={(responsabil) =>
-                setFilters((f) => ({
-                  ...f,
-                  responsabili: responsabil ? toggleInArray(f.responsabili, responsabil) : [],
-                }))
-              }
-            />
+            <StageEvolutionChart data={stageEvolution} stageOrder={stageOrder} />
           </ExpandableChart>
         </div>
 

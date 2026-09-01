@@ -11,6 +11,9 @@ import { AiInsightCard } from "@/components/ui/AiInsightCard";
 import { generateManagementInsightAction, getAiInsightHistoryAction } from "@/lib/actions/financial-ai";
 import { MANAGEMENT_KPI_DEFINITIONS } from "@/lib/management-kpi-definitions";
 import { buildManagementMonthly, computeManagementSummary } from "@/lib/management-analytics";
+import { computePeriodComparisons, type PeriodComparisonValue } from "@/lib/pl-analytics";
+import { ComparisonBarChart } from "./ComparisonBarChart";
+import { MultiYearComparisonSection } from "./MultiYearComparisonSection";
 import { VenituriEvolutieChart } from "@/components/venituri/dashboard/VenituriEvolutieChart";
 import { ManagementLineChart } from "./ManagementLineChart";
 import { ManagementComponentaList } from "./ManagementComponentaList";
@@ -30,6 +33,47 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string }[] = [
 
 function firstOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function formatVariatieManagement(v: PeriodComparisonValue, pozitivEsteBun: boolean): { text: string; color: string } {
+  if (v.variatieProcent === null) return { text: "—", color: "var(--text-muted)" };
+  const procent = v.variatieProcent * 100;
+  const eBun = pozitivEsteBun ? procent >= 0 : procent <= 0;
+  const color = procent === 0 ? "var(--text-secondary)" : eBun ? "#22C55E" : "#EF4444";
+  const semn = procent >= 0 ? "+" : "";
+  return { text: `${semn}${procent.toFixed(1)}%`, color };
+}
+
+function ManagementComparisonRow({
+  label,
+  mtd,
+  ytd,
+  mom,
+  yoy,
+  pozitivEsteBun,
+}: {
+  label: string;
+  mtd: number;
+  ytd: number;
+  mom: PeriodComparisonValue;
+  yoy: PeriodComparisonValue;
+  pozitivEsteBun: boolean;
+}) {
+  const momFmt = formatVariatieManagement(mom, pozitivEsteBun);
+  const yoyFmt = formatVariatieManagement(yoy, pozitivEsteBun);
+  return (
+    <tr className="border-b border-border-faint">
+      <td className="px-3 py-2 font-medium text-text-primary">{label}</td>
+      <td className="px-3 py-2 text-right font-mono text-text-primary">{formatEur(mtd)}</td>
+      <td className="px-3 py-2 text-right font-mono text-text-primary">{formatEur(ytd)}</td>
+      <td className="px-3 py-2 text-right font-mono" style={{ color: momFmt.color }}>
+        {momFmt.text}
+      </td>
+      <td className="px-3 py-2 text-right font-mono" style={{ color: yoyFmt.color }}>
+        {yoyFmt.text}
+      </td>
+    </tr>
+  );
 }
 
 export function ManagementDashboardClient({
@@ -83,6 +127,11 @@ export function ManagementDashboardClient({
   );
 
   const summary = useMemo(() => computeManagementSummary(monthly), [monthly]);
+
+  const comparisons = useMemo(
+    () => computePeriodComparisons(venituriLinii, cheltuieliLinii),
+    [venituriLinii, cheltuieliLinii]
+  );
 
   const profitChartData = monthly.map((m) => ({
     luna: m.luna,
@@ -328,6 +377,66 @@ export function ManagementDashboardClient({
         </button>
       </div>
       <p className="-mt-2 mb-4 text-[11px] text-text-faint">Click pe orice KPI de mai sus arata compozitia pe luni.</p>
+
+      <div className="mb-4 overflow-x-auto rounded-xl border border-border-subtle">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-border-subtle bg-surface-1 text-left text-xs text-text-muted">
+              <th className="px-3 py-2">
+                <span className="flex items-center gap-1">
+                  Comparatii
+                  <InfoTooltip title="MTD / YTD / MoM / YoY" definition={MANAGEMENT_KPI_DEFINITIONS.comparatiePerioade} />
+                </span>
+              </th>
+              <th className="px-3 py-2 text-right">MTD (luna curenta)</th>
+              <th className="px-3 py-2 text-right">YTD (anul curent)</th>
+              <th className="px-3 py-2 text-right">MoM (vs luna trecuta)</th>
+              <th className="px-3 py-2 text-right">YoY (vs anul trecut)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ManagementComparisonRow
+              label="Venituri"
+              mtd={comparisons.mtdVenituri}
+              ytd={comparisons.ytdVenituri}
+              mom={comparisons.momVenituri}
+              yoy={comparisons.yoyVenituri}
+              pozitivEsteBun
+            />
+            <ManagementComparisonRow
+              label="Cheltuieli"
+              mtd={comparisons.mtdCheltuieli}
+              ytd={comparisons.ytdCheltuieli}
+              mom={comparisons.momCheltuieli}
+              yoy={comparisons.yoyCheltuieli}
+              pozitivEsteBun={false}
+            />
+            <ManagementComparisonRow
+              label="Profit"
+              mtd={comparisons.mtdProfit}
+              ytd={comparisons.ytdProfit}
+              mom={comparisons.momProfit}
+              yoy={comparisons.yoyProfit}
+              pozitivEsteBun
+            />
+          </tbody>
+        </table>
+      </div>
+
+      <div className="mb-4">
+        <ExpandableChart>
+          <ComparisonBarChart
+            momVenituri={comparisons.momVenituri}
+            momCheltuieli={comparisons.momCheltuieli}
+            momProfit={comparisons.momProfit}
+            yoyVenituri={comparisons.yoyVenituri}
+            yoyCheltuieli={comparisons.yoyCheltuieli}
+            yoyProfit={comparisons.yoyProfit}
+          />
+        </ExpandableChart>
+      </div>
+
+      <MultiYearComparisonSection venituriLinii={venituriLinii} />
 
       <div className="mb-4">
         <AiInsightCard

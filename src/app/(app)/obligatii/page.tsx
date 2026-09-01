@@ -1,5 +1,6 @@
-import { getObligatii, getLastObligatiiImportBatch, getObligatiiPlati } from "@/lib/data/obligatii";
+import { getObligatii, getLastObligatiiImportBatch, getObligatiiPlati, getObligatiiRecurente } from "@/lib/data/obligatii";
 import { getNomenclatoare } from "@/lib/data/nomenclatoare";
+import { getFurnizorOptions } from "@/lib/data/partners";
 import { requireModuleAccess } from "@/lib/auth/moduleAccess";
 import { BackButton } from "@/components/BackButton";
 import { ObligatiiClient } from "@/components/obligatii/ObligatiiClient";
@@ -7,11 +8,13 @@ import { ObligatiiClient } from "@/components/obligatii/ObligatiiClient";
 export default async function ObligatiiPage() {
   await requireModuleAccess("creante_obligatii", "obligatii");
 
-  const [obligatii, lastBatch, plati, nomenclatoare] = await Promise.all([
+  const [obligatii, lastBatch, plati, nomenclatoare, recurente, furnizoriOptions] = await Promise.all([
     getObligatii(),
     getLastObligatiiImportBatch(),
     getObligatiiPlati(),
     getNomenclatoare(),
+    getObligatiiRecurente(),
+    getFurnizorOptions(),
   ]);
 
   const modalitatePlataOptions = (nomenclatoare.obligatie_modalitate_plata ?? []).map((n) => n.valoare);
@@ -24,6 +27,8 @@ export default async function ObligatiiPage() {
         lastBatch={lastBatch}
         plati={plati}
         modalitatePlataOptions={modalitatePlataOptions}
+        recurente={recurente}
+        furnizoriOptions={furnizoriOptions}
       />
     </div>
   );

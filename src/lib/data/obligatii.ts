@@ -109,3 +109,23 @@ export async function getObligatiiTargetsLunare(): Promise<Record<string, number
   }
   return map;
 }
+
+export async function getObligatiiRecurente(): Promise<
+  (import("@/types/obligatii").ObligatieRecurenta & { partner_nume: string | null })[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("obligatii_recurente")
+    .select("*, partners(nume)")
+    .order("creat_la", { ascending: false });
+
+  if (error) {
+    console.error("getObligatiiRecurente error:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((r) => ({
+    ...r,
+    partner_nume: (r.partners as unknown as { nume: string } | null)?.nume ?? null,
+  }));
+}

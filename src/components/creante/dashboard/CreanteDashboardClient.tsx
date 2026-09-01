@@ -71,10 +71,12 @@ export function CreanteDashboardClient({
   creante,
   incasari,
   targets,
+  groupMap,
 }: {
   creante: Creanta[];
   incasari: Record<string, CreantaIncasare[]>;
   targets: Record<string, number>;
+  groupMap?: Record<string, string>;
 }) {
   const [period, setPeriod] = useState<PeriodFilter>("toate");
   const [customFrom, setCustomFrom] = useState("");
@@ -105,11 +107,30 @@ export function CreanteDashboardClient({
     });
   }, [inPeriodList, filters]);
 
-  const summary = useMemo(() => computeCreanteSummary(filtered), [filtered]);
+  // La fel ca `filtered`, dar FARA filtrul de perioada din UI - DSO isi
+  // calculeaza singur o fereastra fixa de 90 de zile, care s-ar strica daca
+  // ar primi date deja taiate de alt filtru de perioada (ex. "Luna
+  // curenta" ar exclude facturi mai vechi, relevante pentru fereastra de
+  // 90 de zile). Respecta insa filtrul de client/status/tip vanzare/aging,
+  // ca DSO sa reflecte corect selectia unui client anume.
+  const pentruDso = useMemo(() => {
+    return creante.filter((c) => {
+      if (filters.status.length > 0) {
+        const matches = filters.status.some((s) => (s === "neincasate" ? c.sold > 0 : getCreantaStatus(c) === s));
+        if (!matches) return false;
+      }
+      if (filters.tipVanzare.length > 0 && !filters.tipVanzare.includes(c.tip_vanzare ?? "Necunoscut")) return false;
+      if (filters.client.length > 0 && !filters.client.includes(c.nume_firma)) return false;
+      if (filters.aging.length > 0 && !filters.aging.some((b) => matchesAgingBucket(c, b))) return false;
+      return true;
+    });
+  }, [creante, filters]);
+
+  const summary = useMemo(() => computeCreanteSummary(filtered, pentruDso), [filtered, pentruDso]);
   const statusData = useMemo(() => groupByStatusCreante(filtered), [filtered]);
   const agingData = useMemo(() => groupByAgingCreante(filtered), [filtered]);
   const tipVanzareData = useMemo(() => groupByTipVanzareCreante(filtered), [filtered]);
-  const clientData = useMemo(() => topClientiRestanti(filtered, 8), [filtered]);
+  const clientData = useMemo(() => topClientiRestanti(filtered, 8, groupMap), [filtered, groupMap]);
   const riscData = useMemo(() => topRiscCreante(filtered, 5), [filtered]);
 
   const totalIncasatInPeriod = useMemo(
@@ -122,25 +143,37 @@ export function CreanteDashboardClient({
   // le "restrangi" la o singura luna.
   // Fereastra mai lunga decat restul graficelor (19 luni, nu 12) - acopera
   // tot istoricul de target importat (decembrie 2024 - prezent).
-  const grtSeries = useMemo(() => buildGrtSeries(incasariFlat, targets, 18), [incasariFlat, targets]);
-  const incasariSeries = useMemo(() => buildIncasariTimeSeries(incasariFlat, 11), [incasariFlat]);
+  const grtSeries = useMemo(
+    () => buildGrtSeries(incasariFlat, targets, 18, period, { from: customFrom, to: customTo, months: customMonths }),
+    [incasariFlat, targets, period, customFrom, customTo, customMonths]
+  );
+  // Separat de grafic (care respecta filtrul de perioada) - cardul de GRT
+  // "luna curenta" trebuie sa arate mereu luna reala curenta, indiferent de
+  // filtrul ales in restul paginii.
+  const grtSeriesIntreg = useMemo(() => buildGrtSeries(incasariFlat, targets, 18), [incasariFlat, targets]);
+  const incasariSeries = useMemo(
+    () => buildIncasariTimeSeries(incasariFlat, 11, period, { from: customFrom, to: customTo, months: customMonths }),
+    [incasariFlat, period, customFrom, customTo, customMonths]
+  );
   const ziuaLuniiData = useMemo(
     () => groupByZiuaLunii(incasariFlat, period, { from: customFrom, to: customTo, months: customMonths }),
     [incasariFlat, period, customFrom, customTo, customMonths]
   );
-  const facturatSeries = useMemo(() => buildFacturatTimeSeries(creante, 11), [creante]);
-  const dinamicaData = useMemo(
-    () =>
-      facturatSeries.map((f, i) => ({
-        month: f.month,
-        facturat: f.facturat,
-        incasat: incasariSeries[i]?.total ?? 0,
-      })),
-    [facturatSeries, incasariSeries]
+  const facturatSeries = useMemo(
+    () => buildFacturatTimeSeries(creante, 11, period, { from: customFrom, to: customTo, months: customMonths }),
+    [creante, period, customFrom, customTo, customMonths]
   );
+  const dinamicaData = useMemo(() => {
+    const incasariByMonth = new Map(incasariSeries.map((i) => [i.monthKey, i.total]));
+    return facturatSeries.map((f) => ({
+      month: f.month,
+      facturat: f.facturat,
+      incasat: incasariByMonth.get(f.monthKey) ?? 0,
+    }));
+  }, [facturatSeries, incasariSeries]);
 
   const currentMonthKey = getTodayISO().slice(0, 7);
-  const currentMonthGrt = grtSeries.find((g) => g.monthKey === currentMonthKey);
+  const currentMonthGrt = grtSeriesIntreg.find((g) => g.monthKey === currentMonthKey);
 
   const clientOptions = useMemo(
     () => Array.from(new Set(creante.map((c) => c.nume_firma))).sort(),
@@ -240,7 +273,7 @@ export function CreanteDashboardClient({
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <KpiInfoCard
           label="Total Creante (neincasate)"
           value={formatRon(summary.totalSoldNeincasat)}
@@ -279,6 +312,14 @@ export function CreanteDashboardClient({
           icon={<TrendingUp size={16} />}
           accent="#22C55E"
           definition={CREANTE_KPI_DEFINITIONS.totalIncasat}
+        />
+        <KpiInfoCard
+          label="DSO"
+          value={summary.dso !== null ? `${summary.dso.toFixed(0)} zile` : "—"}
+          sublabel="Days Sales Outstanding"
+          icon={<Wallet size={16} />}
+          accent="#A855F7"
+          definition={CREANTE_KPI_DEFINITIONS.dso}
         />
       </div>
 

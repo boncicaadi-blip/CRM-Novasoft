@@ -76,10 +76,11 @@ export function ActiuneCard({
           {o.actiune && (
             <Link
               href="/calendar"
-              className="rounded-md p-1 text-text-muted transition hover:bg-surface-1 hover:text-[#0070F3]"
+              className="flex items-center gap-1 rounded-md border border-border-subtle px-2 py-1 text-[11px] font-medium text-text-secondary transition hover:border-[#0070F3] hover:text-[#0070F3]"
               title="Vezi in calendar"
             >
               <CalendarDays size={13} />
+              Vezi in calendar
             </Link>
           )}
           <button

@@ -241,7 +241,7 @@ export function CashflowClient({
           title="Cashflow"
           definition={{
             descriere:
-              "Fluxul real de numerar - cand chiar intra/ies banii (Realizat: data incasarii/platii), spre deosebire de P&L, unde conteaza data facturii. Estimat = sold neincasat/neplatit, dupa scadenta. Facturile restante apar in prima luna afisata, ca sa nu dispara din calcul.",
+              "Fluxul real de numerar - cand chiar intra/ies banii (Realizat: data incasarii/platii), spre deosebire de P&L, unde conteaza data facturii. Prognozat = sold neincasat/neplatit, dupa scadenta. Facturile restante apar in prima luna afisata, ca sa nu dispara din calcul.",
             cumAnalizezi: "Click pe orice suma pentru a vedea din ce se compune. Click pe iconita de grafic pentru evolutia acelei linii.",
           }}
         />
@@ -311,7 +311,7 @@ export function CashflowClient({
             onChange={(e) => setShowEstimat(e.target.checked)}
             className="h-3.5 w-3.5 rounded border-border-strong bg-surface-2"
           />
-          Estimat
+          Prognozat
         </label>
         <label className="flex items-center gap-1.5 rounded-md border border-border-subtle px-2.5 py-1.5 text-xs text-text-primary">
           <input
@@ -328,7 +328,7 @@ export function CashflowClient({
         <KpiInfoCard
           label="Incasari"
           value={formatRon(showRealizat ? report.totalRealizat.incasari : report.totalEstimat.incasari)}
-          sublabel={showEstimat && showRealizat ? `Estimat: ${formatRon(report.totalEstimat.incasari)}` : undefined}
+          sublabel={showEstimat && showRealizat ? `Prognozat: ${formatRon(report.totalEstimat.incasari)}` : undefined}
           icon={<TrendingUp size={16} />}
           accent="#22C55E"
           definition={KPI_DEFINITIONS.cashflowIncasari}
@@ -336,7 +336,7 @@ export function CashflowClient({
         <KpiInfoCard
           label="Plati"
           value={formatRon(showRealizat ? report.totalRealizat.plati : report.totalEstimat.plati)}
-          sublabel={showEstimat && showRealizat ? `Estimat: ${formatRon(report.totalEstimat.plati)}` : undefined}
+          sublabel={showEstimat && showRealizat ? `Prognozat: ${formatRon(report.totalEstimat.plati)}` : undefined}
           icon={<TrendingDown size={16} />}
           accent="#F97316"
           definition={KPI_DEFINITIONS.cashflowPlati}
@@ -345,7 +345,7 @@ export function CashflowClient({
           label="Cashflow Net"
           value={formatRon(showRealizat ? report.totalRealizat.net : report.totalEstimat.net)}
           valueColor={(showRealizat ? report.totalRealizat.net : report.totalEstimat.net) >= 0 ? "#22C55E" : "#EF4444"}
-          sublabel={showEstimat && showRealizat ? `Estimat: ${formatRon(report.totalEstimat.net)}` : undefined}
+          sublabel={showEstimat && showRealizat ? `Prognozat: ${formatRon(report.totalEstimat.net)}` : undefined}
           icon={<Wallet size={16} />}
           accent="#0070F3"
           definition={KPI_DEFINITIONS.cashflowNet}
@@ -376,7 +376,7 @@ export function CashflowClient({
       <div className="mb-4 rounded-xl border border-border-subtle bg-surface-1 p-4">
         <p className="mb-1 text-sm font-medium text-text-primary">Incasari vs. Plati vs. Cashflow Net</p>
         <p className="mb-3 text-[11px] text-text-muted">
-          Arata valorile {showRealizat ? "Realizate" : "Estimate"} pe fiecare luna din perioada selectata.
+          Arata valorile {showRealizat ? "Realizate" : "Prognozate"} pe fiecare luna din perioada selectata.
         </p>
         <CashflowCombinedChart data={combinedChartData} />
       </div>
@@ -391,7 +391,7 @@ export function CashflowClient({
 
       {nrColoane === 0 ? (
         <p className="rounded-xl border border-border-subtle bg-surface-1 p-4 text-sm text-text-muted">
-          Bifeaza cel putin Estimat sau Realizat ca sa vezi tabelul.
+          Bifeaza cel putin Prognozat sau Realizat ca sa vezi tabelul.
         </p>
       ) : (
         <div className="mb-4 overflow-x-auto rounded-xl border border-border-subtle">
@@ -420,7 +420,7 @@ export function CashflowClient({
                   <Fragment key={luna.luna}>
                     {showEstimat && (
                       <th className="border-l border-border-faint px-3 py-1 text-right text-[10px] font-normal text-text-faint">
-                        Estimat
+                        Prognozat
                       </th>
                     )}
                     {showRealizat && (
@@ -429,7 +429,7 @@ export function CashflowClient({
                   </Fragment>
                 ))}
                 <th className="border-l border-border-subtle bg-surface-2 px-3 py-1 text-right text-[10px] font-normal text-text-faint">
-                  {showRealizat ? "Realizat" : "Estimat"}
+                  {showRealizat ? "Realizat" : "Prognozat"}
                 </th>
               </tr>
             </thead>

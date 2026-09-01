@@ -14,6 +14,7 @@ import { generatePlInsightAction, getAiInsightHistoryAction } from "@/lib/action
 import { formatEur } from "@/lib/format";
 import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
 import { buildPlReport, type PlGrupValoare, type PlValoare } from "@/lib/pl-analytics";
+import { PlCombinedChart } from "./PlCombinedChart";
 import type { VenitLinie } from "@/types/venituri";
 import type { CheltuialaLinie } from "@/types/cheltuieli";
 
@@ -122,6 +123,7 @@ export function PlClient({
     () => ["VENITURI", ...report.costuriGrupe.map((g) => g.incadrare)],
     [report.costuriGrupe]
   );
+  const toateColapsate = allGroupKeys.length > 0 && allGroupKeys.every((k) => collapsed.has(k));
 
   function toggleGroup(key: string) {
     setCollapsed((prev) => {
@@ -438,6 +440,18 @@ export function PlClient({
           historyAction={() => getAiInsightHistoryAction("pl_insight")}
         />
       </div>
+
+      {toateColapsate && (
+        <div className="mb-4 rounded-xl border border-border-subtle bg-surface-1 p-4">
+          <p className="mb-2 text-sm font-medium text-text-primary">Venituri, Cheltuieli si Profit, pe luni</p>
+          <PlCombinedChart
+            luni={report.luni}
+            venituriPerLuna={report.totalVenituri.perLuna}
+            costuriPerLuna={report.totalCosturi.perLuna}
+            profitPerLuna={report.profit.perLuna}
+          />
+        </div>
+      )}
 
       {nrColoane === 0 ? (
         <p className="rounded-xl border border-border-subtle bg-surface-1 p-4 text-sm text-text-muted">

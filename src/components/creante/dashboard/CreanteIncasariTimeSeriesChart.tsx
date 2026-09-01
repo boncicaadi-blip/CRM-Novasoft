@@ -15,7 +15,7 @@ export function CreanteIncasariTimeSeriesChart({ data }: { data: IncasariMonthDa
         <InfoTooltip title="Evolutie incasari" definition={CREANTE_KPI_DEFINITIONS.incasariTimeSeriesChart} />
       </p>
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+        <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
           <defs>
             <linearGradient id="incasatGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#22C55E" stopOpacity={0.4} />
@@ -27,6 +27,7 @@ export function CreanteIncasariTimeSeriesChart({ data }: { data: IncasariMonthDa
           <YAxis
             tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             tickFormatter={(v) => formatRonCompact(v)}
+            width={75}
           />
           <Tooltip
             content={({ active, payload }) => {

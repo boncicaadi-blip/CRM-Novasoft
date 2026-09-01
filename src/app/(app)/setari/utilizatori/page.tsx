@@ -55,6 +55,7 @@ export default async function UtilizatoriPage() {
               <th className="px-3 py-2.5 font-medium">Email</th>
               <th className="px-3 py-2.5 font-medium">Rol</th>
               <th className="px-3 py-2.5 font-medium">Status</th>
+              <th className="px-3 py-2.5 font-medium">Popup zilnic</th>
               <th className="px-3 py-2.5 font-medium"></th>
             </tr>
           </thead>

@@ -6,6 +6,7 @@ export interface Creanta {
   nr_factura: string;
   nume_firma: string;
   cif_client: string | null;
+  partner_id: string | null;
   opportunity_id: string | null;
   data_factura: string | null;
   data_scadenta: string | null;

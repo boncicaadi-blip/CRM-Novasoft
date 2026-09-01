@@ -1,6 +1,7 @@
 export interface Opportunity {
   id: string;
   opportunity_code: string | null;
+  partner_id: string | null;
 
   // Identificare firma
   nume_grup: string;
@@ -114,6 +115,19 @@ export interface Opportunity {
 
   // Relatie populata separat (join)
   profiles?: { id: string; full_name: string } | null;
+  partner?: {
+    judet: string | null;
+    oras: string | null;
+    website: string | null;
+    contact_nume: string | null;
+    contact_functie: string | null;
+    solutia_existenta: string | null;
+    nr_vehicule: number | null;
+    nr_angajati: number | null;
+    cifra_afaceri: number | null;
+    potential_fonduri_europene: boolean;
+    domeniu: { valoare: string } | null;
+  } | null;
 }
 
 export type OpportunityInsert = Partial<
@@ -174,6 +188,7 @@ export interface Profile {
   approved: boolean;
   module_access: string[];
   submodule_access: string[];
+  arata_popup_zilnic: boolean;
   created_at: string;
 }
 
@@ -189,6 +204,7 @@ export interface OpportunityHistoryRow {
   mrr_synergo: number | null;
   forecast_total_saas: number | null;
   forecast_total_onpremise: number | null;
+  forecast_implementare: number | null;
 }
 
 export type NomenclatorCategorie =

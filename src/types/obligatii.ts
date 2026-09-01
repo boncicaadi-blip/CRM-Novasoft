@@ -5,6 +5,8 @@ export interface Obligatie {
   nr_factura: string;
   nume_furnizor: string;
   cif_furnizor: string | null;
+  sursa: "manual" | "import_excel" | "anaf" | "prognoza";
+  obligatie_recurenta_id: string | null;
   data_factura: string | null;
   data_scadenta: string | null;
   serviciu_facturat: string | null;
@@ -12,6 +14,9 @@ export interface Obligatie {
   modalitate_plata: string | null;
   responsabil_achizitie: string | null;
   total_factura: number;
+  moneda: string;
+  valoare_valuta: number | null;
+  curs_valutar: number | null;
   valoare_platita: number;
   data_plata: string | null;
   sold: number;
@@ -47,4 +52,22 @@ export interface ObligatiiTargetLunar {
   target: number;
   creat_la: string;
   actualizat_la: string;
+}
+
+export interface ObligatieRecurenta {
+  id: string;
+  tip: "non_factura" | "furnizor";
+  nume: string;
+  partner_id: string | null;
+  cif_furnizor: string | null;
+  valoare: number;
+  ziua_lunii: number;
+  data_inceput: string;
+  data_sfarsit: string | null;
+  serviciu_facturat: string | null;
+  tip_achizitie: TipAchizitie | null;
+  modalitate_plata: string | null;
+  activ: boolean;
+  creat_la: string;
+  creat_de: string | null;
 }

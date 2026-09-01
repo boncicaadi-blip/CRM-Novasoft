@@ -45,6 +45,71 @@ async function requireAdmin() {
   return { supabase, userId: userData.user.id, isAdmin: profile?.role === "admin" };
 }
 
+/**
+ * Adauga manual o factura primita de la un furnizor - pentru facturi
+ * externe care nu pot fi aduse prin SPV (ex. facturi in alta moneda decat
+ * RON, sau furnizori din afara Romaniei). total_factura se salveaza
+ * intotdeauna in RON; daca moneda e alta, valoare_valuta + curs_valutar
+ * pastreaza suma originala si cursul folosit, ca referinta.
+ */
+export async function addObligatieManualAction(fields: {
+  nr_factura: string;
+  nume_furnizor: string;
+  cif_furnizor?: string | null;
+  partner_id?: string | null;
+  data_factura?: string | null;
+  data_scadenta?: string | null;
+  serviciu_facturat?: string | null;
+  tip_achizitie?: TipAchizitie | null;
+  modalitate_plata?: string | null;
+  total_factura: number;
+  moneda?: string;
+  valoare_valuta?: number | null;
+  curs_valutar?: number | null;
+  observatii?: string | null;
+}): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot adauga facturi." };
+
+  const nrFactura = fields.nr_factura.trim();
+  if (!nrFactura) return { success: false, message: "Numarul facturii este obligatoriu." };
+  if (!fields.nume_furnizor.trim()) return { success: false, message: "Numele furnizorului este obligatoriu." };
+  if (!Number.isFinite(fields.total_factura) || fields.total_factura === 0) {
+    return { success: false, message: "Totalul facturii trebuie sa fie un numar diferit de 0." };
+  }
+
+  const { data: existing } = await supabase
+    .from("obligatii")
+    .select("id")
+    .eq("nr_factura", nrFactura)
+    .maybeSingle();
+  if (existing) {
+    return { success: false, message: `Factura ${nrFactura} exista deja - nu se dubleaza.` };
+  }
+
+  const { error } = await supabase.from("obligatii").insert({
+    nr_factura: nrFactura,
+    nume_furnizor: fields.nume_furnizor.trim(),
+    cif_furnizor: fields.cif_furnizor || null,
+    partner_id: fields.partner_id || null,
+    data_factura: fields.data_factura || null,
+    data_scadenta: fields.data_scadenta || null,
+    serviciu_facturat: fields.serviciu_facturat || null,
+    tip_achizitie: fields.tip_achizitie || null,
+    modalitate_plata: fields.modalitate_plata || null,
+    total_factura: fields.total_factura,
+    moneda: fields.moneda || "RON",
+    valoare_valuta: fields.valoare_valuta ?? null,
+    curs_valutar: fields.curs_valutar ?? null,
+    observatii: fields.observatii || null,
+  });
+
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/obligatii");
+  return { success: true };
+}
+
 interface RawRowUnificat {
   "Nume firma"?: unknown;
   "Serviciu facturat"?: unknown;
@@ -282,10 +347,15 @@ export async function updateObligatieTrackingAction(
     serviciu_facturat?: string | null;
     observatii?: string | null;
     valoare_propusa_spre_plata?: number | null;
+    total_factura?: number;
   }
 ): Promise<{ success: boolean; message?: string }> {
   const { supabase, isAdmin } = await requireAdmin();
   if (!isAdmin) return { success: false, message: "Doar administratorii pot edita obligatii." };
+
+  if (fields.total_factura !== undefined && (!Number.isFinite(fields.total_factura) || fields.total_factura <= 0)) {
+    return { success: false, message: "Totalul facturii trebuie sa fie un numar pozitiv." };
+  }
 
   if (fields.valoare_propusa_spre_plata !== undefined && fields.valoare_propusa_spre_plata !== null) {
     const { data: obligatie } = await supabase.from("obligatii").select("sold").eq("id", id).single();
