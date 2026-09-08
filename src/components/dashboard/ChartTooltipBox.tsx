@@ -28,7 +28,9 @@ export function ChartTooltipBox({
               )}
               {row.label}
             </span>
-            <span className="font-mono text-text-primary">{row.value}</span>
+            <span className="font-mono" style={{ color: row.color ?? "var(--text-primary)" }}>
+              {row.value}
+            </span>
           </div>
         ))}
       </div>

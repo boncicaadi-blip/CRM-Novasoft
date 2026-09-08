@@ -45,6 +45,24 @@ export const VENITURI_KPI_DEFINITIONS: Record<string, KpiDefinition> = {
     descriere: "Cei mai mari 10 clienti dupa venit realizat, in perioada selectata.",
     cumAnalizezi: "Un client foarte mare in top poate insemna dependenta de concentrare - risc daca acel client pleaca.",
   },
+  paretoRealizat: {
+    descriere: "Toti clientii, sortati descrescator dupa venitul realizat, cu linia cumulativa (%) suprapusa.",
+    formula: "Bare: venit realizat per client, sortat descrescator. Linie: procent cumulativ din total.",
+    cumAnalizezi: "Regula 80/20 - cati clienti fac 80% din venit? Daca linia atinge 80% repede, ai concentrare mare pe putini clienti.",
+  },
+  paretoEstimat: {
+    descriere: "Toti clientii, sortati descrescator dupa venitul estimat, cu linia cumulativa (%) suprapusa.",
+    formula: "Bare: venit estimat per client, sortat descrescator. Linie: procent cumulativ din total.",
+    cumAnalizezi: "La fel ca Pareto realizat, dar pe estimari - arata unde e concentrat potentialul, nu doar ce s-a incasat deja.",
+  },
+  venitRealizatPeClient: {
+    descriere: "Distributia venitului realizat, pe fiecare client.",
+    cumAnalizezi: "Vezi rapid ponderea fiecarui client in totalul realizat.",
+  },
+  venitEstimatPeClient: {
+    descriere: "Distributia venitului estimat, pe fiecare client.",
+    cumAnalizezi: "Vezi rapid ponderea fiecarui client in totalul estimat.",
+  },
   dupaGrup: {
     descriere: "Venitul realizat grupat pe Grupul de firme din care face parte fiecare client (din fisa oportunitatii) - util cand acelasi grup are mai multe firme/contracte separate.",
     cumAnalizezi: "Vezi valoarea reala a unui grup de firme, nu doar a unei singure entitati legale din grup.",

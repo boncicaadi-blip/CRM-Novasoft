@@ -27,6 +27,7 @@ export async function requireModuleAccess(module: ModuleKey, submodule?: string)
     .single();
 
   const isAdmin = profile?.role === "admin";
+  const role: string = profile?.role ?? "viewer";
   const moduleAccess: string[] = profile?.module_access ?? [];
   const submoduleAccess: string[] = profile?.submodule_access ?? [];
 
@@ -34,5 +35,5 @@ export async function requireModuleAccess(module: ModuleKey, submodule?: string)
     redirect("/profil");
   }
 
-  return { supabase, userId: data.user.id, isAdmin, moduleAccess, submoduleAccess };
+  return { supabase, userId: data.user.id, isAdmin, role, moduleAccess, submoduleAccess };
 }

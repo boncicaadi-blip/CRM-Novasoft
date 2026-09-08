@@ -137,7 +137,7 @@ export async function addVenitLinieManualAction(fields: {
   if (!isAdmin) return { success: false, message: "Doar administratorii pot adauga venituri." };
 
   if (!fields.partner_id) return { success: false, message: "Trebuie sa alegi un client din lista." };
-  if (fields.venit_estimat <= 0) return { success: false, message: "Valoarea trebuie sa fie pozitiva." };
+  if (fields.venit_estimat === 0) return { success: false, message: "Valoarea nu poate fi 0." };
 
   const { error } = await supabase.from("venituri_linii").insert({
     nume_client: fields.nume_client,
@@ -235,6 +235,92 @@ export async function bulkMarkFacturatAction(
       .update({ facturat: true, venit_realizat: linie.venit_estimat })
       .eq("id", linie.id);
   }
+
+  revalidatePath("/venituri-cheltuieli");
+  return { success: true };
+}
+
+/**
+ * Inversul lui bulkMarkFacturatAction - scoate bifa de facturat si reseteaza
+ * venit_realizat la 0 (nu mai are sens sa ramana o valoare realizata pe o
+ * linie marcata explicit ca nefacturata).
+ */
+export async function bulkUnmarkFacturatAction(
+  ids: string[]
+): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot edita venituri." };
+  if (ids.length === 0) return { success: true };
+
+  const { error } = await supabase
+    .from("venituri_linii")
+    .update({ facturat: false, venit_realizat: 0 })
+    .in("id", ids);
+
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/venituri-cheltuieli");
+  return { success: true };
+}
+
+/**
+ * Muta o estimare de venit intr-o alta luna, pastrand istoricul: creeaza o
+ * linie noua, identica, in luna aleasa (cu valoarea data - implicit aceeasi,
+ * dar editabila daca ai o estimare mai buna pentru luna noua), iar linia
+ * originala ramane la locul ei, marcata "mutata" (mutat_in_linie_id) - nu
+ * mai intra in totalurile de estimare de-acum incolo, ca sa nu se numere de
+ * doua ori.
+ */
+export async function mutaEstimareVenitAction(
+  linieId: string,
+  lunaNoua: string,
+  valoareNoua?: number
+): Promise<{ success: boolean; message?: string }> {
+  const { supabase, isAdmin } = await requireAdmin();
+  if (!isAdmin) return { success: false, message: "Doar administratorii pot muta estimari." };
+
+  const { data: linie, error: linieError } = await supabase
+    .from("venituri_linii")
+    .select("*")
+    .eq("id", linieId)
+    .single();
+  if (linieError || !linie) return { success: false, message: "Linia nu a fost gasita." };
+  if (linie.mutat_in_linie_id) return { success: false, message: "Aceasta linie a fost deja mutata." };
+  if (linie.facturat) return { success: false, message: "O linie deja facturata nu poate fi mutata." };
+
+  const { data: linieNoua, error: insertError } = await supabase
+    .from("venituri_linii")
+    .insert({
+      nume_client: linie.nume_client,
+      tip_venit: linie.tip_venit,
+      produs: linie.produs,
+      serviciu: linie.serviciu,
+      observatii: linie.observatii,
+      venit_estimat: valoareNoua ?? linie.venit_estimat,
+      luna: firstOfMonth(lunaNoua),
+      partner_id: linie.partner_id,
+      // Nu mostenim contract_id: daca luna-tinta are deja o linie normala,
+      // generata din acelasi contract recurent (situatie foarte probabila -
+      // de-asta se si muta o estimare, ca sa nu se piarda pe langa cealalta
+      // deja existenta acolo), constrangerea unica (contract_id, luna) ar
+      // respinge inserarea. Linia mutata devine un rand de sine statator,
+      // separat de ciclul normal de generare a contractului.
+      contract_id: null,
+      facturat: false,
+      venit_realizat: null,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !linieNoua) {
+    return { success: false, message: insertError?.message ?? "Eroare la crearea liniei noi." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("venituri_linii")
+    .update({ mutat_in_linie_id: linieNoua.id })
+    .eq("id", linieId);
+  if (updateError) return { success: false, message: updateError.message };
 
   revalidatePath("/venituri-cheltuieli");
   return { success: true };

@@ -23,7 +23,7 @@ export async function getClientCrossLinks(numeFirma: string): Promise<PartnerCro
 
   const { data: partner } = await supabase
     .from("partners")
-    .select("id, opportunity_id, opportunities(nume_potential)")
+    .select("id, opportunity_id, opportunities!opportunity_id(nume_potential)")
     .eq("nume_normalizat", norm)
     .maybeSingle();
 
@@ -56,7 +56,7 @@ export async function getFurnizorCrossLinks(numeFurnizor: string): Promise<Partn
 
   const { data: partner } = await supabase
     .from("partners")
-    .select("id, opportunity_id, opportunities(nume_potential)")
+    .select("id, opportunity_id, opportunities!opportunity_id(nume_potential)")
     .eq("nume_normalizat", norm)
     .maybeSingle();
 
@@ -79,4 +79,55 @@ export async function getFurnizorCrossLinks(numeFurnizor: string): Promise<Partn
     opportunityNume: opportunity?.nume_potential ?? null,
     otherRoleSummary,
   };
+}
+
+export interface FurnizorOption {
+  id: string;
+  nume: string;
+  cod_fiscal: string | null;
+}
+
+/**
+ * Lista de furnizori pentru selectorul din formularul de adaugare manuala pe
+ * Obligatii - din `partners`, la fel ca getClientOptions (Venituri) dar
+ * filtrat pe este_furnizor in loc de facturabil.
+ */
+export async function getFurnizorOptions(): Promise<FurnizorOption[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("partners")
+    .select("id, nume, cod_fiscal")
+    .eq("este_furnizor", true)
+    .order("nume", { ascending: true });
+
+  if (error) {
+    console.error("getFurnizorOptions error:", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
+ * Mapare partner_id -> nume_grup, pentru toti partenerii care au un grup
+ * completat (Setari -> Parteneri). Folosita in Dashboard Creante/Venituri
+ * la "Top Clienti" - daca o firma are grup, intra in raport sub numele
+ * grupului (ex. mai multe firme separate, aceeasi familie economica).
+ */
+export async function getPartnerGroupMap(): Promise<Record<string, string>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("partners")
+    .select("id, nume_grup")
+    .not("nume_grup", "is", null);
+
+  if (error) {
+    console.error("getPartnerGroupMap error:", error.message);
+    return {};
+  }
+
+  const map: Record<string, string> = {};
+  for (const p of data ?? []) {
+    if (p.nume_grup) map[p.id] = p.nume_grup;
+  }
+  return map;
 }

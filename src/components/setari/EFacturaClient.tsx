@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Upload, RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { importAnafFacturiAction, syncAnafFacturiAction, reprocesareFacturiAction, ignoreAnafFacturiBulkAction } from "@/lib/actions/anaf-sync";
+import { importAnafFacturiAction, syncAnafFacturiAction, reprocesareFacturiAction, ignoreAnafFacturiBulkAction, stergeAnafFacturiBulkAction } from "@/lib/actions/anaf-sync";
 import type { AnafFactura } from "@/types/anaf";
 
 type TipFilter = "toate" | "emisa" | "primita";
@@ -57,12 +57,13 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [zileSync, setZileSync] = useState(30);
 
   const nrFacturiNoi = facturi.filter((f) => f.stare === "noua").length;
 
   function handleSync() {
     startTransition(async () => {
-      const result = await syncAnafFacturiAction();
+      const result = await syncAnafFacturiAction(zileSync);
       setMessage(result.message);
       if (result.success) router.refresh();
     });
@@ -139,6 +140,22 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
     });
   }
 
+  function handleDelete() {
+    if (checkedIds.size === 0) return;
+    if (
+      !confirm(
+        `Stergi definitiv ${checkedIds.size} inregistrari? Nu se mai pot recupera - util pentru randuri fara nicio data utila (parsare esuata).`
+      )
+    )
+      return;
+    startTransition(async () => {
+      const result = await stergeAnafFacturiBulkAction(Array.from(checkedIds));
+      setMessage(result.message);
+      if (result.success) setCheckedIds(new Set());
+      if (result.success) router.refresh();
+    });
+  }
+
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
@@ -152,6 +169,17 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
           >
             Reproceseaza descarcate
           </button>
+          <select
+            value={zileSync}
+            onChange={(e) => setZileSync(Number(e.target.value))}
+            title="Cate zile in urma sa caute mesaje noi - nu are rost sa cauti mereu 60 de zile daca ai sincronizat deja recent"
+            className="rounded-md border border-border-subtle bg-surface-2 px-2 py-1.5 text-sm text-text-primary outline-none focus:border-[#E8007A]"
+          >
+            <option value={7} style={{ backgroundColor: "var(--surface-1)" }}>Ultimele 7 zile</option>
+            <option value={14} style={{ backgroundColor: "var(--surface-1)" }}>Ultimele 14 zile</option>
+            <option value={30} style={{ backgroundColor: "var(--surface-1)" }}>Ultimele 30 zile</option>
+            <option value={60} style={{ backgroundColor: "var(--surface-1)" }}>Ultimele 60 zile (maxim ANAF)</option>
+          </select>
           <button
             onClick={handleSync}
             disabled={isPending}
@@ -240,6 +268,14 @@ export function EFacturaClient({ facturi }: { facturi: AnafFactura[] }) {
             className="rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium text-text-secondary transition hover:border-border-strong hover:text-text-primary disabled:opacity-50"
           >
             Ignora {checkedIds.size} selectate
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isPending}
+            title="Sterge definitiv - pentru randuri complet goale, fara nicio data utila (parsare esuata)"
+            className="rounded-md border border-red-500/30 px-3 py-1.5 text-sm font-medium text-red-400 transition hover:bg-red-500/10 disabled:opacity-50"
+          >
+            Sterge definitiv {checkedIds.size} selectate
           </button>
         </div>
       )}

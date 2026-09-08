@@ -14,11 +14,13 @@ import {
 import { formatEur, formatEurCompact } from "@/lib/format";
 import { ChartTooltipBox } from "./ChartTooltipBox";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
-import { KPI_DEFINITIONS } from "@/lib/kpi-definitions";
+import type { KpiDefinition } from "@/lib/kpi-definitions";
 
 interface TimeSeriesDatum {
   month: string;
   arr: number;
+  mrr: number;
+  implementare: number;
   count: number;
   dateFrom: string;
   dateTo: string;
@@ -28,18 +30,29 @@ export function TimeSeriesChart({
   data,
   onSelectRange,
   selectedRange,
+  dataKey = "mrr",
+  title = "Evolutie MRR in timp (din istoric)",
+  tooltipLabel = "MRR",
+  color = "#E8007A",
+  definition,
 }: {
   data: TimeSeriesDatum[];
   onSelectRange?: (range: { dateFrom: string; dateTo: string } | null) => void;
   selectedRange?: { dateFrom: string; dateTo: string } | null;
+  dataKey?: "arr" | "mrr" | "implementare";
+  title?: string;
+  tooltipLabel?: string;
+  color?: string;
+  definition?: KpiDefinition;
 }) {
   const [dragStart, setDragStart] = useState<string | null>(null);
   const [dragEnd, setDragEnd] = useState<string | null>(null);
+  const gradientId = `tsGradient-${dataKey}`;
 
   if (data.length === 0) {
     return (
       <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
-        <p className="mb-1 text-sm font-medium text-text-primary">Evolutie ARR in timp</p>
+        <p className="mb-1 text-sm font-medium text-text-primary">{title}</p>
         <p className="py-12 text-center text-xs text-text-muted">
           Nu exista inca istoric suficient. Se acumuleaza automat pe masura ce modifici oportunitati.
         </p>
@@ -71,8 +84,8 @@ export function TimeSeriesChart({
     <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
-          Evolutie ARR in timp (din istoric)
-          <InfoTooltip title="Evolutie ARR in timp" definition={KPI_DEFINITIONS.crmEvolutieArrChart} />
+          {title}
+          {definition && <InfoTooltip title={title} definition={definition} />}
         </p>
         {selectedRange && onSelectRange && (
           <button
@@ -91,15 +104,15 @@ export function TimeSeriesChart({
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart
           data={data}
-          margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
+          margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
           onMouseDown={(e) => onSelectRange && e?.activeLabel && setDragStart(String(e.activeLabel))}
           onMouseMove={(e) => dragStart && e?.activeLabel && setDragEnd(String(e.activeLabel))}
           onMouseUp={finishSelection}
         >
           <defs>
-            <linearGradient id="arrGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#E8007A" stopOpacity={0.4} />
-              <stop offset="100%" stopColor="#E8007A" stopOpacity={0} />
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.4} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
@@ -107,6 +120,7 @@ export function TimeSeriesChart({
           <YAxis
             tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
             tickFormatter={(v) => formatEurCompact(v)}
+            width={70}
           />
           <Tooltip
             content={({ active, payload }) => {
@@ -116,7 +130,11 @@ export function TimeSeriesChart({
                 <ChartTooltipBox
                   title={d.month}
                   rows={[
-                    { label: "ARR", value: formatEur(d.arr) },
+                    {
+                      label: tooltipLabel,
+                      value: d[dataKey] === 0 ? "0 €" : formatEur(d[dataKey]),
+                      color,
+                    },
                     { label: "Oportunitati", value: String(d.count) },
                   ]}
                 />
@@ -125,10 +143,10 @@ export function TimeSeriesChart({
           />
           <Area
             type="monotone"
-            dataKey="arr"
-            stroke="#E8007A"
+            dataKey={dataKey}
+            stroke={color}
             strokeWidth={2}
-            fill="url(#arrGradient)"
+            fill={`url(#${gradientId})`}
             isAnimationActive={false}
           />
           {dragStart && dragEnd && (

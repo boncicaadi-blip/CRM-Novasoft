@@ -22,6 +22,7 @@ import {
   Check,
   Pencil,
   CheckCheck,
+  RotateCcw,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -41,6 +42,7 @@ import {
   deleteCheltuialaLinieAction,
   deleteCheltuieliLiniiAction,
   bulkMarkPlatitAction,
+  bulkUnmarkPlatitAction,
   syncCheltuieliLiniiAction,
 } from "@/lib/actions/cheltuieli";
 import type {
@@ -210,6 +212,7 @@ export function CheltuieliClient({
   const [filterIncadrare, setFilterIncadrare] = useState("");
   const [filterClasa, setFilterClasa] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterPlatit, setFilterPlatit] = useState<"" | "da" | "nu">("");
   const [isPending, startTransition] = useTransition();
   const [showContractForm, setShowContractForm] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
@@ -226,10 +229,22 @@ export function CheltuieliClient({
           inPeriod(l.luna, period, customFrom, customTo, customMonths) &&
           (!filterIncadrare || l.incadrare === filterIncadrare) &&
           (!filterClasa || l.clasa === filterClasa) &&
-          (!filterStatus || contract?.status_contract === filterStatus)
+          (!filterStatus || contract?.status_contract === filterStatus) &&
+          (!filterPlatit || (filterPlatit === "da" ? l.platit : !l.platit))
         );
       }),
-    [cheltuieliLinii, contractById, period, customFrom, customTo, customMonths, filterIncadrare, filterClasa, filterStatus]
+    [
+      cheltuieliLinii,
+      contractById,
+      period,
+      customFrom,
+      customTo,
+      customMonths,
+      filterIncadrare,
+      filterClasa,
+      filterStatus,
+      filterPlatit,
+    ]
   );
 
   const filteredContracte = useMemo(
@@ -406,7 +421,10 @@ export function CheltuieliClient({
         )}
         <select
           value={filterIncadrare}
-          onChange={(e) => setFilterIncadrare(e.target.value)}
+          onChange={(e) => {
+            setFilterIncadrare(e.target.value);
+            setFilterClasa("");
+          }}
           className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
         >
           <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
@@ -424,7 +442,7 @@ export function CheltuieliClient({
           <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
             Toate clasele
           </option>
-          {clasaOptions.map((n) => (
+          {clasaOptionsForIncadrare(clasaOptions, incadrareOptions, filterIncadrare, filterClasa).map((n) => (
             <NomOption key={n.id} n={n} />
           ))}
         </select>
@@ -443,12 +461,28 @@ export function CheltuieliClient({
             Inactiv
           </option>
         </select>
-        {(filterIncadrare || filterClasa || filterStatus) && (
+        <select
+          value={filterPlatit}
+          onChange={(e) => setFilterPlatit(e.target.value as "" | "da" | "nu")}
+          className="rounded-md border border-border-subtle bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-text-primary outline-none focus:border-[#E8007A]"
+        >
+          <option value="" style={{ backgroundColor: "var(--surface-1)" }}>
+            Platit + Neplatit
+          </option>
+          <option value="da" style={{ backgroundColor: "var(--surface-1)" }}>
+            Platit
+          </option>
+          <option value="nu" style={{ backgroundColor: "var(--surface-1)" }}>
+            Neplatit
+          </option>
+        </select>
+        {(filterIncadrare || filterClasa || filterStatus || filterPlatit) && (
           <button
             onClick={() => {
               setFilterIncadrare("");
               setFilterClasa("");
               setFilterStatus("");
+              setFilterPlatit("");
             }}
             className="text-xs text-[#E8007A] hover:text-[#FF4FAA]"
           >
@@ -513,6 +547,17 @@ function CheltuieliTable({
   const [page, setPage] = useState(1);
 
   const contractById = useMemo(() => new Map(contracte.map((c) => [c.id, c])), [contracte]);
+  const selectedTotals = useMemo(() => {
+    let totalPrognozat = 0;
+    let totalRealizat = 0;
+    for (const l of linii) {
+      if (checkedIds.has(l.id)) {
+        totalPrognozat += l.valoare_prognozata;
+        totalRealizat += l.valoare_realizata ?? 0;
+      }
+    }
+    return { totalPrognozat, totalRealizat };
+  }, [linii, checkedIds]);
 
   function startEdit(l: CheltuialaLinie) {
     setEditingId(l.id);
@@ -584,6 +629,18 @@ function CheltuieliTable({
     });
   }
 
+  function handleBulkUnplatit() {
+    if (checkedIds.size === 0) return;
+    if (
+      !confirm(`Scoti bifa "Platit" de pe ${checkedIds.size} cheltuieli? Valoarea realizata revine la 0, pentru fiecare.`)
+    )
+      return;
+    startTransition(async () => {
+      await bulkUnmarkPlatitAction(Array.from(checkedIds));
+      setCheckedIds(new Set());
+    });
+  }
+
   const [colWidths, setColWidths] = useState<Record<string, number>>({});
 
   const defaultOrdered = useMemo(() => [...linii].sort((a, b) => (a.luna < b.luna ? 1 : -1)), [linii]);
@@ -594,6 +651,8 @@ function CheltuieliTable({
         return l.incadrare;
       case "clasa":
         return l.clasa;
+      case "detaliu":
+        return l.detaliu ?? "";
       case "status":
         return contract?.status_contract ?? "";
       case "luna":
@@ -629,6 +688,14 @@ function CheltuieliTable({
             Marcheaza platit (= prognozat)
           </button>
           <button
+            onClick={handleBulkUnplatit}
+            disabled={isPending}
+            className="flex items-center gap-1.5 rounded-md bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-400 transition hover:bg-amber-500/20 disabled:opacity-50"
+          >
+            <RotateCcw size={13} />
+            Marcheaza neplatit (= 0)
+          </button>
+          <button
             onClick={handleBulkDelete}
             disabled={isPending}
             className="ml-auto flex items-center gap-1.5 rounded-md bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/20 disabled:opacity-50"
@@ -636,6 +703,26 @@ function CheltuieliTable({
             <Trash2 size={13} />
             Sterge selectate
           </button>
+        </div>
+      )}
+      {checkedIds.size > 0 && (
+        <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="rounded-lg border border-[#E8007A]/30 bg-[#E8007A]/5 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-[#E8007A]">
+              Total prognozat ({checkedIds.size} selectate)
+            </p>
+            <p className="font-mono text-xl font-semibold text-text-primary">
+              {formatEur(selectedTotals.totalPrognozat)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-[#E8007A]/30 bg-[#E8007A]/5 px-3 py-2">
+            <p className="text-[11px] uppercase tracking-wide text-[#E8007A]">
+              Total realizat ({checkedIds.size} selectate)
+            </p>
+            <p className="font-mono text-xl font-semibold text-text-primary">
+              {formatEur(selectedTotals.totalRealizat)}
+            </p>
+          </div>
         </div>
       )}
       <div className="overflow-x-auto rounded-xl border border-border-subtle">
@@ -652,6 +739,7 @@ function CheltuieliTable({
               </th>
               <SortableTh label="Incadrare" sortKey="incadrare" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.incadrare} onResize={(w) => setColWidths((c) => ({ ...c, incadrare: w }))} />
               <SortableTh label="Clasa" sortKey="clasa" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.clasa} onResize={(w) => setColWidths((c) => ({ ...c, clasa: w }))} />
+              <SortableTh label="Detaliu" sortKey="detaliu" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.detaliu} onResize={(w) => setColWidths((c) => ({ ...c, detaliu: w }))} />
               <SortableTh label="Contract" sortKey="status" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.status} onResize={(w) => setColWidths((c) => ({ ...c, status: w }))} />
               <SortableTh label="Luna" sortKey="luna" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} width={colWidths.luna} onResize={(w) => setColWidths((c) => ({ ...c, luna: w }))} />
               <SortableTh label="Prognozat" sortKey="prognozat" currentSortKey={sortKey} sortDir={sortDir} onSort={requestSort} align="right" width={colWidths.prognozat} onResize={(w) => setColWidths((c) => ({ ...c, prognozat: w }))} />
@@ -705,6 +793,7 @@ function CheltuieliTable({
                       l.clasa
                     )}
                   </td>
+                  <td className="px-3 py-2 text-text-secondary">{l.detaliu || <span className="text-text-faint">—</span>}</td>
                   <td className="px-3 py-2">
                     {contract ? (
                       <span className={contract.status_contract === "Activ" ? "text-green-400" : "text-text-muted"}>
@@ -749,7 +838,18 @@ function CheltuieliTable({
                         className="w-24 rounded-md border border-border-subtle bg-surface-2 px-2 py-1 text-right text-sm text-text-primary outline-none focus:border-[#E8007A]"
                       />
                     ) : (
-                      <span className="font-mono text-text-primary">
+                      <span
+                        className={`font-mono ${
+                          l.valoare_realizata !== null && l.valoare_realizata !== l.valoare_prognozata
+                            ? "font-semibold text-amber-400"
+                            : "text-text-primary"
+                        }`}
+                        title={
+                          l.valoare_realizata !== null && l.valoare_realizata !== l.valoare_prognozata
+                            ? `Diferit de prognozat (${formatEur(l.valoare_prognozata)})`
+                            : undefined
+                        }
+                      >
                         {l.valoare_realizata !== null ? formatEur(l.valoare_realizata) : "—"}
                       </span>
                     )}
@@ -811,7 +911,7 @@ function CheltuieliTable({
             })}
             {sorted.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-8 text-center text-sm text-text-muted">
+                <td colSpan={10} className="px-3 py-8 text-center text-sm text-text-muted">
                   Nicio cheltuiala pentru filtrul curent.
                 </td>
               </tr>

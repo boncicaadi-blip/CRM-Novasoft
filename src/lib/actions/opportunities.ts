@@ -26,7 +26,10 @@ function parsePayload(formData: FormData): OpportunityInsert {
   const getBool = (key: string) => formData.get(key) === "on";
 
   return {
-    nume_grup: get("nume_grup")!,
+    // nume_grup nu se mai completeaza manual - gruparea firmelor se gestioneaza
+    // acum din Setari -> Parteneri (partners.nume_grup). Aici doar completam
+    // coloana (NOT NULL) cu numele potentialului, ca sa nu ramana goala.
+    nume_grup: get("nume_potential")!,
     nume_potential: get("nume_potential")!,
     cod_fiscal: get("cod_fiscal"),
     responsabil_vanzare_id: get("responsabil_vanzare_id"),
@@ -119,6 +122,47 @@ export async function createOpportunityAction(
   if (errors.length > 0) return { success: false, message: errors.join(" ") };
 
   const opp = await createOpportunity(payload);
+
+  // Leaga imediat oportunitatea de un Partener - daca exista deja unul cu
+  // acelasi nume (normalizat), il foloseste (oportunitatea noua "mosteneste"
+  // pe loc datele deja completate acolo - judet, oras, contacte etc.); daca
+  // nu exista, creeaza unul nou, ca sa nu astepte pana la urmatorul
+  // "Sincronizeaza parteneri" din Creante.
+  try {
+    const supabase = await createSupabaseServerClient();
+    const numeNormalizat = normalizeName(opp.nume_potential);
+
+    const { data: existent } = await supabase
+      .from("partners")
+      .select("id")
+      .eq("nume_normalizat", numeNormalizat)
+      .maybeSingle();
+
+    if (existent) {
+      await supabase.from("opportunities").update({ partner_id: existent.id }).eq("id", opp.id);
+    } else {
+      const { data: creat } = await supabase
+        .from("partners")
+        .insert({
+          nume: opp.nume_potential.toUpperCase(),
+          nume_normalizat: numeNormalizat,
+          cod_fiscal: opp.cod_fiscal || null,
+          potential: true,
+          judet: (formData.get("anaf_judet") as string | null) || null,
+          oras: (formData.get("anaf_oras") as string | null) || null,
+          opportunity_id: opp.id,
+        })
+        .select("id")
+        .single();
+      if (creat) {
+        await supabase.from("opportunities").update({ partner_id: creat.id }).eq("id", opp.id);
+      }
+    }
+  } catch {
+    // Nu blocam crearea oportunitatii daca legarea de partener esueaza -
+    // "Sincronizeaza parteneri" din Creante ramane plasa de siguranta.
+  }
+
   revalidatePath("/pipeline");
   revalidatePath("/dashboard");
   redirect(`/oportunitati/${opp.id}`);
@@ -281,40 +325,6 @@ export async function updateOpportunitySectionAction(
   }
 
   await updateOpportunity(id, payload);
-
-  // Daca s-a schimbat Facturabil, propagam catre partenerul corespunzator -
-  // partners.facturabil e cel folosit efectiv la selectia clientului in
-  // Contracte (Venituri), nu campul de pe oportunitate. O firma poate avea
-  // mai multe oportunitati; toate se leaga de acelasi partener unic.
-  if ("facturabil" in payload) {
-    const supabase = await createSupabaseServerClient();
-    const numeFirma = (merged.nume_potential as string) ?? current.nume_potential;
-    const norm = normalizeName(numeFirma);
-
-    const { data: existing } = await supabase
-      .from("partners")
-      .select("id")
-      .eq("nume_normalizat", norm)
-      .maybeSingle();
-
-    if (existing) {
-      await supabase
-        .from("partners")
-        .update({ facturabil: payload.facturabil, opportunity_id: id })
-        .eq("id", existing.id);
-    } else {
-      await supabase.from("partners").insert({
-        nume: numeFirma,
-        nume_normalizat: norm,
-        opportunity_id: id,
-        facturabil: payload.facturabil,
-        cod_fiscal: current.cod_fiscal,
-        domeniul_activitate: current.domeniul_activitate,
-        judet: current.judet,
-        oras: current.oras,
-      });
-    }
-  }
 
   revalidatePath(`/oportunitati/${id}`);
   revalidatePath("/pipeline");

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Pencil, Check, X, UserCheck, UserX, Trash2 } from "lucide-react";
-import { updateUserAction, approveUserAction, deactivateUserAction, deleteUserAction } from "@/lib/actions/users";
+import { updateUserAction, approveUserAction, deactivateUserAction, deleteUserAction, togglePopupZilnicAction } from "@/lib/actions/users";
 import { ALL_MODULES, MODULE_LABELS, SUBMODULES, submoduleFullKey, type ModuleKey } from "@/lib/modules";
 import type { Profile } from "@/types/opportunity";
 
@@ -19,6 +19,20 @@ export function UserRow({ user }: { user: Profile }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [rowError, setRowError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [arataPopup, setArataPopup] = useState(user.arata_popup_zilnic);
+  const [isTogglingPopup, startTogglingPopup] = useTransition();
+
+  function handleTogglePopup() {
+    const nouaValoare = !arataPopup;
+    setArataPopup(nouaValoare);
+    startTogglingPopup(async () => {
+      const result = await togglePopupZilnicAction(user.id, nouaValoare);
+      if (!result.success) {
+        setArataPopup(!nouaValoare);
+        setRowError(result.message ?? "Eroare la salvare.");
+      }
+    });
+  }
 
   function toggleModule(m: ModuleKey) {
     setModuleAccess((prev) =>
@@ -223,6 +237,16 @@ export function UserRow({ user }: { user: Profile }) {
             In asteptare
           </span>
         )}
+      </td>
+      <td className="px-3 py-2.5">
+        <input
+          type="checkbox"
+          checked={arataPopup}
+          onChange={handleTogglePopup}
+          disabled={isTogglingPopup}
+          title="Afiseaza popup-ul cu rezumatul zilnic la deschiderea aplicatiei"
+          className="h-4 w-4 cursor-pointer accent-[#E8007A] disabled:opacity-50"
+        />
       </td>
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-1">

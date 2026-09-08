@@ -1,13 +1,15 @@
-export type ModuleKey = "crm" | "creante_obligatii" | "venituri_cheltuieli" | "management";
+export type ModuleKey = "crm" | "creante_obligatii" | "venituri_cheltuieli" | "management" | "concedii" | "contracte";
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
   crm: "CRM",
   creante_obligatii: "Credit Control",
   venituri_cheltuieli: "Financiar",
   management: "Management",
+  concedii: "Concedii",
+  contracte: "Contracte",
 };
 
-export const ALL_MODULES: ModuleKey[] = ["crm", "creante_obligatii", "venituri_cheltuieli", "management"];
+export const ALL_MODULES: ModuleKey[] = ["crm", "creante_obligatii", "venituri_cheltuieli", "management", "concedii", "contracte"];
 
 /** Submodule per modul - o cheie de acces partial (ex: doar Venituri, fara
  * Cheltuieli). Cheia completa folosita in profiles.submodule_access este
@@ -23,6 +25,7 @@ export const SUBMODULES: Partial<Record<ModuleKey, { key: string; label: string 
     { key: "dashboard", label: "Dashboard Comercial" },
     { key: "raport_comercial", label: "Raport Comercial" },
     { key: "raport_comercial_lunar", label: "Raport Comercial Lunar" },
+    { key: "parteneri", label: "Parteneri" },
   ],
   creante_obligatii: [
     { key: "creante", label: "Creante" },
@@ -41,6 +44,18 @@ export const SUBMODULES: Partial<Record<ModuleKey, { key: string; label: string 
     { key: "rapoarte_generale", label: "Rapoarte generale" },
     { key: "pl", label: "P&L detaliat" },
     { key: "cashflow", label: "Cashflow" },
+  ],
+  concedii: [
+    { key: "calendar", label: "Calendar concedii" },
+    { key: "cererile_mele", label: "Cererile mele" },
+    { key: "aprobare", label: "Aprobare cereri" },
+    { key: "angajati", label: "Registru angajati" },
+    { key: "raport", label: "Raport Concedii" },
+  ],
+  contracte: [
+    { key: "drafturi", label: "Draft-uri contracte" },
+    { key: "generate", label: "Contracte generate" },
+    { key: "registru", label: "Registru contracte" },
   ],
 };
 

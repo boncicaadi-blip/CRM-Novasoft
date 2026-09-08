@@ -15,6 +15,7 @@ export function VenituriPieChart({
   onToggle,
   selected = [],
   definition,
+  valueKey = "realizat",
 }: {
   title: string;
   data: GrupareDatum[];
@@ -22,8 +23,10 @@ export function VenituriPieChart({
   onToggle?: (cheie: string) => void;
   selected?: string[];
   definition?: KpiDefinition;
+  valueKey?: "estimat" | "realizat";
 }) {
-  const total = data.reduce((s, d) => s + d.realizat, 0);
+  const total = data.reduce((s, d) => s + d[valueKey], 0);
+  const valueLabel = valueKey === "estimat" ? "Estimat" : "Realizat";
 
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-1 p-4">
@@ -37,7 +40,7 @@ export function VenituriPieChart({
         <PieChart>
           <Pie
             data={data}
-            dataKey="realizat"
+            dataKey={valueKey}
             nameKey="cheie"
             innerRadius={45}
             outerRadius={75}
@@ -60,13 +63,13 @@ export function VenituriPieChart({
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const d = payload[0].payload as GrupareDatum;
-              const pct = total > 0 ? Math.round((d.realizat / total) * 100) : 0;
+              const pct = total > 0 ? Math.round((d[valueKey] / total) * 100) : 0;
               return (
                 <ChartTooltipBox
                   title={d.cheie}
                   rows={[
                     { label: "Linii", value: String(d.count) },
-                    { label: "Realizat", value: formatEur(d.realizat) },
+                    { label: valueLabel, value: formatEur(d[valueKey]) },
                     { label: "Procent", value: `${pct}%` },
                   ]}
                 />

@@ -5,6 +5,7 @@ import { getTermeneCredentials } from "@/lib/data/apiCredentials";
 import { getAnafConnectionStatus, getAnafFacturi } from "@/lib/data/anaf";
 import { TermeneCredentialsForm } from "@/components/setari/TermeneCredentialsForm";
 import { AnafConnectionCard } from "@/components/setari/AnafConnectionCard";
+import { BnrCursCard } from "@/components/setari/BnrCursCard";
 
 export default async function IntegrariPage() {
   const supabase = await createClient();
@@ -47,6 +48,8 @@ export default async function IntegrariPage() {
         <Suspense fallback={null}>
           <AnafConnectionCard status={anafStatus} facturi={anafFacturi} />
         </Suspense>
+
+        <BnrCursCard />
       </div>
     </div>
   );

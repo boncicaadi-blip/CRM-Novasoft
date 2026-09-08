@@ -34,10 +34,14 @@ export function PipelineView({
   // Coloanele Kanban afisate: ordinea completa din nomenclatoare (sau fallback
   // la stage-urile din date), restransa la stage-urile bifate in filtru -
   // daca niciun filtru nu e activ, se arata toate coloanele ca inainte.
+  // Stage-ul "Client" (contract semnat, relatia continua) nu mai apare ca
+  // si coloana activa in Kanban - ramane vizibil doar in tabel/istoric, ca
+  // sa nu aglomereze board-ul cu oportunitati deja incheiate.
   const visibleStages = useMemo(() => {
     const order = stageOrder && stageOrder.length > 0 ? stageOrder : stagesInData;
-    if (stageFilter.length === 0) return order;
-    return order.filter((s) => stageFilter.includes(s));
+    const fara_client = order.filter((s) => s !== "Client");
+    if (stageFilter.length === 0) return fara_client;
+    return fara_client.filter((s) => stageFilter.includes(s));
   }, [stageOrder, stagesInData, stageFilter]);
 
   const filtered = useMemo(() => {
@@ -60,6 +64,9 @@ export function PipelineView({
     }
     return rows;
   }, [opportunities, search, stageFilter, statusFilter]);
+
+  // Doar pentru Kanban - fara oportunitatile ajunse deja la stage "Client".
+  const kanbanFiltered = useMemo(() => filtered.filter((o) => o.stage !== "Client"), [filtered]);
 
   return (
     <div className="flex h-full flex-col">
@@ -87,7 +94,7 @@ export function PipelineView({
       <div className="flex-1 overflow-hidden">
         {view === "kanban" ? (
           <div className="h-full overflow-x-auto">
-            <KanbanBoard opportunities={filtered} stages={visibleStages} stageColors={stageColors} />
+            <KanbanBoard opportunities={kanbanFiltered} stages={visibleStages} stageColors={stageColors} />
           </div>
         ) : (
           <div className="h-full overflow-y-auto">

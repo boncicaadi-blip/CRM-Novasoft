@@ -59,6 +59,13 @@ export function DashboardFilterBar({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <input
+        type="text"
+        value={filters.search}
+        onChange={(e) => onChange({ ...filters, search: e.target.value })}
+        placeholder="Cauta client/oportunitate..."
+        className={`${selectClass} min-w-[200px]`}
+      />
       <MultiSelect
         label="Stage"
         options={stages}
@@ -128,6 +135,7 @@ export function DashboardFilterBar({
               statuses: [],
               responsabili: [],
               judete: [],
+              search: "",
               dateFrom: null,
               dateTo: null,
               periodPreset: null,

@@ -4,8 +4,10 @@ import {
   getObligatieStatus,
   getZileDepasireObligatie,
   matchesAgingBucketObligatie,
+  dateMatchesPeriod,
   type AgingBucketObligatie,
   type ObligatieStatus,
+  type PeriodFilter,
 } from "@/lib/obligatii-analytics";
 
 export interface StatusDatum {
@@ -105,24 +107,51 @@ export interface PlatiMonthDatum {
   dateTo: string;
 }
 
-/** Evolutia platilor pe ultimele N luni, din jurnal (dupa data platii). */
+/** Evolutia platilor, in intervalul selectat (period/customRange) - vezi
+ * comentariul din creante-dashboard-analytics.ts (buildIncasariTimeSeries),
+ * aceeasi logica: intervalul afisat reflecta filtrul curent, nu o fereastra
+ * fixa de la data curenta. */
 export function buildPlatiTimeSeries(
   plati: ObligatiePlata[],
-  monthsBack = 11
+  monthsBack = 11,
+  period?: PeriodFilter,
+  customRange?: { from: string; to: string; months?: string[] }
 ): PlatiMonthDatum[] {
+  const filtrate = period ? plati.filter((p) => dateMatchesPeriod(p.data_plata, period, customRange)) : plati;
+
   const now = new Date();
+  let primaLuna: string;
+  let ultimaLuna: string;
+
+  if (filtrate.length === 0) {
+    const start = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
+    primaLuna = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
+    ultimaLuna = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  } else {
+    const luni = filtrate.map((p) => p.data_plata.slice(0, 7)).sort();
+    primaLuna = luni[0];
+    ultimaLuna = luni[luni.length - 1];
+  }
+
   const months: PlatiMonthDatum[] = [];
-  for (let i = monthsBack; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+  let [y, m] = primaLuna.split("-").map(Number);
+  const [yEnd, mEnd] = ultimaLuna.split("-").map(Number);
+  while (y < yEnd || (y === yEnd && m <= mEnd)) {
+    const d = new Date(y, m - 1, 1);
+    const nextMonth = new Date(y, m, 1);
     const dateFrom = toRomaniaISO(d);
     const dateTo = toRomaniaISO(new Date(nextMonth.getTime() - 86_400_000));
     const label = d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" });
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthKey = `${y}-${String(m).padStart(2, "0")}`;
     months.push({ month: label, monthKey, total: 0, count: 0, dateFrom, dateTo });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
   }
 
-  for (const p of plati) {
+  for (const p of filtrate) {
     const dStr = p.data_plata;
     const match = months.find((m) => dStr >= m.dateFrom && dStr <= m.dateTo);
     if (match) {
@@ -135,12 +164,33 @@ export function buildPlatiTimeSeries(
 }
 
 /** Facturat lunar (dupa data facturii) - pentru graficul de "dinamica
- * obligatiilor": cat intra nou in fiecare luna. */
+ * obligatiilor": cat intra nou in fiecare luna. Aceeasi logica de interval
+ * dinamic ca buildPlatiTimeSeries. */
 export function buildFacturatTimeSeries(
   obligatii: Obligatie[],
-  monthsBack = 11
+  monthsBack = 11,
+  period?: PeriodFilter,
+  customRange?: { from: string; to: string; months?: string[] }
 ): { month: string; monthKey: string; facturat: number; count: number; dateFrom: string; dateTo: string }[] {
+  const filtrate = period
+    ? obligatii.filter((o) => o.data_factura && dateMatchesPeriod(o.data_factura, period, customRange))
+    : obligatii;
+
   const now = new Date();
+  let primaLuna: string;
+  let ultimaLuna: string;
+
+  const cuData = filtrate.filter((o) => o.data_factura);
+  if (cuData.length === 0) {
+    const start = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
+    primaLuna = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
+    ultimaLuna = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  } else {
+    const luni = cuData.map((o) => o.data_factura!.slice(0, 7)).sort();
+    primaLuna = luni[0];
+    ultimaLuna = luni[luni.length - 1];
+  }
+
   const months: {
     month: string;
     monthKey: string;
@@ -149,19 +199,25 @@ export function buildFacturatTimeSeries(
     dateFrom: string;
     dateTo: string;
   }[] = [];
-  for (let i = monthsBack; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+  let [y, m] = primaLuna.split("-").map(Number);
+  const [yEnd, mEnd] = ultimaLuna.split("-").map(Number);
+  while (y < yEnd || (y === yEnd && m <= mEnd)) {
+    const d = new Date(y, m - 1, 1);
+    const nextMonth = new Date(y, m, 1);
     const dateFrom = toRomaniaISO(d);
     const dateTo = toRomaniaISO(new Date(nextMonth.getTime() - 86_400_000));
     const label = d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" });
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthKey = `${y}-${String(m).padStart(2, "0")}`;
     months.push({ month: label, monthKey, facturat: 0, count: 0, dateFrom, dateTo });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
   }
 
-  for (const o of obligatii) {
-    const dStr = o.data_factura;
-    if (!dStr) continue;
+  for (const o of cuData) {
+    const dStr = o.data_factura!;
     const match = months.find((m) => dStr >= m.dateFrom && dStr <= m.dateTo);
     if (match) {
       match.facturat += o.total_factura;
@@ -185,9 +241,11 @@ export interface GrtMonthDatum {
 export function buildGrtSeries(
   plati: ObligatiePlata[],
   targets: Record<string, number>,
-  monthsBack = 11
+  monthsBack = 11,
+  period?: PeriodFilter,
+  customRange?: { from: string; to: string; months?: string[] }
 ): GrtMonthDatum[] {
-  const timeSeries = buildPlatiTimeSeries(plati, monthsBack);
+  const timeSeries = buildPlatiTimeSeries(plati, monthsBack, period, customRange);
   return timeSeries.map((m) => {
     const target = targets[m.monthKey] ?? 0;
     return {

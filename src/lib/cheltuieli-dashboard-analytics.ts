@@ -61,19 +61,46 @@ export interface LunaDatum {
   realizat: number;
 }
 
-export function buildEvolutieLunara(linii: CheltuialaLinie[], luni = 15): LunaDatum[] {
+/**
+ * Genereaza intervalul de luni din datele PRIMITE (nu o fereastra fixa de la
+ * data curenta) - vezi comentariul din venituri-dashboard-analytics.ts,
+ * aceeasi logica, doar pentru Cheltuieli.
+ */
+export function buildEvolutieLunara(linii: CheltuialaLinie[], maxLuni = 36): LunaDatum[] {
   const now = new Date();
+
+  let primaLuna: string;
+  let ultimaLuna: string;
+
+  if (linii.length === 0) {
+    const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    primaLuna = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
+    ultimaLuna = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  } else {
+    const luniPrezente = linii.map((l) => l.luna.slice(0, 7)).sort();
+    primaLuna = luniPrezente[0];
+    ultimaLuna = luniPrezente[luniPrezente.length - 1];
+  }
+
   const buckets: LunaDatum[] = [];
-  for (let i = luni - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  let [y, m] = primaLuna.split("-").map(Number);
+  const [yEnd, mEnd] = ultimaLuna.split("-").map(Number);
+  while ((y < yEnd || (y === yEnd && m <= mEnd)) && buckets.length < maxLuni) {
+    const key = `${y}-${String(m).padStart(2, "0")}`;
+    const d = new Date(y, m - 1, 1);
     buckets.push({
       luna: key,
       label: d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" }),
       estimat: 0,
       realizat: 0,
     });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
   }
+
   const byKey = new Map(buckets.map((b) => [b.luna, b]));
   for (const l of linii) {
     const key = l.luna.slice(0, 7);

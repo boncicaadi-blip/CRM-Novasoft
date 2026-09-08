@@ -16,11 +16,7 @@ import {
 import { Field, TextInput, TextArea, Select, Checkbox, MoneyInput } from "@/components/form/fields";
 import { formatEur } from "@/lib/format";
 import { useSaveShortcut } from "@/lib/hooks/useSaveShortcut";
-import {
-  DA_NU_NUSTIU,
-  JUDETE,
-  SUBSTATUS_SUGGESTIONS,
-} from "@/lib/constants";
+import { SUBSTATUS_SUGGESTIONS } from "@/lib/constants";
 import type { Opportunity, Profile, Nomenclator } from "@/types/opportunity";
 import {
   createOpportunityAction,
@@ -66,7 +62,6 @@ export function OpportunityForm({
 
   const stages = nomenclatoare["stage"] ?? [];
   const statuses = valori(nomenclatoare["status"]);
-  const domeniiActivitate = valori(nomenclatoare["domeniu_activitate"]);
   const produseServicii = valori(nomenclatoare["produs_serviciu"]);
   const tipuriProiect = valori(nomenclatoare["tip_proiect"]);
   const canaleIntrare = valori(nomenclatoare["canal_intrare"]);
@@ -92,15 +87,13 @@ export function OpportunityForm({
     opportunity?.pricing_mode ?? "saas"
   );
   const [codFiscal, setCodFiscal] = useState(opportunity?.cod_fiscal ?? "");
-  const [numeGrup, setNumeGrup] = useState(opportunity?.nume_grup ?? "");
   const [numePotential, setNumePotential] = useState(opportunity?.nume_potential ?? "");
-  const [judetField, setJudetField] = useState(opportunity?.judet ?? "");
-  const [orasField, setOrasField] = useState(opportunity?.oras ?? "");
   const [anafLookupState, setAnafLookupState] = useState<"idle" | "loading" | "done" | "error">(
     "idle"
   );
   const [anafLookupError, setAnafLookupError] = useState<string | null>(null);
-  const [anafDomeniuGasit, setAnafDomeniuGasit] = useState<string | null>(null);
+  const [anafJudet, setAnafJudet] = useState<string | null>(null);
+  const [anafOras, setAnafOras] = useState<string | null>(null);
 
   function handleAnafLookup() {
     if (!codFiscal) return;
@@ -114,10 +107,8 @@ export function OpportunityForm({
           return;
         }
         if (res.denumire && !numePotential) setNumePotential(res.denumire);
-        if (res.denumire && !numeGrup) setNumeGrup(res.denumire);
-        if (res.judet) setJudetField(res.judet);
-        if (res.oras) setOrasField(res.oras);
-        setAnafDomeniuGasit(res.domeniulActivitate ?? null);
+        setAnafJudet(res.judet ?? null);
+        setAnafOras(res.oras ?? null);
         setAnafLookupState("done");
       })
       .catch((e) => {
@@ -178,7 +169,6 @@ export function OpportunityForm({
   function validateStep(index: number): string[] {
     const errors: string[] = [];
     if (index === 0) {
-      if (!numeGrup.trim()) errors.push("Nume grup");
       if (!numePotential.trim()) errors.push("Nume potential (firma)");
     }
     if (index === 2) {
@@ -292,18 +282,11 @@ export function OpportunityForm({
         <div className={stepIndex === 0 ? "space-y-4" : "hidden"}>
           <h2 className="mb-1 text-base font-semibold text-text-primary">Identificare firma</h2>
           <p className="mb-4 text-xs text-text-muted">
-            Datele de baza ale prospectului / clientului.
+            Datele de baza ale prospectului / clientului. Restul datelor de firma (domeniu,
+            contacte, cifra de afaceri, calificare tehnica generala) se completeaza dupa creare, in
+            Fisa Partenerului.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Nume grup *">
-              <TextInput
-                name="nume_grup"
-                required
-                value={numeGrup}
-                onChange={(e) => setNumeGrup(e.target.value)}
-                placeholder="ex: AAS TRANSFREIGHT"
-              />
-            </Field>
             <Field label="Nume potential (firma) *">
               <TextInput
                 name="nume_potential"
@@ -333,9 +316,12 @@ export function OpportunityForm({
               </div>
               {anafLookupState === "done" && (
                 <p className="mt-1 text-[11px] text-green-400">
-                  Date gasite{anafDomeniuGasit ? ` — Domeniu: ${anafDomeniuGasit}` : ""}.
+                  Date gasite{anafJudet ? ` — ${anafJudet}${anafOras ? `, ${anafOras}` : ""}` : ""}. Daca e o firma
+                  noua, va fi inregistrata automat ca partener Potential, cu aceste date.
                 </p>
               )}
+              {!isEdit && anafJudet && <input type="hidden" name="anaf_judet" value={anafJudet} />}
+              {!isEdit && anafOras && <input type="hidden" name="anaf_oras" value={anafOras} />}
               {anafLookupState === "error" && (
                 <p className="mt-1 text-[11px] text-red-400">
                   {anafLookupError ?? "Nu am gasit date pentru acest CUI."}
@@ -362,57 +348,16 @@ export function OpportunityForm({
                 ))}
               </select>
             </Field>
-            <Field label="Domeniul de activitate">
-              <Select
-                name="domeniul_activitate"
-                defaultValue={opportunity?.domeniul_activitate ?? ""}
-                options={domeniiActivitate}
-              />
-            </Field>
-            <div />
-            <Field label="Judet">
-              <select
-                name="judet"
-                value={judetField}
-                onChange={(e) => setJudetField(e.target.value)}
-                className="w-full rounded-md border border-border-subtle bg-surface-2 px-3 py-2 text-sm text-text-primary outline-none focus:border-[#E8007A]"
-              >
-                <option value="" style={{ backgroundColor: "var(--surface-1)", color: "var(--text-primary)" }}>
-                  Selecteaza...
-                </option>
-                {JUDETE.map((j) => (
-                  <option key={j} value={j} style={{ backgroundColor: "var(--surface-1)", color: "var(--text-primary)" }}>
-                    {j}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Oras">
-              <TextInput name="oras" value={orasField} onChange={(e) => setOrasField(e.target.value)} />
-            </Field>
-            <Field label="Nr angajati">
-              <TextInput type="number" name="nr_angajati" defaultValue={opportunity?.nr_angajati ?? ""} />
-            </Field>
-            <Field label="Cifra de afaceri" hint="Introdusa manual (EUR)">
-              <MoneyInput name="cifra_afaceri" defaultValue={opportunity?.cifra_afaceri ?? 0} />
-            </Field>
           </div>
         </div>
 
         {/* PAS 2: Calificare */}
         <div className={stepIndex === 1 ? "space-y-4" : "hidden"}>
-          <h2 className="mb-1 text-base font-semibold text-text-primary">Calificare tehnica</h2>
+          <h2 className="mb-1 text-base font-semibold text-text-primary">Calificare</h2>
           <p className="mb-4 text-xs text-text-muted">
-            Context tehnic si operational despre prospect.
+            Specific negocierii curente.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Solutia existenta">
-              <TextInput
-                name="solutia_existenta"
-                defaultValue={opportunity?.solutia_existenta ?? ""}
-                placeholder="ex: WINDNET, 8TEAM, FIRE TMS..."
-              />
-            </Field>
             <Field label="Produs & serviciu propus">
               <Select
                 name="produs_serviciu_propus"
@@ -420,88 +365,11 @@ export function OpportunityForm({
                 options={produseServicii}
               />
             </Field>
-            <div className="flex gap-6 pt-1">
-              <Checkbox
-                name="client_novasoft"
-                label="Client Novasoft"
-                defaultChecked={opportunity?.client_novasoft}
-              />
-              <Checkbox
-                name="client_windsoft"
-                label="Client WindSoft"
-                defaultChecked={opportunity?.client_windsoft}
-              />
-            </div>
-            <div />
-            <Field label="Contabilitate interna">
-              <Select
-                name="contabilitate_interna"
-                defaultValue={opportunity?.contabilitate_interna ?? ""}
-                options={DA_NU_NUSTIU}
-              />
-            </Field>
-            <Field label="Solutie contabilitate">
-              <TextInput
-                name="solutie_contabilitate"
-                defaultValue={opportunity?.solutie_contabilitate ?? ""}
-                placeholder="ex: SAGA, MENTOR..."
-              />
-            </Field>
-            <Checkbox
-              name="mai_multe_firme_grup"
-              label="Mai multe firme in grup"
-              defaultChecked={opportunity?.mai_multe_firme_grup}
-            />
-            <Checkbox
-              name="potential_fonduri_europene"
-              label="Potential fonduri europene"
-              defaultChecked={opportunity?.potential_fonduri_europene}
-            />
-            <Field label="Nr societati suplimentare">
-              <TextInput
-                type="number"
-                name="nr_societati_suplimentare"
-                defaultValue={opportunity?.nr_societati_suplimentare ?? ""}
-              />
-            </Field>
-            <Field label="Nume societati suplimentare">
-              <TextInput
-                name="nume_societati_suplimentare"
-                defaultValue={opportunity?.nume_societati_suplimentare ?? ""}
-              />
-            </Field>
-            <Field label="Furnizor combustibil 1">
-              <TextInput
-                name="furnizori_combustibil_1"
-                defaultValue={opportunity?.furnizori_combustibil_1 ?? ""}
-              />
-            </Field>
-            <Field label="Furnizor GPS 1">
-              <TextInput
-                name="furnizori_gps_1"
-                defaultValue={opportunity?.furnizori_gps_1 ?? ""}
-              />
-            </Field>
-            <Field label="Nr vehicule">
-              <TextInput
-                type="number"
-                name="nr_vehicule"
-                defaultValue={opportunity?.nr_vehicule ?? ""}
-              />
-            </Field>
             <Checkbox
               name="interes_planificator"
               label="Interes pentru planificator"
               defaultChecked={opportunity?.interes_planificator}
             />
-            <div className="col-span-2">
-              <Field label="Detalii suplimentare solutie software">
-                <TextArea
-                  name="detalii_suplimentare_software"
-                  defaultValue={opportunity?.detalii_suplimentare_software ?? ""}
-                />
-              </Field>
-            </div>
           </div>
         </div>
 

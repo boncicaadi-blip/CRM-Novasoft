@@ -295,6 +295,36 @@ export async function ignoreAnafFacturiBulkAction(
   return { success: true, message: `${ids.length} facturi marcate ca ignorate.` };
 }
 
+/**
+ * Sterge definitiv randurile selectate (din baza de date SI din storage) -
+ * spre deosebire de "Ignora", care doar schimba starea, aceasta chiar
+ * elimina intrarea. Util pentru randuri "fantoma" (parsare esuata, fara
+ * nicio data utila) care nu au ce cauta in istoric.
+ */
+export async function stergeAnafFacturiBulkAction(
+  ids: string[]
+): Promise<{ success: boolean; message: string }> {
+  const check = await requireAdminSupabase();
+  if (!check.ok) return { success: false, message: check.message };
+  if (ids.length === 0) return { success: false, message: "Nicio factura selectata." };
+
+  const { data: randuri } = await check.supabase
+    .from("anaf_facturi")
+    .select("storage_path")
+    .in("id", ids);
+
+  const paths = (randuri ?? []).map((r) => r.storage_path).filter((p): p is string => !!p);
+  if (paths.length > 0) {
+    await check.supabase.storage.from("facturi-anaf").remove(paths);
+  }
+
+  const { error } = await check.supabase.from("anaf_facturi").delete().in("id", ids);
+  if (error) return { success: false, message: error.message };
+
+  revalidatePath("/setari/e-factura");
+  return { success: true, message: `${ids.length} inregistrari sterse definitiv.` };
+}
+
 interface AnafFacturaPentruImport {
   id: string;
   tip: "emisa" | "primita";
@@ -351,8 +381,24 @@ export async function importAnafFacturiAction(
 
   const deImportat = facturi as AnafFacturaPentruImport[];
 
+  // Daca un partener cu acest CIF exista deja (nume verificat anterior, in
+  // Setari -> Parteneri), il folosim pe acela in loc de ortografia bruta
+  // din XML-ul ANAF - evita sa stricam un nume deja corectat manual.
+  const cifuriDeCautat = [...new Set(deImportat.map((f) => f.cui_partener).filter((c): c is string => !!c))];
+  const partnerByCif = new Map<string, { id: string; nume: string }>();
+  if (cifuriDeCautat.length > 0) {
+    const { data: partnersExistenti } = await supabase
+      .from("partners")
+      .select("id, nume, cod_fiscal")
+      .in("cod_fiscal", cifuriDeCautat);
+    for (const p of partnersExistenti ?? []) {
+      if (p.cod_fiscal) partnerByCif.set(p.cod_fiscal, { id: p.id, nume: p.nume });
+    }
+  }
+
   let nrImportate = 0;
   let nrDejaLegate = 0;
+  let nrInlocuitePrognoze = 0;
   const erori: string[] = [];
 
   for (const f of deImportat) {
@@ -383,12 +429,15 @@ export async function importAnafFacturiAction(
         continue;
       }
 
+      const partnerVerificat = f.cui_partener ? partnerByCif.get(f.cui_partener) : undefined;
+
       const { data: creantaNoua, error: insertError } = await supabase
         .from("creante")
         .insert({
           nr_factura: f.nr_factura,
-          nume_firma: f.nume_partener ?? "PARTENER NECUNOSCUT",
+          nume_firma: partnerVerificat?.nume ?? f.nume_partener ?? "PARTENER NECUNOSCUT",
           cif_client: f.cui_partener,
+          partner_id: partnerVerificat?.id ?? null,
           data_factura: f.data_factura,
           data_scadenta: dataScadenta,
           serviciu_facturat: f.serviciu,
@@ -427,16 +476,61 @@ export async function importAnafFacturiAction(
         continue;
       }
 
+      const partnerVerificat = f.cui_partener ? partnerByCif.get(f.cui_partener) : undefined;
+
+      // Daca acest furnizor are deja o prognoza generata (regula recurenta)
+      // pentru aceeasi luna, inlocuim prognoza cu factura reala in loc sa
+      // adaugam un rand nou - evita dublarea intre prognoza si factura reala.
+      if (partnerVerificat && dataScadenta) {
+        const lunaFactura = dataScadenta.slice(0, 7);
+        const { data: prognoze } = await supabase
+          .from("obligatii")
+          .select("id")
+          .eq("partner_id", partnerVerificat.id)
+          .eq("sursa", "prognoza")
+          .gte("data_scadenta", `${lunaFactura}-01`)
+          .lt("data_scadenta", `${lunaFactura}-31`)
+          .limit(1);
+
+        const prognozaExistenta = prognoze?.[0];
+        if (prognozaExistenta) {
+          const { error: updateError } = await supabase
+            .from("obligatii")
+            .update({
+              nr_factura: f.nr_factura,
+              nume_furnizor: partnerVerificat.nume,
+              cif_furnizor: f.cui_partener,
+              data_factura: f.data_factura,
+              data_scadenta: dataScadenta,
+              serviciu_facturat: f.serviciu,
+              total_factura: f.valoare,
+              sursa: "anaf",
+            })
+            .eq("id", prognozaExistenta.id);
+
+          if (!updateError) {
+            await supabase
+              .from("anaf_facturi")
+              .update({ stare: "importata", obligatie_id: prognozaExistenta.id })
+              .eq("id", f.id);
+            nrInlocuitePrognoze += 1;
+            continue;
+          }
+        }
+      }
+
       const { data: obligatieNoua, error: insertError } = await supabase
         .from("obligatii")
         .insert({
           nr_factura: f.nr_factura,
-          nume_furnizor: f.nume_partener ?? "PARTENER NECUNOSCUT",
+          nume_furnizor: partnerVerificat?.nume ?? f.nume_partener ?? "PARTENER NECUNOSCUT",
           cif_furnizor: f.cui_partener,
+          partner_id: partnerVerificat?.id ?? null,
           data_factura: f.data_factura,
           data_scadenta: dataScadenta,
           serviciu_facturat: f.serviciu,
           total_factura: f.valoare,
+          sursa: "anaf",
         })
         .select("id")
         .single();
@@ -467,9 +561,10 @@ export async function importAnafFacturiAction(
 
   const parts = [`${nrImportate} facturi importate.`];
   if (nrDejaLegate > 0) parts.push(`${nrDejaLegate} erau deja legate de un rand existent - nu au fost duplicate.`);
+  if (nrInlocuitePrognoze > 0) parts.push(`${nrInlocuitePrognoze} prognoze inlocuite cu factura reala.`);
   if (erori.length > 0) parts.push(`${erori.length} probleme: ${erori.slice(0, 3).join("; ")}`);
 
-  return { success: nrImportate > 0 || nrDejaLegate > 0, message: parts.join(" "), nrImportate };
+  return { success: nrImportate > 0 || nrDejaLegate > 0 || nrInlocuitePrognoze > 0, message: parts.join(" "), nrImportate };
 }
 /**
  * Sincronizeaza facturile din SPV: cere lista de mesaje pe ultimele 60 de
@@ -482,13 +577,15 @@ export async function importAnafFacturiAction(
  * client Supabase cu cheia de service-role (fara sesiune de utilizator).
  */
 async function performAnafSync(
-  supabase: SupabaseServerClient
+  supabase: SupabaseServerClient,
+  zile: number = 60
 ): Promise<{ success: boolean; message: string; nrNoi?: number }> {
   const tokenResult = await getValidAccessToken(supabase);
   if ("error" in tokenResult) return { success: false, message: tokenResult.error };
   const { token, cif } = tokenResult;
 
-  const listUrl = `${ANAF_API_BASE}/listaMesajeFactura?zile=60&cif=${encodeURIComponent(cif)}`;
+  const zileValide = Math.min(60, Math.max(1, Math.round(zile)));
+  const listUrl = `${ANAF_API_BASE}/listaMesajeFactura?zile=${zileValide}&cif=${encodeURIComponent(cif)}`;
 
   let listResp: Response;
   try {
@@ -512,7 +609,7 @@ async function performAnafSync(
   if (mesaje.length === 0) {
     return {
       success: true,
-      message: "Niciun mesaj in ultimele 60 de zile (sau contul nu are inca facturi in SPV).",
+      message: `Niciun mesaj in ultimele ${zileValide} de zile (sau contul nu are inca facturi in SPV).`,
       nrNoi: 0,
     };
   }
@@ -565,6 +662,15 @@ async function performAnafSync(
       const cifPartener = tip === "emisa" ? (msg.cif_beneficiar ?? parsed?.cifClient) : (msg.cif_emitent ?? parsed?.cifFurnizor);
       const numePartener = tip === "emisa" ? parsed?.numeClient : parsed?.numeFurnizor;
 
+      // Daca parsarea XML-ului a esuat complet (nu avem nici nr. factura,
+      // nici valoare, nici CIF de nicaieri), nu are sens sa inseram un rand
+      // "fantoma", complet gol, pe care nu-l poti nici importa, nici sterge
+      // usor din UI - raportam eroarea in schimb, ca sa stii ce s-a intamplat.
+      if (!parsed?.nrFactura && !parsed?.valoare && !cifPartener) {
+        erori.push(`Mesaj ${mesajId}: continutul nu a putut fi identificat ca factura valida - ignorat.`);
+        continue;
+      }
+
       const { error: insertError } = await supabase.from("anaf_facturi").insert({
         mesaj_id_anaf: mesajId,
         tip,
@@ -606,10 +712,12 @@ async function performAnafSync(
 }
 
 /** Actiunea publica (buton din UI) - cere sesiune de admin, apoi delega la performAnafSync. */
-export async function syncAnafFacturiAction(): Promise<{ success: boolean; message: string; nrNoi?: number }> {
+export async function syncAnafFacturiAction(
+  zile: number = 60
+): Promise<{ success: boolean; message: string; nrNoi?: number }> {
   const check = await requireAdminSupabase();
   if (!check.ok) return { success: false, message: check.message };
-  return performAnafSync(check.supabase);
+  return performAnafSync(check.supabase, zile);
 }
 
 /**

@@ -83,15 +83,20 @@ export interface ClientDatum {
   sold: number;
 }
 
-/** Top N clienti dupa soldul restant (doar facturi chiar restante). */
-export function topClientiRestanti(creante: Creanta[], n = 8): ClientDatum[] {
+/** Top N clienti dupa soldul restant (doar facturi chiar restante). Daca groupMap e dat, firmele cu grup completat (Setari -> Parteneri) se agrega sub numele grupului. */
+export function topClientiRestanti(
+  creante: Creanta[],
+  n = 8,
+  groupMap?: Record<string, string>
+): ClientDatum[] {
   const map = new Map<string, ClientDatum>();
   for (const c of creante) {
     if (getCreantaStatus(c) !== "restanta") continue;
-    const d = map.get(c.nume_firma) ?? { numeFirma: c.nume_firma, count: 0, sold: 0 };
+    const cheie = (c.partner_id && groupMap?.[c.partner_id]) || c.nume_firma;
+    const d = map.get(cheie) ?? { numeFirma: cheie, count: 0, sold: 0 };
     d.count += 1;
     d.sold += c.sold;
-    map.set(c.nume_firma, d);
+    map.set(cheie, d);
   }
   return Array.from(map.values())
     .sort((a, b) => b.sold - a.sold)
@@ -108,23 +113,54 @@ export interface IncasariMonthDatum {
 }
 
 /** Evolutia incasarilor pe ultimele N luni, din jurnal (dupa data incasarii). */
+/**
+ * Incasari lunare, in intervalul selectat (period/customRange) - daca nu se
+ * da niciun interval, cade pe ultimele `monthsBack` luni de la azi (folosit
+ * doar cand nu exista filtru activ). Genereaza intervalul afisat din DATELE
+ * REALE filtrate, nu o fereastra fixa de la data curenta - altfel graficul
+ * ar ramane "agatat" de azi chiar daca filtrezi pe alt an.
+ */
 export function buildIncasariTimeSeries(
   incasari: CreantaIncasare[],
-  monthsBack = 11
+  monthsBack = 11,
+  period?: PeriodFilter,
+  customRange?: { from: string; to: string; months?: string[] }
 ): IncasariMonthDatum[] {
+  const filtrate = period ? incasari.filter((i) => dateMatchesPeriod(i.data_incasare, period, customRange)) : incasari;
+
   const now = new Date();
+  let primaLuna: string;
+  let ultimaLuna: string;
+
+  if (filtrate.length === 0) {
+    const start = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
+    primaLuna = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
+    ultimaLuna = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  } else {
+    const luni = filtrate.map((i) => i.data_incasare.slice(0, 7)).sort();
+    primaLuna = luni[0];
+    ultimaLuna = luni[luni.length - 1];
+  }
+
   const months: IncasariMonthDatum[] = [];
-  for (let i = monthsBack; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+  let [y, m] = primaLuna.split("-").map(Number);
+  const [yEnd, mEnd] = ultimaLuna.split("-").map(Number);
+  while (y < yEnd || (y === yEnd && m <= mEnd)) {
+    const d = new Date(y, m - 1, 1);
+    const nextMonth = new Date(y, m, 1);
     const dateFrom = toRomaniaISO(d);
     const dateTo = toRomaniaISO(new Date(nextMonth.getTime() - 86_400_000));
     const label = d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" });
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthKey = `${y}-${String(m).padStart(2, "0")}`;
     months.push({ month: label, monthKey, total: 0, count: 0, dateFrom, dateTo });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
   }
 
-  for (const i of incasari) {
+  for (const i of filtrate) {
     const dStr = i.data_incasare;
     const match = months.find((m) => dStr >= m.dateFrom && dStr <= m.dateTo);
     if (match) {
@@ -137,12 +173,33 @@ export function buildIncasariTimeSeries(
 }
 
 /** Facturat lunar (dupa data facturii) - pentru graficul de "dinamica
- * creantelor": cat intra nou in pipeline in fiecare luna. */
+ * creantelor": cat intra nou in pipeline in fiecare luna. Acelasi principiu
+ * ca buildIncasariTimeSeries - intervalul afisat reflecta filtrul curent. */
 export function buildFacturatTimeSeries(
   creante: Creanta[],
-  monthsBack = 11
+  monthsBack = 11,
+  period?: PeriodFilter,
+  customRange?: { from: string; to: string; months?: string[] }
 ): { month: string; monthKey: string; facturat: number; count: number; dateFrom: string; dateTo: string }[] {
+  const filtrate = period
+    ? creante.filter((c) => c.data_factura && dateMatchesPeriod(c.data_factura, period, customRange))
+    : creante;
+
   const now = new Date();
+  let primaLuna: string;
+  let ultimaLuna: string;
+
+  const cuData = filtrate.filter((c) => c.data_factura);
+  if (cuData.length === 0) {
+    const start = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1);
+    primaLuna = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
+    ultimaLuna = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  } else {
+    const luni = cuData.map((c) => c.data_factura!.slice(0, 7)).sort();
+    primaLuna = luni[0];
+    ultimaLuna = luni[luni.length - 1];
+  }
+
   const months: {
     month: string;
     monthKey: string;
@@ -151,19 +208,25 @@ export function buildFacturatTimeSeries(
     dateFrom: string;
     dateTo: string;
   }[] = [];
-  for (let i = monthsBack; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+  let [y, m] = primaLuna.split("-").map(Number);
+  const [yEnd, mEnd] = ultimaLuna.split("-").map(Number);
+  while (y < yEnd || (y === yEnd && m <= mEnd)) {
+    const d = new Date(y, m - 1, 1);
+    const nextMonth = new Date(y, m, 1);
     const dateFrom = toRomaniaISO(d);
     const dateTo = toRomaniaISO(new Date(nextMonth.getTime() - 86_400_000));
     const label = d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" });
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthKey = `${y}-${String(m).padStart(2, "0")}`;
     months.push({ month: label, monthKey, facturat: 0, count: 0, dateFrom, dateTo });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
   }
 
-  for (const c of creante) {
-    const dStr = c.data_factura;
-    if (!dStr) continue;
+  for (const c of cuData) {
+    const dStr = c.data_factura!;
     const match = months.find((m) => dStr >= m.dateFrom && dStr <= m.dateTo);
     if (match) {
       match.facturat += c.total_factura;
@@ -190,9 +253,11 @@ export interface GrtMonthDatum {
 export function buildGrtSeries(
   incasari: CreantaIncasare[],
   targets: Record<string, number>,
-  monthsBack = 11
+  monthsBack = 11,
+  period?: PeriodFilter,
+  customRange?: { from: string; to: string; months?: string[] }
 ): GrtMonthDatum[] {
-  const timeSeries = buildIncasariTimeSeries(incasari, monthsBack);
+  const timeSeries = buildIncasariTimeSeries(incasari, monthsBack, period, customRange);
   return timeSeries.map((m) => {
     const target = targets[m.monthKey] ?? 0;
     return {

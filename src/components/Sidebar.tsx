@@ -27,6 +27,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
+  Building2,
+  Check,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 import type { ModuleKey } from "@/lib/modules";
@@ -38,6 +41,9 @@ interface NavItem {
   /** Cheia de submodul (vezi SUBMODULES din lib/modules) - daca lipseste,
    * itemul e vizibil doar cu acces la modulul intreg (fara granularitate). */
   submodule?: string;
+  /** Cheie catre badgeCounts (prop de pe Sidebar) - afiseaza un numar
+   * langa item, daca e > 0. */
+  badgeKey?: string;
 }
 
 interface NavGroup {
@@ -57,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
     icon: GitBranch,
     moduleKey: "crm",
     items: [
+      { href: "/setari/parteneri", label: "Parteneri", icon: Building2, submodule: "parteneri" },
       { href: "/pipeline", label: "Pipeline", icon: GitBranch, submodule: "pipeline" },
       { href: "/actiuni", label: "Actiuni", icon: ListChecks, submodule: "actiuni" },
       { href: "/calendar", label: "Calendar", icon: CalendarDays, submodule: "calendar" },
@@ -74,6 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/creante", label: "Creante", icon: Wallet, submodule: "creante" },
       { href: "/creante/dashboard", label: "Dashboard Creante", icon: FileBarChart, submodule: "creante_dashboard" },
+      { href: "/creante/notificare", label: "Notificare de plata", icon: FileText, submodule: "creante_dashboard" },
       { href: "/obligatii", label: "Obligatii", icon: Wallet, submodule: "obligatii" },
       { href: "/obligatii/dashboard", label: "Dashboard Obligatii", icon: FileBarChart, submodule: "obligatii_dashboard" },
     ],
@@ -100,6 +108,30 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/management", label: "Rapoarte generale", icon: LayoutDashboard, submodule: "rapoarte_generale" },
       { href: "/management/pl", label: "P&L detaliat", icon: FileBarChart, submodule: "pl" },
       { href: "/management/cashflow", label: "Cashflow", icon: Wallet, submodule: "cashflow" },
+    ],
+  },
+  {
+    id: "concedii",
+    label: "Concedii",
+    icon: CalendarDays,
+    moduleKey: "concedii",
+    items: [
+      { href: "/concedii", label: "Calendar concedii", icon: CalendarDays, submodule: "calendar" },
+      { href: "/concedii/cererile-mele", label: "Cererile mele", icon: ListChecks, submodule: "cererile_mele", badgeKey: "cererileMeleNecititite" },
+      { href: "/concedii/aprobare", label: "Aprobare cereri", icon: Check, submodule: "aprobare", badgeKey: "cereriDeAprobat" },
+      { href: "/concedii/angajati", label: "Registru angajati", icon: Users, submodule: "angajati" },
+      { href: "/concedii/raport", label: "Raport Concedii", icon: FileBarChart, submodule: "raport" },
+    ],
+  },
+  {
+    id: "contracte",
+    label: "Contracte",
+    icon: FileText,
+    moduleKey: "contracte",
+    items: [
+      { href: "/contracte/drafturi", label: "Draft-uri contracte", icon: FileText, submodule: "drafturi" },
+      { href: "/contracte/generate", label: "Contracte generate", icon: FileText, submodule: "generate" },
+      { href: "/contracte/registru", label: "Registru contracte", icon: FileText, submodule: "registru" },
     ],
   },
 ];
@@ -133,6 +165,7 @@ export function Sidebar({
   deployVersion = null,
   anafFacturiNoiCount = 0,
   pendingUsersCount = 0,
+  badgeCounts = {},
 }: {
   userName: string;
   isAdmin?: boolean;
@@ -141,6 +174,7 @@ export function Sidebar({
   deployVersion?: string | null;
   anafFacturiNoiCount?: number;
   pendingUsersCount?: number;
+  badgeCounts?: Record<string, number>;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -290,6 +324,7 @@ export function Sidebar({
                     {group.items.map((item) => {
                       const isActive = isNavItemActive(pathname, item.href);
                       const Icon = item.icon;
+                      const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] ?? 0 : 0;
                       return (
                         <Link
                           key={item.href}
@@ -302,6 +337,11 @@ export function Sidebar({
                         >
                           <Icon size={15} />
                           {item.label}
+                          {badgeCount > 0 && (
+                            <span className="ml-auto rounded-full bg-[#E8007A] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                              {badgeCount}
+                            </span>
+                          )}
                         </Link>
                       );
                     })}
@@ -466,6 +506,7 @@ export function Sidebar({
               {mobileSheetGroup.items.map((item) => {
                 const isActive = isNavItemActive(pathname, item.href);
                 const Icon = item.icon;
+                const badgeCount = item.badgeKey ? badgeCounts[item.badgeKey] ?? 0 : 0;
                 return (
                   <Link
                     key={item.href}
@@ -479,6 +520,11 @@ export function Sidebar({
                   >
                     <Icon size={17} />
                     {item.label}
+                    {badgeCount > 0 && (
+                      <span className="ml-auto rounded-full bg-[#E8007A] px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        {badgeCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

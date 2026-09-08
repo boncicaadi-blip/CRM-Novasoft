@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/anaf-sync",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/bnr-sync",
+      "schedule": "0 12 * * *"
     }
   ]
 }

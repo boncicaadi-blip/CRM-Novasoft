@@ -18,7 +18,8 @@ export function groupByStatusContract(
     const status = contract?.status_contract ?? "Fara contract";
     const cur = map.get(status) ?? { status, count: 0, valoare: 0 };
     cur.count += 1;
-    cur.valoare += l.venit_realizat ?? l.venit_estimat;
+    if (l.venit_realizat !== null) cur.valoare += l.venit_realizat;
+    else if (!l.mutat_in_linie_id) cur.valoare += l.venit_estimat;
     map.set(status, cur);
   }
   return Array.from(map.values());
@@ -37,7 +38,7 @@ export function groupBy(linii: VenitLinie[], keyFn: (l: VenitLinie) => string | 
     const cheie = keyFn(l) ?? "Nespecificat";
     const cur = map.get(cheie) ?? { cheie, count: 0, estimat: 0, realizat: 0 };
     cur.count += 1;
-    cur.estimat += l.venit_estimat;
+    if (!l.mutat_in_linie_id) cur.estimat += l.venit_estimat;
     cur.realizat += l.venit_realizat ?? 0;
     map.set(cheie, cur);
   }
@@ -56,8 +57,9 @@ export function groupByTipVenit(linii: VenitLinie[]): GrupareDatum[] {
   return groupBy(linii, (l) => l.tip_venit);
 }
 
-export function topClienti(linii: VenitLinie[], n = 10): GrupareDatum[] {
-  return groupBy(linii, (l) => l.nume_client).slice(0, n);
+/** Top N clienti dupa valoare. Daca groupMap e dat, firmele cu grup completat (Setari -> Parteneri) se agrega sub numele grupului. */
+export function topClienti(linii: VenitLinie[], n = 10, groupMap?: Record<string, string>): GrupareDatum[] {
+  return groupBy(linii, (l) => (l.partner_id && groupMap?.[l.partner_id]) || l.nume_client).slice(0, n);
 }
 
 export interface LunaDatum {
@@ -67,25 +69,55 @@ export interface LunaDatum {
   realizat: number;
 }
 
-export function buildEvolutieLunara(linii: VenitLinie[], luni = 15): LunaDatum[] {
+/**
+ * Genereaza intervalul de luni din datele PRIMITE (nu o fereastra fixa de la
+ * data curenta) - altfel graficul arata mereu ultimele N luni de azi
+ * inapoi, chiar daca ai filtrat pe un an anume: intervalul afisat trebuie
+ * sa reflecte exact ce ai selectat sus, nu sa ramana "agatat" de azi.
+ * Daca nu exista date, cade pe o fereastra implicita rezonabila (ultimele
+ * 12 luni), ca sa nu arate un grafic complet gol fara niciun motiv vizibil.
+ */
+export function buildEvolutieLunara(linii: VenitLinie[], maxLuni = 36): LunaDatum[] {
   const now = new Date();
+
+  let primaLuna: string;
+  let ultimaLuna: string;
+
+  if (linii.length === 0) {
+    const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    primaLuna = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}`;
+    ultimaLuna = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  } else {
+    const luniPrezente = linii.map((l) => l.luna.slice(0, 7)).sort();
+    primaLuna = luniPrezente[0];
+    ultimaLuna = luniPrezente[luniPrezente.length - 1];
+  }
+
   const buckets: LunaDatum[] = [];
-  for (let i = luni - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  let [y, m] = primaLuna.split("-").map(Number);
+  const [yEnd, mEnd] = ultimaLuna.split("-").map(Number);
+  while ((y < yEnd || (y === yEnd && m <= mEnd)) && buckets.length < maxLuni) {
+    const key = `${y}-${String(m).padStart(2, "0")}`;
+    const d = new Date(y, m - 1, 1);
     buckets.push({
       luna: key,
       label: d.toLocaleDateString("ro-RO", { month: "short", year: "2-digit" }),
       estimat: 0,
       realizat: 0,
     });
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
   }
+
   const byKey = new Map(buckets.map((b) => [b.luna, b]));
   for (const l of linii) {
     const key = l.luna.slice(0, 7);
     const bucket = byKey.get(key);
     if (bucket) {
-      bucket.estimat += l.venit_estimat;
+      if (!l.mutat_in_linie_id) bucket.estimat += l.venit_estimat;
       bucket.realizat += l.venit_realizat ?? 0;
     }
   }
@@ -112,7 +144,7 @@ export function groupByJudetVenituri(
     const entry = map.get(judet) ?? { judet, count: 0, arr: 0, forecast: 0 };
     entry.count += 1;
     entry.arr += l.venit_realizat ?? 0;
-    entry.forecast += l.venit_estimat;
+    if (!l.mutat_in_linie_id) entry.forecast += l.venit_estimat;
     map.set(judet, entry);
   }
   return Array.from(map.values());

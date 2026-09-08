@@ -76,6 +76,13 @@ export interface CreanteSummary {
   /** Suma valorilor propuse (editabile per factura, nu neaparat soldul intreg). */
   targetPropus: number;
   nrFacturiPropuse: number;
+  /**
+   * Days Sales Outstanding - numarul mediu de zile pana se incaseaza o
+   * factura. Formula standard: (Sold neincasat curent / Facturat in
+   * ultimele 90 de zile) x 90. Null daca nu exista facturi in fereastra de
+   * 90 de zile (nu se poate calcula un raport relevant).
+   */
+  dso: number | null;
 }
 
 /**
@@ -86,7 +93,19 @@ export interface CreanteSummary {
  * Singurul lucru cu adevarat "legat de o perioada" e Total incasat, care se
  * calculeaza separat, din jurnalul de incasari (vezi computeTotalIncasatInPeriod).
  */
-export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
+/**
+ * `creantePentruDso`, daca e dat, e folosit STRICT pentru calculul DSO -
+ * util pe pagini unde `creante` (primul parametru) e deja restrans de un
+ * filtru de perioada din UI (ex. Dashboard-ul cu filtrare incrucisata):
+ * DSO isi calculeaza singur o fereastra fixa de 90 de zile, care s-ar
+ * strica daca ar primi date deja taiate de alt filtru de perioada. Trebuie
+ * sa respecte in continuare orice alt filtru (client, status etc.) - de-aia
+ * e un parametru separat, nu doar "toate creantele".
+ */
+export function computeCreanteSummary(
+  creante: Creanta[],
+  creantePentruDso?: Creanta[]
+): CreanteSummary {
   let totalSoldNeincasat = 0;
   let totalSoldRestant = 0;
   let totalFacturat = 0;
@@ -127,6 +146,27 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
     }
   }
 
+  // DSO (Days Sales Outstanding) - formula standard, pe o fereastra de 90
+  // de zile (perioada uzuala pentru un calcul stabil, nu prea sensibil la
+  // fluctuatii lunare): (Sold neincasat curent / Facturat in ultimele 90
+  // de zile) x 90 de zile.
+  const FEREASTRA_DSO_ZILE = 90;
+  const azi = new Date();
+  const inceputFereastra = new Date(azi);
+  inceputFereastra.setDate(inceputFereastra.getDate() - FEREASTRA_DSO_ZILE);
+  const inceputFereastraStr = inceputFereastra.toISOString().slice(0, 10);
+
+  let facturatUltimele90Zile = 0;
+  for (const c of creantePentruDso ?? creante) {
+    if (c.data_factura && c.data_factura.slice(0, 10) >= inceputFereastraStr) {
+      facturatUltimele90Zile += c.total_factura;
+    }
+  }
+  const dso =
+    facturatUltimele90Zile > 0
+      ? (totalSoldNeincasat / facturatUltimele90Zile) * FEREASTRA_DSO_ZILE
+      : null;
+
   return {
     totalSoldNeincasat,
     totalSoldRestant,
@@ -141,6 +181,7 @@ export function computeCreanteSummary(creante: Creanta[]): CreanteSummary {
     sold365Plus,
     targetPropus,
     nrFacturiPropuse,
+    dso,
   };
 }
 

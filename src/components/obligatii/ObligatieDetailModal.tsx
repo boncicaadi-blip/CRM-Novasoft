@@ -31,6 +31,7 @@ export function ObligatieDetailModal({
   );
   const [modalitatePlata, setModalitatePlata] = useState(obligatie.modalitate_plata ?? "");
   const [serviciuFacturat, setServiciuFacturat] = useState(obligatie.serviciu_facturat ?? "");
+  const [totalFactura, setTotalFactura] = useState(String(obligatie.total_factura));
   const [observatii, setObservatii] = useState(obligatie.observatii ?? "");
   const [valoarePropusa, setValoarePropusa] = useState(
     String(obligatie.valoare_propusa_spre_plata ?? obligatie.sold)
@@ -54,6 +55,7 @@ export function ObligatieDetailModal({
         modalitate_plata: modalitatePlata || null,
         serviciu_facturat: serviciuFacturat || null,
         observatii: observatii || null,
+        ...(Number(totalFactura) !== obligatie.total_factura ? { total_factura: Number(totalFactura) } : {}),
         ...(obligatie.propus_spre_plata
           ? { valoare_propusa_spre_plata: Number(valoarePropusa) }
           : {}),
@@ -114,7 +116,18 @@ export function ObligatieDetailModal({
         <div className="mb-4 grid grid-cols-2 gap-3 rounded-lg border border-border-subtle bg-surface-1 p-3 text-sm">
           <div>
             <p className="text-[11px] text-text-muted">Total factura</p>
-            <p className="font-mono text-text-primary">{formatRon(obligatie.total_factura)}</p>
+            <input
+              type="number"
+              step="0.01"
+              value={totalFactura}
+              onChange={(e) => setTotalFactura(e.target.value)}
+              className="w-full rounded-md border border-border-subtle bg-surface-2 px-2 py-1 font-mono text-sm text-text-primary outline-none focus:border-[#E8007A]"
+            />
+            {obligatie.sursa === "prognoza" && (
+              <p className="mt-0.5 text-[10px] text-amber-400">
+                Prognoza - modifici doar aceasta luna, restul ramane neschimbat.
+              </p>
+            )}
           </div>
           <div>
             <p className="text-[11px] text-text-muted">Sold</p>
